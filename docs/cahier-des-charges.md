@@ -378,6 +378,7 @@ Les maquettes montrent le sélecteur de carnet à la création, la liste de tags
 | F50 | Une suggestion n'est jamais appliquée toute seule : elle apparaît sur la fiche de la note (« Créer le carnet … », « Créer le tag … », « Ignorer ») et la création exige un clic. | Must |
 | F51 | Les suggestions sont produites par le même appel que le classement (une ligne de plus dans la réponse), donc sans appel supplémentaire. En mode strict, la consigne envoyée à l'IA est plus courte, ce qui économise des jetons. | Must |
 | F52 | Un carnet créé sur suggestion reçoit une description à compléter, pour guider les classements suivants. | Should |
+| F79 | **Description du carnet de notes** (onglet Carnets) : quelques phrases sur l'utilisateur et l'usage de ses notes, jointes à chaque classement et à chaque enrichissement pour mieux choisir le carnet. Elle complète la description propre à chaque carnet. | Must |
 
 ## Liens dans les notes
 
@@ -396,6 +397,8 @@ Garde-fous : seules les adresses http(s) publiques sont lues (les adresses inter
 | F75 | Réglage **Enrichissement des notes** : désactivé, à la demande (par défaut) ou automatique, avec son fournisseur d'IA comme les autres fonctions. | Must |
 | F76 | Un bloc **Pour aller plus loin** sur la note : explication du sujet (2 à 4 phrases), pistes complémentaires, recherches prêtes (Web et Google Scholar) et sources. Les notes pratiques (courses, rappels) ne sont pas enrichies. | Must |
 | F77 | Chaque source proposée par l'IA est ouverte par le serveur ; une adresse qui ne répond pas est écartée et signalée. Le bloc indique qu'il est généré par l'IA et à vérifier ; il peut être retiré ou régénéré. | Must |
+
+| F78 | À la création d'une note, une case **Enrichir cette note** (cochée d'office en mode automatique, masquée si l'enrichissement est désactivé) demande l'enrichissement pour cette note seulement, dans l'appel de classement. | Must |
 
 Règles de sobriété : en mode automatique, l'enrichissement est demandé dans l'appel de classement (aucun appel en plus, réponse plus longue), une seule fois par note et jamais lors d'un re-tri. À la demande, un appel par clic. L'enrichissement ne sert pas au classement ni aux synthèses ; il est inclus dans la recherche.
 

@@ -25,7 +25,7 @@ function shead(t) { return '<div class="shead"><h2>' + t + '</h2>' + xbtn() + '<
 /* ---------- Ajout d'une note ---------- */
 var add = null;
 function openAdd(t) {
-  add = { tab: t || 'text', notebookId: S.settings.defaultNotebook || '', text: '', caption: '', rec: null, audio: null, images: [] };
+  add = { tab: t || 'text', enrich: S.settings.trigger.enrich === 'auto', notebookId: S.settings.defaultNotebook || '', text: '', caption: '', rec: null, audio: null, images: [] };
   modal = 'add';
   renderAdd();
 }
@@ -56,13 +56,22 @@ function renderAdd() {
       '<div class="actions"><button class="btn primary" data-a="add-img"' + (add.images.length ? '' : ' disabled') + '>Ajouter ' + (add.images.length > 1 ? 'les images' : 'l\'image') + '</button></div>';
   }
   var co = '<option value=""' + (!add.notebookId ? ' selected' : '') + '>Choisi par l\'IA</option>' + S.notebooks.map(function (c) { return '<option value="' + c.id + '"' + (add.notebookId === c.id ? ' selected' : '') + '>' + esc(c.name) + (st.defaultNotebook === c.id ? ' (par défaut)' : '') + '</option>'; }).join('');
-  openSheet(shead('Nouvelle note') + '<div class="seg">' + tb('text', 'Écrire') + tb('voice', 'Parler') + tb('image', 'Image') + '</div><div><label class="l" for="addcat">Carnet de destination</label><select id="addcat" class="field">' + co + '</select></div>' + body, 'Nouvelle note');
+  openSheet(shead('Nouvelle note') + '<div class="seg">' + tb('text', 'Écrire') + tb('voice', 'Parler') + tb('image', 'Image') + '</div><div><label class="l" for="addcat">Carnet de destination</label><select id="addcat" class="field">' + co + '</select></div>' +
+    (st.trigger.enrich !== 'off' ? '<label class="check"><input type="checkbox" id="addenrich"' + (add.enrich ? ' checked' : '') + '><span><b>Enrichir cette note</b><small>Explication, pistes et sources, dans l\'appel de classement (aucun appel en plus).</small></span></label>' : '') +
+    body, 'Nouvelle note');
+}
+
+// Valeur envoyée seulement si elle diffère du réglage général (sinon le réglage décide).
+function addEnrich() {
+  var box = $('#addenrich');
+  if (!box) return undefined;
+  return box.checked === (S.settings.trigger.enrich === 'auto') ? undefined : box.checked;
 }
 
 function addText() {
   var t = $('#ntext').value.trim();
   if (!t) { toast('La note est vide.'); return; }
-  queueNote({ type: 'text', content: t, notebookId: $('#addcat').value });
+  queueNote({ type: 'text', content: t, notebookId: $('#addcat').value, enrich: addEnrich() });
   closeModal();
   toast(online ? 'Note ajoutée' : 'Note enregistrée sur l\'appareil');
 }
@@ -129,7 +138,7 @@ function addVoice() {
   var b = add.audio.blob;
   var type = (b.type || 'audio/webm').split(';')[0];
   var blob = b.type === type ? b : new Blob([b], { type: type });
-  queueNote({ type: 'voice', content: '', notebookId: $('#addcat').value, dur: add.audio.dur, files: [{ original: blob }] });
+  queueNote({ type: 'voice', content: '', notebookId: $('#addcat').value, enrich: addEnrich(), dur: add.audio.dur, files: [{ original: blob }] });
   closeModal();
   toast(online ? 'Vocal ajouté' : 'Vocal enregistré sur l\'appareil');
 }
@@ -167,7 +176,7 @@ function pickImages(files) {
 }
 function addImages() {
   if (!add.images.length) return;
-  queueNote({ type: 'image', content: $('#icap').value.trim(), notebookId: $('#addcat').value, files: add.images.map(function (im) { return { original: im.original, ai: im.ai }; }) });
+  queueNote({ type: 'image', content: $('#icap').value.trim(), notebookId: $('#addcat').value, enrich: addEnrich(), files: add.images.map(function (im) { return { original: im.original, ai: im.ai }; }) });
   closeModal();
   toast(online ? 'Image ajoutée' : 'Image enregistrée sur l\'appareil');
 }

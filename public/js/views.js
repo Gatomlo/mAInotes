@@ -165,7 +165,12 @@ function renderCats() {
   var retriInfo = r ? (r.status === 'running' ? 'Re-tri en cours : ' + r.done + ' / ' + r.total + ' notes examinées.' : 'Dernier re-tri le ' + fmtFull(r.date) + ' : ' + plural(r.items.length, 'note déplacée', 'notes déplacées') + '.') : '';
   $('#view-cats').innerHTML =
     '<div class="sec"><h2>Carnets</h2><button class="btn primary" data-a="cat-new">Nouveau carnet</button></div>' +
-    '<p class="sub">Chaque description guide le classement automatique. Une note n\'appartient qu\'à un seul carnet.</p>' +
+    '<form class="panel" id="ctxform"><h3>Description de votre carnet de notes</h3>' +
+    '<p class="sub" style="margin:0">Qui vous êtes, à quoi servent vos notes, vos sujets du moment. L\'IA la lit à chaque classement pour choisir le bon carnet.</p>' +
+    '<textarea id="ctx" class="field" rows="4" maxlength="1500" placeholder="ex. Enseignante en sciences, je note des idées de cours, des lectures sur l\'IA en éducation et les tâches du ranch (chevaux, travaux, factures).">' + esc(st.context || '') + '</textarea>' +
+    '<div class="help"><span>Restez bref : quelques phrases suffisent, et chaque mot est envoyé à chaque classement.</span></div>' +
+    '<div class="actions"><button type="submit" class="btn primary">Enregistrer la description</button></div></form>' +
+    '<p class="sub">Chaque carnet a aussi sa propre description (« Ce qu\'il doit contenir ») : touchez un carnet pour la compléter. Une note n\'appartient qu\'à un seul carnet.</p>' +
     '<div style="margin-top:12px"><label class="l" for="defcat">Carnet par défaut des nouvelles notes</label><select id="defcat" class="field" data-set="defaultNotebook">' + def + '</select><div class="help"><span>Modifiable note par note à la création. Un carnet choisi à la création n\'est jamais changé par l\'IA.</span></div></div>' +
     '<div class="list">' + rows + '</div>' +
     '<div class="sec"><h2>Tags</h2></div>' +

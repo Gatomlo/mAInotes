@@ -220,11 +220,17 @@ document.addEventListener('change', function (e) {
   if (t.id === 'afile') importAudio(t.files[0]);
   if (t.id === 'ifile') { add.notebookId = $('#addcat').value; pickImages(t.files); }
   if (t.id === 'addcat' && add) add.notebookId = t.value;
+  if (t.id === 'addenrich' && add) add.enrich = t.checked;
   if (t.id === 'defcat') saveSettings({ defaultNotebook: t.value }).then(function () { renderCats(); toast('Carnet par défaut enregistré'); });
   if (t.closest && t.closest('#view-set') && t.tagName === 'SELECT' && t.hasAttribute('data-set')) { setDirty = true; var b = $('#savebar'); if (b) b.hidden = false; }
 });
 document.addEventListener('focusin', function (e) { if (e.target.id === 'dtagq') dtList(true); });
 document.addEventListener('submit', function (e) {
+  if (e.target.id === 'ctxform') {
+    e.preventDefault();
+    saveSettings({ context: $('#ctx').value }).then(function () { toast('Description enregistrée'); renderCats(); });
+    return;
+  }
   if (e.target.id === 'tagform') {
     e.preventDefault();
     var v = $('#newtag').value.trim();

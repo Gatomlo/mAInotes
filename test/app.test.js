@@ -344,3 +344,20 @@ test('enrichissement automatique : dans l\'appel de classement, jamais au re-tri
   const off = await call('POST', `notes/${r.data.note.id}/enrich`, {});
   assert.strictEqual(off.status, 400);
 });
+
+test('case « Enrichir cette note » et description du carnet de notes', async () => {
+  await call('PATCH', 'settings', { trigger: { enrich: 'demand' }, context: 'Enseignante, je note mes lectures sur l\'IA en éducation.' });
+  let before = calls.length;
+  let r = await call('POST', 'notes', { type: 'text', content: 'Lire Weber-Wulff 2023', enrich: true });
+  let n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r.data.note.id); return x.status === 'ready' && x; });
+  assert.strictEqual(calls.length - before, 1, 'enrichi dans l\'appel de classement');
+  assert.ok(n.enrichment, 'case cochée : note enrichie');
+  const prompt = JSON.stringify(calls[calls.length - 1].messages);
+  assert.ok(prompt.includes('Enseignante, je note mes lectures'), 'description transmise au classement');
+
+  await call('PATCH', 'settings', { trigger: { enrich: 'auto' } });
+  r = await call('POST', 'notes', { type: 'text', content: 'Autre lecture', enrich: false });
+  n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r.data.note.id); return x.status === 'ready' && x; });
+  assert.ok(!n.enrichment, 'case décochée : pas d\'enrichissement malgré le mode automatique');
+  await call('PATCH', 'settings', { trigger: { enrich: 'demand' }, context: '' });
+});

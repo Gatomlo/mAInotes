@@ -187,7 +187,7 @@ function flushOutbox() {
 }
 
 function sendItem(item) {
-  return api('POST', 'notes', { clientId: item.clientId, type: item.type, content: item.content, notebookId: item.notebookId, dur: item.dur, createdAt: item.createdAt })
+  return api('POST', 'notes', { clientId: item.clientId, type: item.type, content: item.content, notebookId: item.notebookId, dur: item.dur, createdAt: item.createdAt, enrich: item.enrich })
     .then(function (r) {
       var note = r.note;
       if (item.type === 'text' || note.status !== 'uploading') return note;

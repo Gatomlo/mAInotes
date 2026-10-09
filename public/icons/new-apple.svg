@@ -3,13 +3,14 @@
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#13908C"/><stop offset="1" stop-color="#0A5C5C"/></linearGradient>
     <linearGradient id="star" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE38A"/><stop offset="1" stop-color="#FFC233"/></linearGradient>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <g id="art">
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g id="art" transform="translate(256 256) scale(.9) translate(-262 -256)">
     <rect x="150" y="98" width="222" height="300" rx="30" fill="#000" opacity=".16" transform="translate(8 12)"/>
     <rect x="150" y="98" width="222" height="300" rx="30" fill="#fff"/>
     <g fill="#0B6E6E"><rect x="132" y="142" width="40" height="18" rx="9"/><rect x="132" y="206" width="40" height="18" rx="9"/><rect x="132" y="270" width="40" height="18" rx="9"/><rect x="132" y="334" width="40" height="18" rx="9"/></g>
     <g stroke="#0B6E6E" stroke-width="20" stroke-linecap="round" opacity=".85"><path d="M206 172h120"/><path d="M206 228h120"/><path d="M206 284h76"/></g>
     <path d="M372 286c7 34 21 48 55 55-34 7-48 21-55 55-7-34-21-48-55-55 34-7 48-21 55-55z" fill="url(#star)" stroke="#0A5C5C" stroke-width="10" stroke-linejoin="round"/>
     <path d="M318 360c3 14 9 20 23 23-14 3-20 9-23 23-3-14-9-20-23-23 14-3 20-9 23-23z" fill="#FFE38A"/>
+  <g id="plus"><circle cx="388" cy="124" r="62" fill="#FFC233" stroke="#0A5C5C" stroke-width="10"/><path d="M388 96v56M360 124h56" stroke="#0A5C5C" stroke-width="16" stroke-linecap="round"/></g>
   </g>
 </svg>

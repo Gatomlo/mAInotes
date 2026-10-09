@@ -88,6 +88,15 @@ test('page servie sous /mainotes/ avec chemins relatifs', async () => {
   assert.doesNotMatch(html, /(src|href)="\//);
   const manifest = await (await fetch(base + 'manifest.json')).json();
   assert.strictEqual(manifest.icons[0].src, 'icons/icon-192.png');
+  assert.strictEqual(manifest.display, 'fullscreen');
+  assert.ok(manifest.shortcuts.every((x) => x.url.startsWith('./?action=new')), 'raccourcis relatifs');
+  const mnew = await (await fetch(base + 'manifest-new.json')).json();
+  assert.strictEqual(mnew.start_url, './?action=new');
+  assert.notStrictEqual(mnew.id, manifest.id, 'deux applications distinctes');
+  for (const icon of [...manifest.icons, ...mnew.icons]) {
+    const res = await fetch(base + icon.src);
+    assert.strictEqual(res.status, 200, icon.src);
+  }
 });
 
 test('création du compte à la première ouverture, une seule fois', async () => {

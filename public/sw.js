@@ -1,7 +1,7 @@
 // Service worker : l'interface s'ouvre sans réseau. L'API n'est jamais mise en cache,
 // sauf les médias déjà consultés (lecture hors connexion).
-const VERSION = 'mainotes-v1';
-const SHELL = ['./', 'index.html', 'styles.css', 'manifest.json', 'icons/icon.svg', 'icons/icon-192.png',
+const VERSION = 'mainotes-v2';
+const SHELL = ['./', 'index.html', 'styles.css', 'manifest.json', 'manifest-new.json', 'icons/icon.svg', 'icons/icon-192.png', 'icons/new-192.png',
   'js/core.js', 'js/auth.js', 'js/views.js', 'js/modals.js', 'js/settings.js', 'js/events.js'];
 
 self.addEventListener('install', (e) => {
@@ -29,5 +29,5 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(fetch(req).then((res) => {
     if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
     return res;
-  }).catch(() => caches.match(req).then((hit) => hit || (req.mode === 'navigate' ? caches.match('index.html') : Response.error()))));
+  }).catch(() => caches.match(req).then((hit) => hit || (req.mode === 'navigate' ? caches.match(req, { ignoreSearch: true }).then((h) => h || caches.match('index.html')) : Response.error()))));
 });

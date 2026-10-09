@@ -63,6 +63,17 @@ L'adresse de l'API (`https://api.infomaniak.com/2/ai/{product_id}/openai/v1`) se
 ou un traitement différé (`batch_id`). Gemini et Claude restent inactifs tant qu'aucune clé n'est saisie
 et qu'ils ne sont pas activés.
 
+## 3 bis. Installer sur le téléphone
+
+Dans l'application : **Réglages › Installer sur cet appareil**. Choisissez l'ouverture sur l'accueil
+(« Mes notes ») ou directement sur la création d'une note (« Nouvelle note »), puis :
+
+- **Android (Chrome)** : bouton « Installer » du panneau, ou menu ⋮ › Installer l'application ;
+- **iPhone / iPad (Safari)** : Partager › Sur l'écran d'accueil.
+
+L'application s'ouvre en plein écran. Pour avoir les deux icônes, installez une fois avec chaque choix.
+Sur Android, un appui long sur l'icône « Mes notes » propose les raccourcis Écrire, Parler et Photo.
+
 ## 4. Données et sauvegarde
 
 Toutes les données sont dans un seul dossier :

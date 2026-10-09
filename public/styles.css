@@ -257,3 +257,11 @@ div.l{font-size:14px;font-weight:600;display:block;margin-bottom:6px}
 .lrow .ld{color:var(--muted);font-size:13px;white-space:nowrap;min-width:96px}
 .lrow .lc{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .lrow .chip{height:26px;font-size:12px}
+
+/* Plein écran : le contenu évite l'encoche et les bords arrondis de l'écran. */
+body{padding-top:env(safe-area-inset-top,0px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.install-choice{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.install-choice button{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border-radius:16px;border:1px solid var(--line);background:var(--surface);font-weight:600}
+.install-choice button[aria-pressed="true"]{border:2px solid var(--accent);background:var(--accent-soft)}
+.install-choice img{width:64px;height:64px;border-radius:16px}
+.install-choice small{font-weight:400;color:var(--muted);font-size:13px;text-align:center}

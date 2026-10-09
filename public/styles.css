@@ -243,3 +243,17 @@ div.l{font-size:14px;font-weight:600;display:block;margin-bottom:6px}
 .check small{display:block;color:var(--muted);font-size:13px}
 .readtext{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55;font-size:16px}
 .readtext a{color:var(--accent);text-decoration:underline}
+
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap;margin-top:12px}
+.period{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.period .field{height:44px;width:auto;padding:0 12px}
+.period label{font-size:14px;color:var(--muted)}
+.rows{display:flex;flex-direction:column;gap:6px}
+.lrow{display:flex;align-items:center;gap:6px 16px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;cursor:pointer;min-height:52px}
+.lrow:hover{border-color:var(--line-strong)}
+.lrow .lt{flex:1 1 260px;min-width:0;display:flex;align-items:center;gap:8px;font-weight:600}
+.lrow .lt>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.lrow .lt svg{color:var(--muted)}
+.lrow .ld{color:var(--muted);font-size:13px;white-space:nowrap;min-width:96px}
+.lrow .lc{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.lrow .chip{height:26px;font-size:12px}

@@ -74,11 +74,25 @@ function outboxCard(item) {
     (item.error ? '<button class="btn danger" style="height:44px;margin-left:auto" data-a="outbox-del" data-id="' + item.clientId + '">Supprimer</button>' : '') + '</div></div>';
 }
 
+// Vue liste : une note par ligne (titre, date de création, carnet, tags).
+function listRow(n, q) {
+  var busy = n.status === 'queued' || n.status === 'analyzing' || n.status === 'uploading';
+  var state = busy ? '<span class="chip wait">' + I(IC.spark, 12) + 'Analyse</span>' : n.status === 'error' ? '<span class="chip err">Erreur</span>' : n.status === 'pending' ? '<span class="chip check">À analyser</span>' : '';
+  var tags = n.tagIds.map(function (id) { var t = tagById(id); return t ? '<span class="chip">#' + esc(t.name) + '</span>' : ''; }).join('');
+  var d = new Date(n.createdAt);
+  return '<div class="lrow" role="button" tabindex="0" data-a="open" data-id="' + n.id + '" aria-label="Ouvrir : ' + esc(n.title) + '">' +
+    '<span class="lt">' + I(IC[n.type] || IC.text, 16) + '<span>' + hl(n.title, q) + '</span>' + (n.enrichment ? I(IC.spark, 13) : '') + '</span>' +
+    '<span class="ld" title="' + esc(fmtFull(n.createdAt)) + '">' + d.toLocaleDateString('fr-BE', { day: 'numeric', month: 'short', year: 'numeric' }) + '</span>' +
+    '<span class="lc">' + (n.type === 'synthesis' ? '<span class="chip">Synthèse</span>' : catChip(n)) + tags + state + '</span></div>';
+}
+
 function live() { return S.notes.filter(function (n) { return !n.trashedAt; }); }
 
 function filtered() {
   var nq = norm(F.q).trim();
+  var range = dateRange();
   return live().filter(function (n) {
+    if (range && (n.createdAt < range[0] || n.createdAt > range[1])) return false;
     var busy = n.status === 'queued' || n.status === 'analyzing' || n.status === 'uploading';
     if (busy) return !F.cat && !F.tags.length && !nq;
     if (F.cat === '__none') { if (n.notebookId && !n.needsReview) return false; if (n.type === 'synthesis') return false; }
@@ -131,7 +145,10 @@ function renderHome() {
     th += '<button class="fchip tag" data-a="ftag" data-id="' + t.id + '" aria-pressed="' + (F.tags.indexOf(t.id) > -1) + '">#' + esc(t.name) + ' <small>' + k + '</small></button>';
   });
   $('#tagchips').innerHTML = th;
-  var list = filtered(), active = F.cat || F.tags.length || F.q.trim();
+  var list = filtered(), active = F.cat || F.tags.length || F.q.trim() || dateRange();
+  $('#fperiod').value = F.period;
+  $('#fcustom').hidden = F.period !== 'custom';
+  $$('[data-a="view"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.id === VIEW)); });
   $('#resinfo').textContent = active ? plural(list.length, 'note', 'notes') + ' sur ' + live().length : '';
   $('#clearf').hidden = !active;
   $('#qclear').hidden = !F.q;
@@ -146,7 +163,8 @@ function renderHome() {
   var calls = pend.reduce(function (a, n) { return a + 1 + ((n.type === 'voice' && !n.transcript) || (n.type === 'image' && !n.description && !n.content) ? 1 : 0); }, 0);
   $('#pendbar').innerHTML = pend.length ? '<div class="pendbar"><span>' + plural(pend.length, 'note à analyser', 'notes à analyser') + '</span><button class="btn primary" style="height:44px" data-a="analyze-all">Tout analyser · ≈ ' + plural(calls, 'appel', 'appels') + '</button></div>' : '';
   var showOutbox = !active ? outbox.map(outboxCard).join('') : '';
-  $('#grid').innerHTML = showOutbox + (list.length ? list.map(function (n) { return card(n, F.q); }).join('') :
+  $('#grid').className = VIEW === 'list' ? 'rows' : 'grid';
+  $('#grid').innerHTML = showOutbox + (list.length ? list.map(function (n) { return VIEW === 'list' ? listRow(n, F.q) : card(n, F.q); }).join('') :
     (showOutbox ? '' : '<div class="empty"><h3>' + (active ? 'Aucune note ne correspond' : 'Aucune note pour l\'instant') + '</h3><p>' + (active ? 'Essayez un autre mot ou retirez un filtre.' : 'Ajoutez un texte, un vocal ou une image : le classement se fait tout seul.') + '</p></div>'));
 }
 

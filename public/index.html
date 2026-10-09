@@ -39,6 +39,13 @@
     </div>
     <div class="chips" id="catchips" role="group" aria-label="Filtrer par carnet"></div>
     <div class="chips tags" id="tagchips" role="group" aria-label="Filtrer par tags"></div>
+    <div class="toolbar">
+      <div class="period"><label class="l" for="fperiod" style="margin:0">Créées</label>
+        <select id="fperiod" class="field"><option value="">Toutes les dates</option><option value="today">Aujourd'hui</option><option value="7">7 derniers jours</option><option value="30">30 derniers jours</option><option value="month">Ce mois-ci</option><option value="year">Cette année</option><option value="custom">Période personnalisée…</option></select>
+        <span id="fcustom" class="period" hidden><label for="ffrom">du</label><input id="ffrom" type="date" class="field"><label for="fto">au</label><input id="fto" type="date" class="field"></span>
+      </div>
+      <div class="modes" role="group" aria-label="Affichage"><button type="button" data-a="view" data-id="cards" aria-pressed="true">Cartes</button><button type="button" data-a="view" data-id="list" aria-pressed="false">Liste</button></div>
+    </div>
     <div class="resinfo"><span id="resinfo" aria-live="polite"></span><span style="display:inline-flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="clearf" data-a="clearf" style="height:44px;padding:0 8px" hidden>Tout effacer</button><button class="btn ghost" data-a="trash-open" id="trashbtn" style="height:44px;padding:0 8px" hidden></button><button class="btn ghost" id="synthhist" data-a="hist-open" style="height:44px;padding:0 8px">Historique</button><button class="btn" id="synth" data-a="synth" style="height:44px;padding:0 14px" hidden></button></span></div>
     <div id="pendbar"></div>
     <div class="grid" id="grid"></div>

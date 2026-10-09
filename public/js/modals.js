@@ -445,6 +445,7 @@ function filterLabel() {
   p.push(F.cat === '__none' ? 'À vérifier' : F.cat ? (nb(F.cat) || { name: 'Tous les carnets' }).name : 'Tous les carnets');
   F.tags.forEach(function (id) { var t = tagById(id); if (t) p.push('#' + t.name); });
   if (F.q.trim()) p.push('« ' + F.q.trim() + ' »');
+  if (periodLabel()) p.push('Créées : ' + periodLabel());
   return p.join(' · ');
 }
 function openSynth() {

@@ -16,6 +16,7 @@ delete process.env.MAINOTES_SETUP_TOKEN;
 let gateway, mock, base, mockUrl;
 const calls = [];
 const gemini = { calls: 0, fail: 0 };
+const mistral = { calls: 0, auth: '' };
 const ENRICH = (u) => ({
   explication: 'Weber-Wulff et al. (2023) ont testé 14 outils de détection de textes générés par IA : aucun n\'est fiable.',
   pistes: ['Comparer avec les études plus récentes.'],
@@ -66,11 +67,25 @@ before(async () => {
     res.set({ 'anthropic-ratelimit-requests-limit': '50', 'anthropic-ratelimit-requests-remaining': '49', 'anthropic-ratelimit-requests-reset': new Date(Date.now() + 60000).toISOString(), 'request-id': 'req_test' });
     res.json({ id: 'msg_1', type: 'message', role: 'assistant', model: 'claude-haiku-5-5', stop_reason: 'end_turn', stop_sequence: null, content: [{ type: 'text', text: JSON.stringify({ titre: 'Classée par Claude', carnet: null, tags: [], confiance: 0.9 }) }], usage: { input_tokens: 12, output_tokens: 6 } });
   });
+  // Faux Mistral : format OpenAI, liste de modèles avec capacités.
+  m.post('/mistral/chat/completions', (req, res) => {
+    mistral.calls++;
+    mistral.auth = req.get('authorization');
+    res.set({ 'x-ratelimit-limit-requests': '60', 'x-ratelimit-remaining-requests': '59' });
+    res.json({ choices: [{ message: { content: JSON.stringify({ titre: 'Classée par Mistral', carnet: null, tags: [], confiance: 0.9 }) } }], usage: { prompt_tokens: 20, completion_tokens: 8 } });
+  });
+  m.get('/mistral/models', (req, res) => res.json({ data: [
+    { id: 'mistral-small-latest', capabilities: { completion_chat: true, vision: true } },
+    { id: 'mistral-tiny-latest', capabilities: { completion_chat: true, vision: false } },
+    { id: 'mistral-embed', capabilities: { completion_chat: false, vision: false } },
+    { id: 'voxtral-mini-transcribe-latest', capabilities: { completion_chat: false, audio_transcription: true } }
+  ] }));
   m.get('/ai/:pid/v1/models', (req, res) => res.json({ data: [{ id: 'mistral24b' }, { id: 'whisper' }, { id: 'bge_multilingual_gemma2' }] }));
   mock = await listen(m);
   mockUrl = `http://127.0.0.1:${mock.address().port}`;
   process.env.MAINOTES_GEMINI_URL = mockUrl + '/gemini';
   process.env.ANTHROPIC_BASE_URL = mockUrl + '/anthropic';
+  process.env.MAINOTES_MISTRAL_URL = mockUrl + '/mistral';
 
   const app = require('../server');
   const g = express();
@@ -464,5 +479,43 @@ test('limites annoncées par Claude relevées à chaque appel', async () => {
   const obs = st.data.providers.find((p) => p.id === 'claude').quota.observed;
   assert.strictEqual(obs.headers['anthropic-ratelimit-requests-limit'], '50');
   assert.strictEqual(obs.headers['anthropic-ratelimit-requests-remaining'], '49');
+  await call('PATCH', 'settings', { providers: { classif: 'infomaniak' } });
+});
+
+test('Mistral : inactif par défaut, test de connexion, classement des notes', async () => {
+  let st = await call('GET', 'state');
+  const p0 = st.data.providers.find((p) => p.id === 'mistral');
+  assert.ok(p0, 'Mistral figure dans la liste des fournisseurs');
+  assert.strictEqual(p0.enabled, false);
+  assert.strictEqual(p0.supports.transcr, true);
+  assert.deepStrictEqual(st.data.settings.models.mistral, { chat: 'mistral-small-latest', vision: 'mistral-small-latest', audio: 'voxtral-mini-latest' });
+
+  await call('PUT', 'keys/mistral', { key: 'mk-test' });
+  let r = await call('POST', 'keys/mistral/test', {});
+  assert.deepStrictEqual(r.data.models.chat, ['mistral-small-latest', 'mistral-tiny-latest']);
+  assert.deepStrictEqual(r.data.models.vision, ['mistral-small-latest']);
+  assert.deepStrictEqual(r.data.models.audio, ['voxtral-mini-transcribe-latest']);
+
+  // Inactif : le classement ne part pas chez Mistral.
+  r = await call('PATCH', 'settings', { providers: { classif: 'mistral' } });
+  assert.strictEqual(r.data.settings.providers.classif, 'mistral');
+  const before = mistral.calls;
+  const off = await call('POST', 'notes', { type: 'text', content: 'Note avant activation de Mistral' });
+  const pending = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === off.data.note.id); return x.status !== 'processing' && x.status !== 'new' && x; });
+  assert.notStrictEqual(pending.status, 'ready');
+  assert.strictEqual(mistral.calls, before, 'rien ne part tant que Mistral n\'est pas activé');
+
+  await call('PATCH', 'settings', { enabled: { mistral: true }, trigger: { enrich: 'off' } });
+  const a = await call('POST', 'notes', { type: 'text', content: 'Note pour Mistral' });
+  const n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === a.data.note.id); return x.status === 'ready' && x; });
+  assert.strictEqual(n.title, 'Classée par Mistral');
+  assert.strictEqual(n.provider.classif, 'mistral');
+  assert.strictEqual(mistral.auth, 'Bearer mk-test');
+  st = await call('GET', 'state');
+  const p = st.data.providers.find((x) => x.id === 'mistral');
+  assert.ok(p.usage.calls >= 1);
+  assert.strictEqual(p.quota.observed.headers['x-ratelimit-limit-requests'], '60');
+  const raw = fs.readFileSync(path.join(dataDir, 'db.json'), 'utf8');
+  assert.ok(!raw.includes('mk-test'), 'la clé doit être chiffrée');
   await call('PATCH', 'settings', { providers: { classif: 'infomaniak' } });
 });

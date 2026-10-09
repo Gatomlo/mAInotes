@@ -75,7 +75,7 @@ function quotaHtml(p) {
   }
   h += '<div class="kv"><span>Aujourd\'hui</span><span>' + q.today + (set.perDay ? ' sur ' + set.perDay : '') + ' requête' + (q.today > 1 ? 's' : '') + ' · remise à zéro dans ' + esc(q.resetIn || '') + '</span></div>';
   if (q.observed) h += observedHtml(p.id, q.observed);
-  h += '<div class="help"><span>' + (p.id === 'gemini' ? 'Clé gratuite : vos limites exactes (par minute et par jour, selon le modèle) sont dans <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer">Google AI Studio</a>. Le jour se compte à partir de minuit, heure du Pacifique (9 h en Belgique). ' : '') +
+  h += '<div class="help"><span>' + (p.id === 'gemini' ? 'Clé gratuite : vos limites exactes (par minute et par jour, selon le modèle) sont dans <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer">Google AI Studio</a>. Le jour se compte à partir de minuit, heure du Pacifique (9 h en Belgique). ' : p.id === 'mistral' ? 'Vos limites exactes (offre gratuite ou payante) sont dans la <a href="https://console.mistral.ai" target="_blank" rel="noopener noreferrer">console Mistral</a>. ' : '') +
     'Au-delà du quota par minute, l\'application patiente ; au-delà du quota du jour, les notes attendent le lendemain. Si le fournisseur bloque quand même, elles repartent seules après le délai qu\'il indique.</span></div></div></details>';
   return h;
 }

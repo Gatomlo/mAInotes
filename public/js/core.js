@@ -102,8 +102,12 @@ function api(method, path, body, opts) {
   var payload = body;
   if (body !== undefined && !(body instanceof Blob)) { headers['Content-Type'] = 'application/json'; payload = JSON.stringify(body); }
   if (body instanceof Blob) headers['Content-Type'] = body.type || 'application/octet-stream';
-  return fetch('api/' + path, { method: method, headers: headers, body: payload, credentials: 'same-origin', cache: 'no-store' })
+  // opts.timeout : abandon si le serveur ne répond pas (réseau muet), traité comme hors connexion.
+  var ctrl = opts.timeout && window.AbortController ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, opts.timeout) : null;
+  return fetch('api/' + path, { method: method, headers: headers, body: payload, credentials: 'same-origin', cache: 'no-store', signal: ctrl ? ctrl.signal : undefined })
     .then(function (res) {
+      clearTimeout(timer);
       return res.text().then(function (t) {
         var data = {};
         try { data = t ? JSON.parse(t) : {}; } catch (e) { data = { error: t }; }
@@ -113,6 +117,7 @@ function api(method, path, body, opts) {
         return data;
       });
     }, function (err) {
+      clearTimeout(timer);
       setOnline(false);
       var e = new ApiError('Pas de connexion au serveur.', 0);
       e.network = true;
@@ -238,7 +243,7 @@ function upsertNote(n) {
 var syncTimer = null;
 function sync() {
   if (!S.user) return Promise.resolve();
-  return api('GET', 'state').then(function (d) {
+  return api('GET', 'state', undefined, { timeout: 15000 }).then(function (d) {
     S.notebooks = d.notebooks; S.tags = d.tags; S.notes = d.notes; S.settings = d.settings;
     S.providers = d.providers; S.retri = d.retri; S.synthesesCount = d.synthesesCount;
     saveCache();
@@ -256,23 +261,26 @@ document.addEventListener('visibilitychange', function () { if (document.visibil
 
 /* ---------- Démarrage ---------- */
 function boot() {
-  idbAll().then(function (items) { outbox = items; });
-  api('GET', 'auth/state', undefined, { allow401: true }).then(function (st) {
+  idbAll().then(function (items) { outbox = items; if (S.user) render(); });
+  // Notes déjà chargées sur cet appareil : affichées tout de suite, sans attendre le
+  // serveur (réseau absent ou trop lent). Le serveur confirme ensuite la session.
+  var c = loadCache();
+  var shown = !!(c && c.user);
+  if (shown) {
+    Object.assign(S, c);
+    online = navigator.onLine;
+    showApp();
+    render();
+  }
+  api('GET', 'auth/state', undefined, { allow401: true, timeout: 8000 }).then(function (st) {
     if (st.setup) return showAuth('setup', st);
     if (!st.user) return showAuth('login', st);
     S.user = st.user;
-    showApp();
+    if (!shown) showApp();
     return sync().then(flushOutbox);
   }, function () {
-    // Hors connexion : on montre les notes déjà chargées.
-    var c = loadCache();
-    if (c && c.user) {
-      Object.assign(S, c);
-      showApp();
-      render();
-    } else {
-      showAuth('offline');
-    }
+    // Hors connexion : on reste sur les notes déjà chargées, ou on le signale.
+    if (shown) { render(); scheduleSync(); } else showAuth('offline');
   });
 }
 

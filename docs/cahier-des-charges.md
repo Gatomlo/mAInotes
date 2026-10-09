@@ -192,7 +192,7 @@ Les notes vivent sur le serveur, pas dans l'appareil : le smartphone et l'ordina
 
 Ces exigences s'ajoutent aux 20 fonctionnalités ci-dessus, et la capture hors-ligne (F4) passe en priorité Must.
 
-- **F21 (Must) Compte unique** : connexion personnelle, session conservée sur chaque appareil.
+- **F21 (Must) Compte unique** : connexion personnelle, session conservée sur chaque appareil. Détaillé dans « Compte utilisateur et hébergement » (F64 à F71).
 - **F22 (Must) Mise à jour entre appareils** : une note captée sur le smartphone apparaît sur l'ordinateur en quelques secondes, au rechargement de la liste et à intervalle régulier.
 - **F23 (Must) Envoi différé** : hors réseau, la note est gardée sur l'appareil puis envoyée au retour de la connexion, sans doublon.
 - **Conflits** : en cas de modification des deux côtés, la dernière écriture l'emporte pour le titre et le texte ; un classement verrouillé à la main l'emporte toujours sur l'IA.
@@ -379,6 +379,29 @@ Les maquettes montrent le sélecteur de carnet à la création, la liste de tags
 | F51 | Les suggestions sont produites par le même appel que le classement (une ligne de plus dans la réponse), donc sans appel supplémentaire. En mode strict, la consigne envoyée à l'IA est plus courte, ce qui économise des jetons. | Must |
 | F52 | Un carnet créé sur suggestion reçoit une description à compléter, pour guider les classements suivants. | Should |
 
+## Compte utilisateur et hébergement
+
+L'application vit sur un hébergement Infomaniak qui n'accepte qu'une seule application Node.js : elle est montée par la passerelle `node-gateway` sur l'adresse `/mainotes/` (voir `docs/deploiement-infomaniak.md`). Elle est personnelle : un seul compte, créé à la première ouverture.
+
+| Réf. | Fonction | Priorité |
+|---|---|---|
+| F64 | **Création du compte à la première ouverture** après déploiement : nom, identifiant (e-mail ou nom d'utilisateur) et mot de passe de 10 caractères au moins, saisi deux fois. Un seul compte possible : ensuite, l'écran de création disparaît. | Must |
+| F65 | **Code d'installation facultatif** (variable `MAINOTES_SETUP_TOKEN`) exigé pour créer le compte, afin que personne d'autre ne le crée avant vous. | Should |
+| F66 | **Connexion** par identifiant et mot de passe, session conservée 180 jours sur chaque appareil. Cinq essais ratés bloquent 15 minutes. | Must |
+| F67 | **Édition du compte** dans un onglet « Compte » : nom affiché, identifiant (le mot de passe actuel est demandé), mot de passe (avec option de déconnecter les autres appareils). | Must |
+| F68 | **Appareils connectés** : liste des sessions (appareil, date, dernière activité), déconnexion d'un appareil ou de tous les autres, déconnexion de l'appareil courant. | Must |
+| F69 | **Export complet** des données en JSON (notes, médias, carnets, tags, synthèses, réglages ; sans les clés d'API ni le mot de passe). Réalise F20. | Must |
+| F70 | **Suppression du compte** avec mot de passe et saisie de « SUPPRIMER » : tout est effacé, l'application revient à l'écran de création. | Must |
+| F71 | **Mot de passe oublié** : réinitialisation par une commande sur le serveur (`npm run reset-password`), sans envoi d'e-mail. | Must |
+
+**Règles de sécurité**
+
+- Mots de passe stockés hachés (scrypt), jamais en clair.
+- Cookie de session `HttpOnly`, `SameSite=Lax`, `Secure` derrière HTTPS, limité au chemin de l'application.
+- Toute requête d'écriture porte un en-tête propre à l'application (protection contre les requêtes venues d'un autre site).
+- Clés d'API chiffrées (AES-256-GCM) avec une clé gardée sur le serveur, jamais renvoyées à l'écran.
+- Les notes, médias et réglages restent dans un dossier de données sur l'hébergement Infomaniak, à sauvegarder.
+
 ## Plan de réalisation
 
 Quatre phases, avec un feu vert à franchir entre chacune ; les durées seront fixées après le prototype.
@@ -411,8 +434,8 @@ Le principal risque est un classement IA qui déçoit au début ; la parade est 
 
 **Questions à trancher avant de coder**
 
-- [ ] Où héberger l'application et les fichiers (service en ligne géré, serveur personnel) ?
-- [ ] Usage strictement personnel, ou possibilité d'ouvrir à d'autres personnes plus tard ?
+- [x] Où héberger l'application et les fichiers : hébergement Infomaniak, application montée par `node-gateway`, données dans un dossier du serveur.
+- [x] Usage strictement personnel : un seul compte, créé à la première ouverture (F64 à F71).
 - [ ] Fournisseur d'IA pour la transcription, la vision et le classement : un seul ou un par fonction ?
 - [ ] Une seule catégorie par note (proposé) ou plusieurs ?
 - [ ] Les catégories de départ : à lister ensemble avant la première version.

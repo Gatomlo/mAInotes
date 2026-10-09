@@ -10,6 +10,7 @@ const express = require('express');
 
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mainotes-test-'));
 process.env.MAINOTES_DATA_DIR = dataDir;
+process.env.MAINOTES_ALLOW_PRIVATE_LINKS = '1';
 delete process.env.MAINOTES_SETUP_TOKEN;
 
 let gateway, mock, base, mockUrl;
@@ -28,12 +29,16 @@ before(async () => {
     let content;
     if (prompt.includes('Range cette note')) {
       const nbCode = /C(\d) Maison/.exec(prompt);
-      content = JSON.stringify({ titre: 'Devis du plombier', carnet: nbCode ? 'C' + nbCode[1] : null, tags: ['T1'], confiance: 0.9 });
+      const out = { titre: 'Devis du plombier', carnet: nbCode ? 'C' + nbCode[1] : null, tags: ['T1'], confiance: 0.9 };
+      if (prompt.includes('L1 ')) out.liens = { L1: 'Fiche d\'un robinet thermostatique vendu par un magasin de bricolage.' };
+      content = JSON.stringify(out);
     } else {
       content = '## Maison\n- Relancer le plombier pour le **devis** [1]';
     }
     res.json({ choices: [{ message: { content } }], usage: { prompt_tokens: 100, completion_tokens: 20 } });
   });
+  m.get('/page', (req, res) => res.type('html').send('<html><head><meta charset="utf-8"><title>Robinet &amp; mitigeur</title><meta property="og:site_name" content="Brico"><meta name="description" content="Mitigeur thermostatique chromé."></head><body><script>x()</script><p>Prix : 89 €</p></body></html>'));
+  m.get('/redir', (req, res) => res.redirect('/page'));
   m.get('/ai/:pid/v1/models', (req, res) => res.json({ data: [{ id: 'mistral24b' }, { id: 'whisper' }, { id: 'bge_multilingual_gemma2' }] }));
   mock = await listen(m);
   mockUrl = `http://127.0.0.1:${mock.address().port}`;
@@ -261,4 +266,37 @@ test('modèle Gemini retiré remplacé au chargement', () => {
   const s2 = new Store(dir);
   assert.deepStrictEqual(s2.db.settings.models.gemini, { chat: 'gemini-3.5-flash-lite', vision: 'mon-modele', audio: 'gemini-3.5-flash-lite' });
   fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('lien collé : aperçu lu sur la page et descriptif rédigé dans l\'appel de classement', async () => {
+  // Le compte a été supprimé par le test précédent : on le recrée.
+  let r = await call('POST', 'auth/setup', { login: 'liens', password: 'une phrase longue' });
+  assert.strictEqual(r.status, 200);
+  await call('PATCH', 'settings', { infomaniak: { productId: '123', baseUrl: mockUrl + '/ai/{product_id}/v1' } });
+  await call('PUT', 'keys/infomaniak', { key: 'k' });
+  const before = calls.length;
+  r = await call('POST', 'notes', { type: 'text', content: `À commander : ${mockUrl}/redir.` });
+  const n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r.data.note.id); return x.status === 'ready' && x; });
+  assert.strictEqual(calls.length - before, 1, 'un seul appel IA');
+  assert.strictEqual(n.links.length, 1);
+  const l = n.links[0];
+  assert.strictEqual(l.url, mockUrl + '/redir');
+  assert.strictEqual(l.title, 'Robinet & mitigeur');
+  assert.strictEqual(l.site, 'Brico');
+  assert.strictEqual(l.summary, 'Mitigeur thermostatique chromé.');
+  assert.match(l.excerpt, /Prix : 89 €/);
+  assert.ok(!/x\(\)/.test(l.excerpt), 'scripts retirés');
+  assert.strictEqual(l.aiDescription, true);
+  assert.match(l.description, /robinet thermostatique/);
+});
+
+test('lien vers une adresse interne refusé', async () => {
+  const { fetchPreview, extractUrls, isPrivateIp } = require('../lib/links');
+  delete process.env.MAINOTES_ALLOW_PRIVATE_LINKS;
+  const l = await fetchPreview(mockUrl + '/page');
+  process.env.MAINOTES_ALLOW_PRIVATE_LINKS = '1';
+  assert.strictEqual(l.error, 'adresse interne');
+  assert.strictEqual(l.summary, '');
+  assert.ok(isPrivateIp('192.168.1.4') && isPrivateIp('::1') && !isPrivateIp('83.166.133.1'));
+  assert.deepStrictEqual(extractUrls('voir www.exemple.be/a. et https://x.org/b), puis ftp://non'), ['https://www.exemple.be/a', 'https://x.org/b']);
 });

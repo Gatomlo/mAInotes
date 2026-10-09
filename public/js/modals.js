@@ -215,6 +215,8 @@ function openDetail(id) {
     (n.status === 'error' && n.error ? '<div class="err">' + esc(n.error) + '</div>' : '') +
     (n.status === 'pending' && (n.pendingReason === 'budget' || n.pendingReason === 'config') ? '<div class="err">' + esc(n.error || 'Analyse en attente.') + '</div>' : '') +
     media + fields +
+    (n.links && n.links.length ? '<div><div class="l">' + (n.links.length > 1 ? 'Liens' : 'Lien') + '</div><div style="display:flex;flex-direction:column;gap:8px">' + n.links.map(function (l) { return linkCard(l, false); }).join('') + '</div>' +
+      (n.links.some(function (l) { return l.aiDescription; }) ? '<div class="help">' + I(IC.spark, 14) + '<span>Descriptif rédigé par l\'IA pendant le classement, à partir de la page.</span></div>' : '') + '</div>' : '') +
     (n.type !== 'synthesis' ? '<div><label class="l" for="d-cat">Carnet</label><select id="d-cat" class="field">' + opts + '</select>' + (n.notebookChosen ? '<div class="help"><span>Carnet choisi à la création : l\'IA ne le change pas.</span></div>' : '') + '</div>' +
       '<div><label class="l" for="dtagq">Tags</label><div class="sel" id="dsel"></div><div class="cbx"><input id="dtagq" class="field" role="combobox" aria-expanded="false" aria-controls="dtaglist" aria-autocomplete="list" autocomplete="off" placeholder="Rechercher ou créer un tag…"><div class="list2" id="dtaglist" role="listbox" hidden></div></div></div>' +
       sugg +

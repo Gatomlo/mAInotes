@@ -172,6 +172,7 @@ var ACTIONS = {
 };
 
 document.addEventListener('click', function (e) {
+  if (e.target.closest('a[href]')) return; // un vrai lien s'ouvre, sans ouvrir la carte
   var el = e.target.closest('[data-a]');
   if (el && ACTIONS[el.dataset.a]) {
     if (el.tagName === 'A') return;

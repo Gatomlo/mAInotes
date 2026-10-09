@@ -37,7 +37,32 @@ var CACHE_KEY = 'mainotes-cache-v1';
 function nb(id) { return S.notebooks.filter(function (c) { return c.id === id; })[0] || null; }
 function tagById(id) { return S.tags.filter(function (t) { return t.id === id; })[0] || null; }
 function noteById(id) { return S.notes.filter(function (n) { return n.id === id; })[0] || null; }
-function noteText(n) { return [n.content, n.transcript, n.description].filter(Boolean).join('\n\n'); }
+function linksText(n) { return (n.links || []).map(function (l) { return [l.title, l.description || l.summary, l.site].filter(Boolean).join(' '); }).join('\n'); }
+function noteText(n) { return [n.content, n.transcript, n.description, linksText(n)].filter(Boolean).join('\n\n'); }
+
+/* Adresses web rendues cliquables (texte échappé, liens ouverts dans un nouvel onglet). */
+var URL_RE = /\b(?:https?:\/\/|www\.)[^\s<>"'«»]+/gi;
+function linkify(text) {
+  text = String(text || '');
+  var out = '', i = 0, m;
+  URL_RE.lastIndex = 0;
+  while ((m = URL_RE.exec(text))) {
+    var raw = m[0].replace(/[.,;:!?)\]}”’]+$/, '');
+    var href = /^www\./i.test(raw) ? 'https://' + raw : raw;
+    out += esc(text.slice(i, m.index)) + '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(raw) + '</a>';
+    i = m.index + raw.length;
+    URL_RE.lastIndex = i;
+  }
+  return out + esc(text.slice(i));
+}
+function linkCard(l, compact) {
+  var desc = l.description || l.summary || (l.error ? 'Aperçu indisponible (' + l.error + ').' : '');
+  return '<a class="linkcard" href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">' +
+    '<span class="lk-site">' + I('<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>', 14) + esc(l.site || '') + '</span>' +
+    '<b>' + esc(l.title || l.url) + '</b>' +
+    (desc ? '<span class="lk-desc">' + (l.aiDescription ? I(IC.spark, 12) + ' ' : '') + esc(compact && desc.length > 140 ? desc.slice(0, 137) + '…' : desc) + '</span>' : '') +
+    '</a>';
+}
 
 /* ---------- API ---------- */
 function ApiError(msg, status, data) { this.message = msg; this.status = status; this.data = data; }
@@ -156,7 +181,9 @@ function flushOutbox() {
       }
     });
   });
-  return chain.then(function () { flushing = false; render(); }, function () { flushing = false; render(); });
+  // Une note envoyée part à l'analyse : on resynchronise vite pour afficher le résultat.
+  var done = function () { flushing = false; render(); if (list.length) scheduleSync(); };
+  return chain.then(done, done);
 }
 
 function sendItem(item) {

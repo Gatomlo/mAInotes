@@ -31,6 +31,7 @@ function matchLabel(n, q) {
   if (norm(n.content).indexOf(nq) > -1) w.push(n.type === 'image' ? 'la légende' : 'le texte');
   if (norm(n.transcript).indexOf(nq) > -1) w.push('la transcription');
   if (norm(n.description).indexOf(nq) > -1) w.push("la description de l'image");
+  if (norm(linksText(n)).indexOf(nq) > -1) w.push('un lien');
   return w.length ? '<div class="match">' + I(IC.search, 13) + 'Trouvé dans ' + w.join(' et ') + '</div>' : '';
 }
 function headLine(n) {
@@ -52,7 +53,7 @@ function card(n, q) {
     return '<div class="card busy" aria-busy="true" role="button" tabindex="0" data-a="open" data-id="' + n.id + '">' + headLine(n) + '<div class="ttl">' + esc(n.title) + '</div><div class="bar" style="width:78%"></div><div class="status">' + I(IC.spark) + what + '</div></div>';
   }
   var body = n.type === 'voice' ? (n.transcript || n.content) : n.type === 'image' ? [n.content, n.description].filter(Boolean).join(' — ') : n.content;
-  var ex = body ? hl(snippet(body, q), q) : '<span class="muted">' + (n.type === 'voice' ? 'Pas encore transcrite.' : n.type === 'image' ? 'Pas encore décrite.' : '') + '</span>';
+  var ex = body ? (norm(q).trim() ? hl(snippet(body, q), q) : linkify(snippet(body, ''))) : '<span class="muted">' + (n.type === 'voice' ? 'Pas encore transcrite.' : n.type === 'image' ? 'Pas encore décrite.' : '') + '</span>';
   var foot;
   if (n.status === 'pending' || n.status === 'error') {
     var lbl = n.status === 'error' ? '<span class="chip err">Erreur d\'analyse</span>' : n.pendingReason === 'budget' ? '<span class="chip check">Plafond atteint</span>' : '<span class="chip check">À analyser</span>';
@@ -63,7 +64,7 @@ function card(n, q) {
     foot = (n.type === 'synthesis' ? '<span class="chip">Synthèse</span>' : catChip(n)) + tags + (end ? '<span class="end">' + end + '</span>' : '');
   }
   return '<div class="card" role="button" tabindex="0" data-a="open" data-id="' + n.id + '" aria-label="Ouvrir : ' + esc(n.title) + '">' + thumbHtml(n) + headLine(n) +
-    '<div class="ttl">' + hl(n.title, q) + '</div><div class="exc">' + ex + '</div>' + matchLabel(n, q) + '<div class="foot">' + foot + '</div></div>';
+    '<div class="ttl">' + hl(n.title, q) + '</div><div class="exc">' + ex + '</div>' + (n.links && n.links.length ? linkCard(n.links[0], true) + (n.links.length > 1 ? '<div class="muted" style="font-size:13px">+ ' + plural(n.links.length - 1, 'autre lien', 'autres liens') + '</div>' : '') : '') + matchLabel(n, q) + '<div class="foot">' + foot + '</div></div>';
 }
 
 function outboxCard(item) {

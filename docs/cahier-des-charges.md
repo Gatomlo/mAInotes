@@ -379,6 +379,16 @@ Les maquettes montrent le sélecteur de carnet à la création, la liste de tags
 | F51 | Les suggestions sont produites par le même appel que le classement (une ligne de plus dans la réponse), donc sans appel supplémentaire. En mode strict, la consigne envoyée à l'IA est plus courte, ce qui économise des jetons. | Must |
 | F52 | Un carnet créé sur suggestion reçoit une description à compléter, pour guider les classements suivants. | Should |
 
+## Liens dans les notes
+
+| Réf. | Fonction | Priorité |
+|---|---|---|
+| F72 | Une adresse web collée dans une note (`https://…` ou `www.…`) devient un lien cliquable, sur la carte et dans le détail ; il s'ouvre dans un nouvel onglet. | Must |
+| F73 | Le serveur lit la page une fois (titre, site, résumé annoncé, court extrait), sans appel IA, et affiche un aperçu sous la note. Trois liens au plus par note. | Must |
+| F74 | Un petit descriptif (une phrase) est rédigé par l'IA dans le **même appel que le classement**, sans appel supplémentaire. Il sert aussi au classement, à la recherche et aux synthèses. | Must |
+
+Garde-fous : seules les adresses http(s) publiques sont lues (les adresses internes sont refusées), 5 secondes et 512 Ko au plus par page.
+
 ## Compte utilisateur et hébergement
 
 L'application vit sur un hébergement Infomaniak qui n'accepte qu'une seule application Node.js : elle est montée par la passerelle `node-gateway` sur l'adresse `/mainotes/` (voir `docs/deploiement-infomaniak.md`). Elle est personnelle : un seul compte, créé à la première ouverture.

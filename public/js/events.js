@@ -41,7 +41,8 @@ var ACTIONS = {
 
   fcat: function (el) { var id = el.dataset.id || null; F.cat = F.cat === id ? null : id; renderHome(); },
   ftag: function (el) { var id = el.dataset.id, i = F.tags.indexOf(id); if (i > -1) F.tags.splice(i, 1); else F.tags.push(id); renderHome(); },
-  clearf: function () { F = { q: '', cat: null, tags: [] }; $('#q').value = ''; renderHome(); },
+  clearf: function () { F = { q: '', cat: null, tags: [], period: '', from: '', to: '' }; $('#q').value = ''; $('#ffrom').value = ''; $('#fto').value = ''; renderHome(); },
+  view: function (el) { VIEW = el.dataset.id; try { localStorage.setItem('mainotes-view', VIEW); } catch (e) { /* rien */ } renderHome(); },
   qclear: function () { F.q = ''; $('#q').value = ''; renderHome(); $('#q').focus(); },
   open: function (el) { if (modal === 'detail' && curId !== el.dataset.id) saveDetail(false); openDetail(el.dataset.id); },
   analyze: function (el) { analyze(el.dataset.id); },
@@ -202,7 +203,7 @@ document.addEventListener('keydown', function (e) {
     if (modal === 'detail') saveDetail(true); else closeModal();
     return;
   }
-  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('card') && e.target.dataset.a === 'open') { e.preventDefault(); openDetail(e.target.dataset.id); return; }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && (e.target.classList.contains('card') || e.target.classList.contains('lrow')) && e.target.dataset.a === 'open') { e.preventDefault(); openDetail(e.target.dataset.id); return; }
   if (e.target.id === 'dtagq') {
     if (e.key === 'ArrowDown') { e.preventDefault(); dtI = Math.min(dtI + 1, dtOpts.length - 1); dtList(true); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); dtI = Math.max(dtI - 1, 0); dtList(true); }
@@ -220,6 +221,8 @@ document.addEventListener('input', function (e) {
 });
 document.addEventListener('change', function (e) {
   var t = e.target;
+  if (t.id === 'fperiod') { F.period = t.value; renderHome(); if (t.value === 'custom') $('#ffrom').focus(); }
+  if (t.id === 'ffrom' || t.id === 'fto') { F.from = $('#ffrom').value; F.to = $('#fto').value; renderHome(); }
   if (t.id === 'afile') importAudio(t.files[0]);
   if (t.id === 'ifile') { add.notebookId = $('#addcat').value; pickImages(t.files); }
   if (t.id === 'addcat' && add) add.notebookId = t.value;

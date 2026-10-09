@@ -84,7 +84,7 @@ Vingt fonctionnalités, dont quinze indispensables au MVP (Must), organisées en
 | F3 | Capture | Ajout d'image par appareil photo ou import, une ou plusieurs images par note | Must |
 | F4 | Capture | Enregistrement local immédiat, envoi et analyse dès que le réseau revient | Should |
 | F5 | IA média | Transcription complète du vocal, avec détection de la langue (français par défaut) | Must |
-| F6 | IA média | Description de l'image : contenu, texte visible, contexte | Must |
+| F6 | IA média | Description de l'image : contenu, texte visible, contexte. Couverture de livre : uniquement les informations du livre (titre, auteur, éditeur…), sans décrire la photo | Must |
 | F7 | IA média | Correction manuelle de la transcription et de la description | Must |
 | F8 | Classement | Génération automatique d'un titre court par note | Must |
 | F9 | Classement | Attribution d'une catégorie et de plusieurs tags parmi la liste préétablie | Must |

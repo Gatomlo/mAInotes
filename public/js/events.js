@@ -31,6 +31,8 @@ function testKey(p) {
 }
 
 var ACTIONS = {
+  zoom: function (el) { openZoom(el.dataset.src); },
+  'lb-close': closeZoom,
   reload: function () { location.reload(); },
   'pw-toggle': function (el) { var i = $('#' + el.dataset.id); var show = i.type === 'password'; i.type = show ? 'text' : 'password'; el.textContent = show ? 'Masquer' : 'Afficher'; },
   tab: function (el) { closeModal(); setTab(el.dataset.id); window.scrollTo(0, 0); },
@@ -231,6 +233,7 @@ function closeMenu() { var m = $('#homemenu'); if (!m || m.hidden) return; m.hid
 document.addEventListener('click', function (e) {
   if (!e.target.closest('#homemenu, #menubtn')) closeMenu();
   if (e.target.closest('a[href]')) return; // un vrai lien s'ouvre, sans ouvrir la carte
+  if (e.target.closest('#lb')) { closeZoom(); return; }
   var el = e.target.closest('[data-a]');
   if (el && ACTIONS[el.dataset.a]) {
     if (el.tagName === 'A') return;
@@ -243,6 +246,7 @@ document.addEventListener('click', function (e) {
 });
 
 document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && !$('#lb').hidden) { closeZoom(); return; }
   if (e.key === 'Escape' && !$('#homemenu').hidden) { closeMenu(); $('#menubtn').focus(); return; }
   if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset && (e.target.dataset.a === 'qcat' || e.target.dataset.a === 'qtag')) { e.preventDefault(); ACTIONS[e.target.dataset.a](e.target); return; }
   if (e.key === 'Escape' && !$('#ov').hidden) {

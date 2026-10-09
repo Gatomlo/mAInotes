@@ -7,8 +7,9 @@ function openSheet(html, label) {
   $('#sheet').setAttribute('aria-label', label || 'Fenêtre');
   $('#ov').hidden = false;
   document.body.style.overflow = 'hidden';
+  $('#sheet').scrollTop = 0;
   var f = $('#sheet [autofocus]');
-  if (f) f.focus();
+  if (f) f.focus({ preventScroll: true }); // la fenêtre s'ouvre en haut (titre, image)
 }
 function closeModal() {
   stopRecording(true);
@@ -21,6 +22,15 @@ function closeModal() {
 }
 function xbtn() { return '<button class="iconbtn" data-a="close" aria-label="Fermer">' + I(IC.x, 22) + '</button>'; }
 function shead(t) { return '<div class="shead"><h2>' + t + '</h2>' + xbtn() + '</div>'; }
+
+/* Image en plein écran (original) ; un toucher ou Échap referme. */
+function openZoom(src) {
+  var lb = $('#lb');
+  $('img', lb).src = src;
+  lb.hidden = false;
+  $('.lb-close', lb).focus();
+}
+function closeZoom() { var lb = $('#lb'); lb.hidden = true; $('img', lb).removeAttribute('src'); }
 
 /* ---------- Ajout d'une note ---------- */
 var add = null;
@@ -205,7 +215,7 @@ function openDetail(id, edit) {
   var st = S.settings;
   var media = '';
   if (n.type === 'voice' && n.media.length) media = '<audio controls preload="none" src="api/media/' + n.id + '/' + n.media[0].id + '"></audio>';
-  if (n.type === 'image' && n.media.length) media = '<div class="thumbs">' + n.media.map(function (m) { return '<a href="api/media/' + n.id + '/' + m.id + '" target="_blank" rel="noopener"><img alt="Image de la note" src="api/media/' + n.id + '/' + m.id + '?ai=1"></a>'; }).join('') + '</div>';
+  if (n.type === 'image' && n.media.length) media = '<div class="gallery' + (n.media.length > 1 ? ' multi' : '') + '">' + n.media.map(function (m, i) { return '<button type="button" class="gimg" data-a="zoom" data-src="api/media/' + n.id + '/' + m.id + '" aria-label="Agrandir l\'image' + (n.media.length > 1 ? ' ' + (i + 1) : '') + '"><img alt="" src="api/media/' + n.id + '/' + m.id + '?ai=1"></button>'; }).join('') + '</div>';
   var busy = n.status === 'queued' || n.status === 'analyzing' || n.status === 'uploading';
   var fields = '';
   if (n.type === 'text' || n.type === 'synthesis') fields += '<div><label class="l" for="d-content">Texte</label><textarea id="d-content" class="field" rows="7">' + esc(n.content) + '</textarea></div>';

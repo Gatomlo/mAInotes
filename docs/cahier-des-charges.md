@@ -383,7 +383,7 @@ Les maquettes montrent le sélecteur de carnet à la création, la liste de tags
 | F51 | Les suggestions sont produites par le même appel que le classement (une ligne de plus dans la réponse), donc sans appel supplémentaire. En mode strict, la consigne envoyée à l'IA est plus courte, ce qui économise des jetons. | Must |
 | F52 | Un carnet créé sur suggestion reçoit une description à compléter, pour guider les classements suivants. | Should |
 | F79 | **Description du carnet de notes** (onglet Carnets) : quelques phrases sur l'utilisateur et l'usage de ses notes, jointes à chaque classement et à chaque enrichissement pour mieux choisir le carnet. Elle complète la description propre à chaque carnet. | Must |
-| F89 | **Consignes pour l'IA** (onglet Réglages, après « Choix des IA ») : une précision libre pour les notes écrites, les vocales, les images et les notes avec un lien, jointe au prompt seulement pour les notes du type concerné (classement et enrichissement ; pour les images aussi la description). Par défaut, la consigne Image demande, pour une couverture de livre, uniquement les informations du livre. | Should |
+| F89 | **Consignes pour l'IA** (onglet Réglages, carte « Choix des IA », sous l'IA de chaque type : classement pour les notes écrites et avec lien, transcription pour les vocales, description pour les images) : une précision libre pour les notes écrites, les vocales, les images et les notes avec un lien, jointe au prompt seulement pour les notes du type concerné (classement et enrichissement ; pour les images aussi la description). Par défaut, la consigne Image demande, pour une couverture de livre, uniquement les informations du livre. | Should |
 
 ## Accueil et filtres sur smartphone
 

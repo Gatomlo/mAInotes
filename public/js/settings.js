@@ -31,20 +31,20 @@ function accordionize(root) {
     d.addEventListener('toggle', function () { accOpen[key] = d.open; });
   });
 }
-// Consignes pour l'IA selon le type de note (enregistrées avec les autres réglages).
+// Consignes pour l'IA selon le type de note, placées sous le choix de l'IA qui les reçoit
+// en premier (enregistrées avec les autres réglages). [type, fonction, libellé, aide, exemple]
 var INS_TYPES = [
-  ['text', 'Notes écrites', 'ex. Si la note est une liste de courses, titre « Courses » suivi de la date.'],
-  ['voice', 'Notes vocales', 'ex. Les vocaux sont souvent dictés en voiture : ignore les hésitations, titre sur l\'action à faire.'],
-  ['image', 'Images (description et classement)', 'ex. Ticket de caisse : magasin, date et montant total seulement.'],
-  ['link', 'Notes avec un lien', 'ex. Pour une vidéo YouTube, indique la chaîne et la durée si elles sont connues.']
+  ['text', 'classif', 'Consigne pour les notes écrites', '', 'ex. Si la note est une liste de courses, titre « Courses » suivi de la date.'],
+  ['link', 'classif', 'Consigne pour les notes avec un lien', '', 'ex. Pour une vidéo YouTube, indique la chaîne et la durée si elles sont connues.'],
+  ['voice', 'transcr', 'Consigne pour les notes vocales', 'Appliquée au classement du texte transcrit.', 'ex. Les vocaux sont souvent dictés en voiture : ignore les hésitations, titre sur l\'action à faire.'],
+  ['image', 'vision', 'Consigne pour les images', 'Appliquée à la description puis au classement.', 'ex. Ticket de caisse : magasin, date et montant total seulement.']
 ];
-function insPanel(st) {
+function insFields(st, fn) {
   var ins = st.instructions || {};
-  return '<div class="panel"><h3>Consignes pour l\'IA</h3>' +
-    '<p class="sub" style="margin:0">Une précision par type de note, envoyée seulement avec les notes de ce type (classement, enrichissement, et description pour les images). Le type est connu dès l\'envoi, avant que l\'IA choisisse le carnet. Laissez vide si inutile.</p>' +
-    INS_TYPES.map(function (t) {
-      return '<div><label class="l" for="ins-' + t[0] + '">' + t[1] + '</label><textarea id="ins-' + t[0] + '" class="field" rows="3" maxlength="800" data-set="instructions.' + t[0] + '" placeholder="' + esc(t[2]) + '">' + esc(ins[t[0]] || '') + '</textarea></div>';
-    }).join('') + '</div>';
+  return INS_TYPES.filter(function (t) { return t[1] === fn; }).map(function (t) {
+    return '<div class="ins"><label class="l" for="ins-' + t[0] + '">' + t[2] + '</label><textarea id="ins-' + t[0] + '" class="field" rows="2" maxlength="800" data-set="instructions.' + t[0] + '" placeholder="' + esc(t[4]) + '">' + esc(ins[t[0]] || '') + '</textarea>' +
+      (t[3] ? '<div class="help"><span>' + t[3] + '</span></div>' : '') + '</div>';
+  }).join('');
 }
 
 var FN = [['classif', 'Classement des notes'], ['transcr', 'Transcription des vocaux'], ['vision', 'Description des images'], ['synth', 'Synthèse des notes affichées'], ['enrich', 'Enrichissement des notes']];
@@ -111,7 +111,7 @@ function renderSet() {
   var pv = function (id) { return S.providers.filter(function (p) { return p.id === id; })[0] || {}; };
   var fn = FN.map(function (f) {
     var opts = Object.keys(PROV).filter(function (k) { return pv(k).supports && pv(k).supports[f[0]]; }).map(function (k) { return opt(k, st.providers[f[0]], PROV[k] + (k === 'infomaniak' ? ' (par défaut)' : '') + (pv(k).enabled && pv(k).hasKey ? '' : ' – inactif')); }).join('');
-    return '<div><label class="l" for="prov-' + f[0] + '">' + f[1] + '</label><select id="prov-' + f[0] + '" class="field" data-set="providers.' + f[0] + '">' + opts + '</select></div>';
+    return '<div><label class="l" for="prov-' + f[0] + '">' + f[1] + '</label><select id="prov-' + f[0] + '" class="field" data-set="providers.' + f[0] + '">' + opts + '</select></div>' + insFields(st, f[0]);
   }).join('');
   var trig = function (k, label, values) {
     return '<div><div class="l">' + label + '</div><div class="modes" role="group" aria-label="' + label + '">' + values.map(function (v) { return '<button type="button" data-a="set-trig" data-k="' + k + '" data-id="' + v[0] + '" aria-pressed="' + (st.trigger[k] === v[0]) + '">' + v[1] + '</button>'; }).join('') + '</div></div>';
@@ -142,9 +142,9 @@ function renderSet() {
     '<div class="sec"><h2 style="font-size:18px">Fournisseurs, clés et budget</h2><button class="btn" data-a="log-open">Journal des appels</button></div>' +
     '<p class="sub">Coûts estimés à partir des jetons consommés ; seule la facture du fournisseur fait foi. Alerte à 80 %, blocage à 100 % : les notes restent alors en attente, sans perte.</p>' +
     provPanels +
-    '<div class="panel"><h3>Choix des IA</h3>' + fn +
+    '<div class="panel"><h3>Choix des IA</h3>' +
+    '<p class="sub" style="margin:0">Sous chaque fonction, une consigne facultative pour le type de note concerné, envoyée seulement avec ces notes. Le type est connu dès l\'envoi, avant que l\'IA choisisse le carnet.</p>' + fn +
     '<div><label class="l" for="recours">Recours à un autre fournisseur</label><select id="recours" class="field" data-set="recours">' + opt('never', st.recours, 'Jamais') + opt('fail', st.recours, 'En cas d\'échec') + opt('ask', st.recours, 'À la demande (bouton sur la note)') + '</select></div></div>' +
-    insPanel(st) +
     '<div class="panel"><h3>Déclenchement de l\'analyse</h3>' +
     trig('transcr', 'Transcription', [['auto', 'Automatique'], ['manual', 'Manuel']]) +
     trig('classif', 'Classement', [['auto', 'Automatique'], ['manual', 'Manuel']]) +

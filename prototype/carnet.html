@@ -1,0 +1,914 @@
+<title>Carnet de notes intelligent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500;600&display=swap">
+<style>
+/* Concept : outil de capture à une colonne de cartes, filtres en puces au-dessus, panneaux modaux pour ajouter, corriger et re-trier. */
+:root{
+  --bg:#F4F5F7; --surface:#FFFFFF; --ink:#17202E; --muted:#5B6678; --line:#E2E6EC; --line-strong:#B5BDCA;
+  --accent:#0B6E6E; --accent-ink:#FFFFFF; --accent-soft:#E1F1F0; --danger:#B3261E;
+  --chip:#F0F2F5; --chip-ink:#3C4658; --mark:#FFE9A8; --overlay:rgba(23,32,46,.5); --skeleton:#E8EBF0; --warn-soft:#FFF4E0; --warn-ink:#8A5A0F;
+  --blue-dot:#2F5FD0; --blue-soft:#E6ECFB; --blue-ink:#2447A0;
+  --amber-dot:#B7791F; --amber-soft:#FBF0DA; --amber-ink:#8A5A0F;
+  --purple-dot:#7C4DCC; --purple-soft:#EEE8FA; --purple-ink:#5B34A0;
+  --green-dot:#1F7A4D; --green-soft:#E1F3E9; --green-ink:#17603C;
+  --rose-dot:#B8446B; --rose-soft:#FBE7EE; --rose-ink:#8F2B50;
+  --font-display:'Bricolage Grotesque',system-ui,sans-serif; --font-body:'Instrument Sans',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F141B; --surface:#171E28; --ink:#E8ECF2; --muted:#9AA6B8; --line:#28313F; --line-strong:#445064;
+  --accent:#4FB3AD; --accent-ink:#0A1A1A; --accent-soft:#14302F; --danger:#F2867E;
+  --chip:#222B38; --chip-ink:#C5CEDB; --mark:#5A4A12; --overlay:rgba(0,0,0,.6); --skeleton:#232C39; --warn-soft:#3A2C12; --warn-ink:#F0CD8C;
+  --blue-dot:#7C9CF0; --blue-soft:#1E2A4A; --blue-ink:#B6C8FA;
+  --amber-dot:#E0A34A; --amber-soft:#3A2C12; --amber-ink:#F0CD8C;
+  --purple-dot:#A98AE8; --purple-soft:#2C2145; --purple-ink:#D3C1F5;
+  --green-dot:#5CC08F; --green-soft:#16332A; --green-ink:#A6E3C4;
+  --rose-dot:#E27DA0; --rose-soft:#3C1B27; --rose-ink:#F2B3C8; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F141B; --surface:#171E28; --ink:#E8ECF2; --muted:#9AA6B8; --line:#28313F; --line-strong:#445064;
+  --accent:#4FB3AD; --accent-ink:#0A1A1A; --accent-soft:#14302F; --danger:#F2867E;
+  --chip:#222B38; --chip-ink:#C5CEDB; --mark:#5A4A12; --overlay:rgba(0,0,0,.6); --skeleton:#232C39; --warn-soft:#3A2C12; --warn-ink:#F0CD8C;
+  --blue-dot:#7C9CF0; --blue-soft:#1E2A4A; --blue-ink:#B6C8FA;
+  --amber-dot:#E0A34A; --amber-soft:#3A2C12; --amber-ink:#F0CD8C;
+  --purple-dot:#A98AE8; --purple-soft:#2C2145; --purple-ink:#D3C1F5;
+  --green-dot:#5CC08F; --green-soft:#16332A; --green-ink:#A6E3C4;
+  --rose-dot:#E27DA0; --rose-soft:#3C1B27; --rose-ink:#F2B3C8; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.45;padding-inline:16px;padding-block:0 96px}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+svg{flex:none}
+.wrap{max-width:1120px;margin:0 auto}
+h1,h2,h3{font-family:var(--font-display);margin:0;letter-spacing:-.3px}
+.cat-blue{--dot:var(--blue-dot);--soft:var(--blue-soft);--cink:var(--blue-ink)}
+.cat-amber{--dot:var(--amber-dot);--soft:var(--amber-soft);--cink:var(--amber-ink)}
+.cat-purple{--dot:var(--purple-dot);--soft:var(--purple-soft);--cink:var(--purple-ink)}
+.cat-green{--dot:var(--green-dot);--soft:var(--green-soft);--cink:var(--green-ink)}
+.cat-rose{--dot:var(--rose-dot);--soft:var(--rose-soft);--cink:var(--rose-ink)}
+
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 20px;padding-block:24px 8px}
+.brand{flex:1 1 220px;min-width:0}
+.brand h1{font-size:32px;font-weight:700}
+.sub{margin:2px 0 0;color:var(--muted);font-size:14px}
+.tabs{display:flex;gap:4px;padding:4px;background:var(--skeleton);border-radius:14px}
+.tab{height:44px;padding:0 18px;border:0;border-radius:11px;background:transparent;color:var(--muted);font-weight:500}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--ink);font-weight:600}
+.btn{height:48px;padding:0 18px;border-radius:14px;border:1px solid var(--line-strong);background:transparent;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn.ghost{border-color:transparent;color:var(--accent)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.add-desktop{display:none}
+.demo{margin-top:8px;padding:10px 14px;border-radius:12px;background:var(--accent-soft);color:var(--ink);font-size:14px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px}
+.demo svg{color:var(--accent)}
+.demo button{border:0;background:none;color:var(--accent);font-weight:600;min-height:44px;padding:0 4px;text-decoration:underline}
+.demo .modes{display:inline-flex;gap:4px;padding:3px;background:var(--surface);border-radius:12px}
+.demo .modes button{height:44px;padding:0 12px;border-radius:9px;color:var(--ink);text-decoration:none;font-weight:500}
+.demo .modes button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.report h3{font-size:16px;margin:16px 0 6px}
+.report p{margin:0}
+.report ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.pendbar{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;margin-bottom:12px;padding:8px 10px 8px 14px;border-radius:14px;background:var(--warn-soft);color:var(--warn-ink);font-weight:600}
+.search{margin-top:16px;height:52px;display:flex;align-items:center;gap:10px;padding:0 6px 0 16px;background:var(--surface);border:1px solid var(--line-strong);border-radius:14px;color:var(--muted)}
+.search:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.search input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:16px}
+.iconbtn{width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--muted);display:inline-flex;align-items:center;justify-content:center}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-block:12px 2px;scrollbar-width:thin}
+.chips.tags{padding-top:4px}
+.fchip{height:44px;padding:0 16px;border-radius:22px;border:1px solid var(--line);background:var(--surface);white-space:nowrap;display:inline-flex;align-items:center;gap:8px;flex:none}
+.fchip small{color:var(--muted);font-size:13px}
+.fchip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+.fchip[aria-pressed="true"] small{color:inherit;opacity:.8}
+.fchip .dot{width:9px;height:9px;border-radius:50%;background:var(--dot)}
+.fchip.tag{height:40px;font-size:14px;padding:0 14px}
+.fchip.label{border-style:dashed;background:transparent;color:var(--muted);pointer-events:none}
+.resinfo{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;margin-block:10px 8px;color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0;cursor:pointer;text-align:left}
+.card:hover{border-color:var(--line-strong)}
+.card.busy{border-style:dashed;cursor:default}
+.card .head{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px;color:var(--muted)}
+.card .head span{display:inline-flex;align-items:center;gap:6px}
+.card .ttl{font-size:17px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.card .exc{font-size:14px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.card .foot{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px}
+.card .foot .end{margin-left:auto;display:inline-flex;gap:8px;color:var(--accent)}
+.thumb{height:96px;border-radius:12px;overflow:hidden;background:repeating-linear-gradient(135deg,var(--skeleton) 0 10px,var(--chip) 10px 20px);display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.match{font-size:12px;color:var(--accent);display:flex;align-items:center;gap:6px}
+mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:14px;background:var(--chip);color:var(--chip-ink);font-size:13px;white-space:nowrap}
+.chip.cat{background:var(--soft);color:var(--cink);font-weight:600}
+.chip.cat .dot{width:8px;height:8px;border-radius:50%;background:var(--dot)}
+.chip.check{background:var(--warn-soft);color:var(--warn-ink);border:1px dashed var(--amber-dot);font-weight:600}
+.bar{height:12px;border-radius:6px;background:var(--skeleton)}
+.status{display:flex;align-items:center;gap:6px;color:var(--accent);font-weight:500;font-size:14px}
+.status svg{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.empty{grid-column:1/-1;text-align:center;padding:48px 16px;color:var(--muted);background:var(--surface);border:1px dashed var(--line-strong);border-radius:16px}
+.empty h3{color:var(--ink);font-size:18px;margin-bottom:6px}
+.fab{position:fixed;right:20px;bottom:calc(24px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(11,110,110,.35);z-index:5}
+@media (min-width:760px){.fab{display:none}.add-desktop{display:inline-flex}}
+
+.list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.row{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;text-align:left}
+.row:hover{border-color:var(--line-strong)}
+.row .dot{width:14px;height:14px;border-radius:50%;background:var(--dot)}
+.row .rt{flex:1;min-width:0}
+.row .rt b{display:block;font-size:16px}
+.row .rt span{display:block;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.row .n{color:var(--muted)}
+.sec{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:24px}
+.sec h2{font-size:22px}
+.tagform{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.tagform input{flex:1 1 180px;min-width:0;height:48px;border:1px solid var(--line-strong);border-radius:12px;padding:0 14px;background:var(--surface);font-size:16px}
+
+.overlay{position:fixed;inset:0;background:var(--overlay);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{width:100%;max-width:640px;max-height:92%;overflow-y:auto;background:var(--surface);border-radius:24px 24px 0 0;padding:12px 20px calc(24px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+@media (min-width:760px){.overlay{align-items:center}.sheet{border-radius:24px;max-height:88%;padding-bottom:24px}}
+.grab{width:44px;height:5px;border-radius:3px;background:var(--line-strong);align-self:center}
+@media (min-width:760px){.grab{display:none}}
+.sheet h2{font-size:22px;font-weight:700}
+.shead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.seg button{height:72px;border-radius:16px;border:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:14px}
+.seg button[aria-pressed="true"]{border:2px solid var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+label.l{font-size:14px;font-weight:600;display:block;margin-bottom:6px}
+.field,textarea.field,select.field{width:100%;border:1px solid var(--line-strong);border-radius:12px;padding:12px 14px;background:var(--surface);font-size:16px;line-height:1.45}
+input.field,select.field{height:48px;padding-block:0}
+textarea.field{resize:vertical;min-height:96px}
+.help{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:flex-start;margin-top:6px}
+.help svg{color:var(--accent);margin-top:2px}
+.err{color:var(--danger);font-size:13px;margin-top:6px}
+.recbox{border:1px solid var(--line);border-radius:20px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.time{font-family:var(--font-display);font-size:56px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.wave{display:flex;align-items:center;gap:4px;height:64px}
+.wave i{width:5px;border-radius:3px;background:var(--accent);height:10px}
+.wave.on i{animation:wv 900ms ease-in-out infinite alternate}
+.wave.on i:nth-child(3n){animation-delay:-.3s}.wave.on i:nth-child(3n+1){animation-delay:-.6s}.wave.on i:nth-child(4n){animation-duration:700ms}
+@keyframes wv{from{height:8px}to{height:56px}}
+.recdot{display:inline-flex;align-items:center;gap:8px;font-weight:600;color:var(--danger)}
+.recdot i{width:10px;height:10px;border-radius:50%;background:var(--danger)}
+.bigbtn{width:84px;height:84px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center}
+.preview{max-height:220px;border-radius:14px;overflow:hidden;border:1px solid var(--line);display:flex;justify-content:center;background:var(--chip)}
+.preview img{max-height:220px;display:block;object-fit:contain}
+.actions{display:flex;flex-wrap:wrap;gap:10px}
+.actions .btn{flex:1 1 160px}
+.player{display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:16px;padding:12px 16px}
+.player .play{width:48px;height:48px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center}
+.track{flex:1;min-width:0}
+.track .t{height:6px;border-radius:3px;background:var(--line)}
+.track .t i{display:block;height:6px;border-radius:3px;background:var(--accent);width:0}
+.track .tm{display:flex;justify-content:space-between;margin-top:8px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cbx{position:relative}.cbx .list2{position:absolute;left:0;right:0;top:100%;margin-top:4px;background:var(--surface);border:1px solid var(--line-strong);border-radius:12px;max-height:220px;overflow:auto;z-index:5;box-shadow:0 8px 24px rgba(0,0,0,.14)}.cbx .list2 div{min-height:44px;padding:0 14px;display:flex;align-items:center;font-size:15px;cursor:pointer}.cbx .list2 div[aria-selected="true"],.cbx .list2 div:hover{background:var(--accent-soft);color:var(--accent)}.cbx .list2 .none{color:var(--muted);cursor:default}.sel{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.sel button{height:36px;padding:0 10px 0 12px;border-radius:18px;border:0;background:var(--ink);color:var(--bg);font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.tagpick{display:flex;flex-wrap:wrap;gap:6px}
+.tagpick button{height:44px;padding:0 14px;border-radius:22px;border:1px solid var(--line);background:var(--surface);font-size:14px}
+.tagpick button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:12px}
+.switch b{display:block;font-weight:500}
+.switch span{font-size:13px;color:var(--muted)}
+.sw{width:56px;height:44px;border:0;background:transparent;padding:0;display:flex;align-items:center}
+.sw i{width:52px;height:32px;border-radius:16px;background:var(--line-strong);position:relative;display:block}
+.sw i::after{content:"";position:absolute;left:3px;top:3px;width:26px;height:26px;border-radius:50%;background:var(--surface);transition:transform .15s}
+.sw[aria-checked="true"] i{background:var(--accent)}
+.sw[aria-checked="true"] i::after{transform:translateX(20px)}
+.swatches{display:flex;gap:4px}
+.swatches button{width:48px;height:48px;border:0;background:transparent;display:flex;align-items:center;justify-content:center}
+.swatches i{width:32px;height:32px;border-radius:50%;background:var(--dot);display:block}
+.swatches button[aria-pressed="true"] i{box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--ink)}
+.summary{border:1px solid var(--line);border-radius:20px;padding:18px 20px}
+.summary .big{display:flex;align-items:baseline;gap:12px}
+.summary .big b{font-family:var(--font-display);font-size:52px;line-height:1;color:var(--accent)}
+.summary .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.summary .stats b{font-size:20px;display:block}
+.summary .stats span{font-size:13px;color:var(--muted)}
+.mv{border:1px solid var(--line);border-radius:16px;padding:12px 16px 4px}
+.mv .mt{font-weight:600;overflow-wrap:anywhere}
+.mv .mr{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:6px}
+.mv .mc{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--muted)}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:calc(100% - 32px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;font-size:14px;z-index:40;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+@media (min-width:760px){.toast{bottom:32px}}
+@media (prefers-reduced-motion:reduce){.wave.on i,.status svg{animation:none}.sw i::after{transition:none}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>Mes notes</h1><p class="sub" id="count"></p></div>
+    <div class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" id="tab-home" aria-selected="true" data-a="tab" data-id="home">Notes</button>
+      <button class="tab" role="tab" id="tab-cats" aria-selected="false" data-a="tab" data-id="cats">Carnets</button>
+      <button class="tab" role="tab" id="tab-set" aria-selected="false" data-a="tab" data-id="set">Réglages</button>
+    </div>
+    <button class="btn primary add-desktop" data-a="add"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nouvelle note</button>
+  </header>
+
+  <div class="demo" role="note">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>
+    <span>Prototype : l'IA est simulée (reconnaissance de mots-clés) et les notes restent dans ce navigateur.</span>
+    <span id="calls" style="font-weight:600"></span>
+    <span class="modes" role="group" aria-label="Déclenchement de l'analyse"><button type="button" id="m-auto" data-a="mode" data-id="auto" aria-pressed="true">Analyse automatique</button><button type="button" id="m-manual" data-a="mode" data-id="manual" aria-pressed="false">Analyse manuelle</button></span>
+    <button type="button" data-a="reset">Réinitialiser la démo</button>
+  </div>
+
+  <main id="view-home">
+    <div class="search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" autocomplete="off" aria-label="Rechercher dans les titres et le contenu" placeholder="Rechercher dans les titres et le contenu">
+      <button class="iconbtn" id="qclear" data-a="qclear" aria-label="Effacer la recherche" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div class="chips" id="catchips" role="group" aria-label="Filtrer par carnet"></div>
+    <div class="chips tags" id="tagchips" role="group" aria-label="Filtrer par tags"></div>
+    <div class="resinfo"><span id="resinfo" aria-live="polite"></span><span style="display:inline-flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="clearf" data-a="clearf" style="height:44px;padding:0 8px" hidden>Tout effacer</button><button class="btn ghost" id="synthhist" data-a="hist-open" style="height:44px;padding:0 8px"></button><button class="btn" id="synth" data-a="synth" style="height:44px;padding:0 14px" hidden></button></span></div>
+    <div id="pendbar"></div>
+    <div class="grid" id="grid"></div>
+  </main>
+
+  <main id="view-cats" hidden>
+    <div class="sec"><h2>Carnets</h2><button class="btn primary" data-a="cat-new">Nouveau carnet</button></div>
+    <p class="sub">Chaque description guide le classement automatique. Un tri se relance à chaque ajout ou modification.</p>
+    <div class="actions" style="margin:0 0 12px"><button class="btn" data-a="merge-open" data-id="cat">Fusionner des carnets</button><button class="btn" data-a="merge-open" data-id="tag">Fusionner des tags</button></div>
+    <div><label class="l" for="defcat">Carnet par défaut des nouvelles notes</label><select id="defcat" class="field"></select><div class="help"><span>Vous pourrez le changer note par note au moment de la création.</span></div></div>
+    <div class="list" id="catlist"></div>
+    <div class="sec"><h2>Tags</h2></div>
+    <div class="chips tags" id="taglist" style="flex-wrap:wrap;overflow:visible"></div>
+    <form class="tagform" id="tagform" autocomplete="off">
+      <label for="newtag" class="l" style="width:100%;margin:0">Nouveau tag</label>
+      <input id="newtag" placeholder="ex. voyage" maxlength="24">
+      <button type="submit" class="btn primary" data-a="tag-add" data-retri="1">Ajouter et relancer le tri</button>
+      <button type="button" class="btn" data-a="tag-add">Ajouter</button>
+    </form>
+    <div class="err" id="tagerr" role="alert" hidden></div>
+  </main>
+  <main id="view-set" hidden>
+    <div class="sec"><h2>Réglages</h2></div>
+    <p class="sub">Tout ce qui pilote l'IA et la consommation. Démo : rien n'est envoyé nulle part, les clés ne sont pas conservées.</p>
+    <div id="setbody"></div>
+  </main>
+</div>
+
+<button class="fab" data-a="add" aria-label="Ajouter une note"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+
+<div class="overlay" id="ov" hidden><section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Fenêtre"></section></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+var KEY='carnet-notes-proto-v1';
+var $=function(s,r){return (r||document).querySelector(s)};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var norm=function(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')};
+var stem=function(w){return w.replace(/(s|x)$/,'')};
+var STOP={dans:1,pour:1,avec:1,vers:1,sans:1,tout:1,tous:1,elle:1,doit:1,contenir:1,entre:1,leur:1,leurs:1,cette:1,votre:1,notre:1,mais:1,plus:1,moins:1,tres:1,chez:1,sont:1,etre:1,avoir:1,faire:1,autres:1,autre:1,vous:1,rendez:1,quotidienne:1,souvenirs:0};
+var tokens=function(s){return norm(s).split(/[^a-z0-9]+/).filter(function(w){return w.length>3&&!STOP[w]}).map(stem)};
+var uid=function(){return Math.random().toString(36).slice(2,9)};
+var COLORS=['blue','amber','purple','green','rose'];
+var CNAME={blue:'Bleu',amber:'Ocre',purple:'Violet',green:'Vert',rose:'Rose'};
+var I=function(p,w){return '<svg width="'+(w||16)+'" height="'+(w||16)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>'};
+var IC={
+ text:'<path d="M4 20l1-4L16 5l3 3L8 19l-4 1z"/>',
+ voice:'<rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+ image:'<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/>',
+ spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+ help:'<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/>',
+ lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+ x:'<path d="M6 6l12 12M18 6 6 18"/>',
+ arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+ check:'<path d="m5 12 5 5 9-10"/>',
+ upload:'<path d="M12 15V4M7 9l5-5 5 5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>'
+};
+var TYPE_LABEL={text:'Texte',voice:'Note vocale',image:'Image'};
+
+/* ---------- données ---------- */
+function seed(){
+ var n=Date.now(),h=36e5,d=24*h;
+ var cats=[
+  {id:'travail',name:'Travail',desc:'Réunions, projets, échanges professionnels',color:'blue',extra:['reunion','projet','client','equipe','tableau','dossier','collegue']},
+  {id:'maison',name:'Maison',desc:'Travaux, rendez-vous, vie quotidienne',color:'amber',extra:['plombier','salle','bain','cuisine','menage','jardin','maison']},
+  {id:'idees',name:'Idées',desc:'Projets, inspirations, envies',color:'purple',extra:['idee','inspiration','envie','atelier']},
+  {id:'admin',name:'Administratif',desc:'Factures, courriers, démarches',color:'rose',extra:['facture','courrier','impot','demarche','electricite','assurance','contrat']}
+ ];
+ var tags=[
+  {name:'devis',kw:['devis']},{name:'réunion',kw:['reunion','tableau']},{name:'facture',kw:['facture','electricite']},
+  {name:'inspiration',kw:['idee','inspiration','envie']},{name:'à rappeler',kw:['relancer','rappeler','relance']}
+ ];
+ var N=function(o){o.id=uid();o.status='ready';o.ai=o.ai!==false;o.locked=!!o.locked;o.img=null;return o};
+ var notes=[
+  N({type:'voice',title:'Devis du plombier : relancer jeudi',content:"Bonjour, c'est un mémo pour moi. J'ai appelé le plombier ce matin au sujet de la salle de bain. Il m'a promis le devis avant la fin de la semaine. Si je n'ai rien reçu jeudi, je le relance par téléphone, et je lui demande aussi le délai avant de commencer les travaux.",cat:'maison',tags:['devis','à rappeler'],dur:102,date:n-3*h}),
+  N({type:'image',title:'Tableau blanc de la réunion',content:"Photo d'un tableau blanc avec trois colonnes : à faire, en cours, terminé, et des notes adhésives de couleur.",cat:'travail',tags:['réunion'],date:n-d-2*h}),
+  N({type:'text',title:"Idée : atelier d'écriture en plein air",content:"Proposer un atelier d'écriture dehors, avec une consigne tirée au sort pour chaque participant. Prévoir des carnets et de quoi s'abriter.",cat:'idees',tags:['inspiration'],date:n-2*d}),
+  N({type:'text',title:'Papier à regarder',content:"Papier reçu hier, à regarder avec attention avant de décider quoi en faire.",cat:null,tags:[],date:n-2*d-3*h}),
+  N({type:'text',title:'Questions à poser au plombier',content:"Délai des travaux, garantie, évacuation de l'ancienne baignoire, acompte demandé.",cat:'maison',tags:['devis'],date:n-4*d}),
+  N({type:'image',title:'Devis papier reçu par courrier',content:"Devis imprimé avec un tableau de postes, un total en bas de page et la mention d'un plombier chauffagiste.",cat:'maison',tags:['devis'],date:n-5*d}),
+  N({type:'text',title:"Idées d'itinéraire pour l'été",content:"Longer la côte en train, s'arrêter deux nuits dans chaque ville et garder un jour libre pour le marché.",cat:'idees',tags:['inspiration'],date:n-6*d}),
+  N({type:'text',title:'Réservation du train, retour dimanche',content:"Le billet retour est pour dimanche soir, à vérifier dans la boîte mail avant de partir.",cat:'admin',tags:[],date:n-7*d}),
+  N({type:'image',title:"Photo du billet d'avion",content:"Photo d'un billet imprimé avec les horaires d'embarquement et un numéro de réservation.",cat:'admin',tags:[],date:n-8*d}),
+  N({type:'text',title:"Facture d'électricité du trimestre",content:"À payer avant la fin du mois, montant plus élevé que d'habitude.",cat:'admin',tags:['facture'],date:n-9*d}),
+  N({type:'text',title:'Liste de voyage pour le week-end',content:"Chargeur, carnet, bouteille d'eau, veste de pluie, pique-nique.",cat:'maison',tags:[],date:n-10*d,locked:true,ai:false})
+ ];
+ return {cats:cats,tags:tags,notes:notes,cv:0,ci:0};
+}
+var S;
+function load(){try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);if(o&&o.notes&&o.cats&&o.tags)return o}}catch(e){}return seed()}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+var F={q:'',cat:null,tags:[]};
+var DEF_SET={maxSec:120,prov:{classif:'infomaniak',transcr:'infomaniak',vision:'infomaniak',synth:'infomaniak'},recours:'fail',propose:{cat:false,tag:false}},KEYS={infomaniak:'',gemini:'',claude:''};
+function SET(){if(!S.set)S.set=JSON.parse(JSON.stringify(DEF_SET));if(!S.set.propose)S.set.propose={cat:false,tag:false};return S.set}
+var STOP='avec dans pour cette comme mais plus tout tous faire avant apres entre chez sans sous vers votre notre leurs elle elles ils nous vous'.split(' ');
+function suggest(n){
+ var st=SET().propose,sg={cat:null,tag:null},w={},txt=norm(n.title+' '+n.content).split(/[^a-z]+/);
+ txt.forEach(function(x){if(x.length>=6&&STOP.indexOf(x)<0)w[x]=(w[x]||0)+1});
+ var known=S.tags.map(function(t){return norm(t.name)}).concat(S.cats.map(function(c){return norm(c.name)}));
+ var cand=Object.keys(w).filter(function(x){return !known.some(function(k){return k.indexOf(x.slice(0,5))===0||x.indexOf(k.slice(0,5))===0})}).sort(function(a,b){return w[b]-w[a]||b.length-a.length});
+ if(st.tag&&cand[0])sg.tag=cand[0];
+ if(st.cat&&!n.cat&&cand.length)sg.cat=cand[0].charAt(0).toUpperCase()+cand[0].slice(1);
+ return (sg.cat||sg.tag)?sg:null;
+}
+var tab='home';
+var cat=function(id){return S.cats.filter(function(c){return c.id===id})[0]||null};
+
+/* ---------- IA simulée ---------- */
+var VOICES=[
+ "Rappel pour moi : demander une facture détaillée à l'artisan et vérifier le montant de l'acompte avant vendredi.",
+ "Idée pour l'atelier du week-end : prévoir une séance d'écriture dehors, avec un thème tiré au sort pour chaque participant.",
+ "Réunion de jeudi : préparer les trois points à présenter à l'équipe et envoyer le dossier la veille."
+];
+var IMGS=[
+ "Photo d'un tableau blanc avec des flèches et des notes adhésives. Texte visible : Planning, Priorités, Prochaine réunion.",
+ "Photo d'un courrier officiel posé sur une table. Texte visible : Avis de paiement, montant à régler avant la fin du mois.",
+ "Photo d'une étagère de cuisine avec des bocaux étiquetés et des sacs de farine et de riz sur le rang du bas."
+];
+function keywords(c){var s={};tokens(c.name).concat(tokens(c.desc),(c.extra||[])).forEach(function(k){s[k]=1});return s}
+function classify(n,fallback){
+ var set={};tokens(n.title+' '+n.content).forEach(function(t){set[t]=1});
+ var best=-1,pick=null,tie=[];
+ S.cats.forEach(function(c){
+  var kw=keywords(c),sc=0;for(var k in kw){if(set[k])sc++}
+  if(sc>best){best=sc;pick=c.id;tie=[c.id]}else if(sc===best){tie.push(c.id)}
+ });
+ if(best<=0)return fallback==null?null:fallback;
+ if(tie.length>1&&tie.indexOf(fallback)>-1)return fallback;
+ return pick;
+}
+function tagHit(n,t){var set={};tokens(n.title+' '+n.content).forEach(function(x){set[x]=1});return t.kw.some(function(k){return set[k]})}
+function tagsFor(n){return S.tags.filter(function(t){return tagHit(n,t)}).map(function(t){return t.name})}
+function genTitle(s){
+ var t=String(s||'').trim().split(/[.\n!?]/)[0].trim();
+ if(t.length>56){t=t.slice(0,56);t=t.slice(0,t.lastIndexOf(' ')>20?t.lastIndexOf(' '):56)+'…'}
+ return t?t.charAt(0).toUpperCase()+t.slice(1):'Note sans titre';
+}
+function addNote(o){
+ var n={id:uid(),type:o.type,title:'',content:o.content||'',cat:null,tags:[],locked:false,ai:true,status:'analyzing',date:Date.now(),dur:o.dur||0,img:o.img||null,forced:o.cat||null,catLocked:!!o.cat};
+ if(S.mode==='manual'){
+  n.status='pending';n.ai=false;
+  n.title=o.type==='text'?genTitle(o.content):(o.type==='voice'?'Note vocale · '+fmtDur(o.dur):'Image');
+  S.notes.unshift(n);render();toast("Note enregistrée, en attente d'analyse");return n;
+ }
+ S.notes.unshift(n);render();
+ setTimeout(function(){finish(n)},o.type==='text'?900:1800);
+ return n;
+}
+function analyze(id){
+ var n=S.notes.filter(function(x){return x.id===id})[0];if(!n||n.status!=='pending')return;
+ n.status='analyzing';n.ai=true;render();
+ setTimeout(function(){finish(n)},n.type==='text'?900:1800);
+}
+function finish(n){
+ if(n.type==='voice'&&!n.content){n.content=VOICES[S.cv%VOICES.length];S.cv++}
+ if(n.type==='image'&&!n.content){n.content=IMGS[S.ci%IMGS.length];S.ci++}
+ n.title=genTitle(n.content);
+ n.cat=n.forced?n.forced:classify(n,null);n.tags=tagsFor(n);n.status='ready';n.ai=true;n.sugg=suggest(n);
+ S.calls=(S.calls||0)+(n.type==='text'?1:2);
+ render();
+ var c=cat(n.cat);toast(c?'Note rangée dans '+c.name:'Note à vérifier : aucun carnet adapté');
+}
+function retri(opt){
+ var items=[],examined=0,locked=0;
+ S.notes.forEach(function(n){
+  if(n.status!=='ready')return;
+  if(n.locked){locked++;return}
+  examined++;
+  var from={cat:n.cat,tags:n.tags.slice()},to={cat:n.cat,tags:n.tags.slice()};
+  if(opt.cat&&!n.catLocked)to.cat=classify(n,n.cat);
+  if(opt.tag){var t=S.tags.filter(function(x){return x.name===opt.tag})[0];if(t&&tagHit(n,t)&&to.tags.indexOf(t.name)<0)to.tags.push(t.name)}
+  var changed=to.cat!==from.cat||to.tags.length!==from.tags.length;
+  if(changed){items.push({id:n.id,from:from,to:to,undone:false});n.cat=to.cat;n.tags=to.tags;n.ai=true}
+ });
+ return {items:items,examined:examined,locked:locked};
+}
+
+/* ---------- affichage des notes ---------- */
+function fmtDate(ts){
+ var d=new Date(ts),n=new Date(),same=function(a,b){return a.toDateString()===b.toDateString()};
+ var tm=d.toLocaleTimeString('fr-BE',{hour:'2-digit',minute:'2-digit'});
+ if(same(d,n))return "Aujourd'hui, "+tm;
+ if(same(d,new Date(n.getTime()-864e5)))return 'Hier';
+ if(n-d<6*864e5){var w=d.toLocaleDateString('fr-BE',{weekday:'long'});return w.charAt(0).toUpperCase()+w.slice(1)}
+ return d.toLocaleDateString('fr-BE',{day:'numeric',month:'short'});
+}
+function fmtDur(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function hl(text,q){
+ text=String(text);var nq=norm(q).trim();if(!nq)return esc(text);
+ var nt=text.split('').map(function(c){return norm(c)}).join('');
+ if(nt.length!==text.length)return esc(text);
+ var out='',i=0,j;
+ while((j=nt.indexOf(nq,i))>-1){out+=esc(text.slice(i,j))+'<mark>'+esc(text.slice(j,j+nq.length))+'</mark>';i=j+nq.length}
+ return out+esc(text.slice(i));
+}
+function snippet(c,q){
+ var nq=norm(q).trim(),nt=c.split('').map(function(x){return norm(x)}).join(''),k=nq&&nt.length===c.length?nt.indexOf(nq):-1;
+ var st=k>110?k-50:0,s=c.slice(st,st+170);
+ return (st?'…':'')+s+(st+170<c.length?'…':'');
+}
+function catChip(id){var c=cat(id);return c?'<span class="chip cat cat-'+c.color+'"><i class="dot"></i>'+esc(c.name)+'</span>':'<span class="chip check">'+I(IC.help,14)+'À vérifier</span>'}
+function matchLabel(n,q){
+ var nq=norm(q).trim();if(!nq)return '';
+ var w=[];if(norm(n.title).indexOf(nq)>-1)w.push('le titre');
+ if(norm(n.content).indexOf(nq)>-1)w.push(n.type==='voice'?'la transcription':n.type==='image'?"la description de l'image":'le texte');
+ return w.length?'<div class="match">'+I(IC.search,13)+'Trouvé dans '+w.join(' et ')+'</div>':'';
+}
+function card(n,q){
+ if(n.status==='analyzing'){
+  var what=n.type==='voice'?'Transcription et classement en cours':n.type==='image'?"Description et classement en cours":'Classement en cours';
+  return '<div class="card busy" aria-busy="true"><div class="head"><span>'+I(IC[n.type])+TYPE_LABEL[n.type]+(n.type==='voice'?' · '+fmtDur(n.dur):'')+'</span><span>À l\'instant</span></div><div class="bar" style="width:78%"></div><div class="bar" style="width:52%"></div><div class="status">'+I(IC.spark)+what+'</div></div>';
+ }
+ if(n.status==='pending'){
+  var thumbP=n.type==='image'?'<div class="thumb">'+(n.img?'<img alt="" src="'+esc(n.img)+'">':I(IC.image,24))+'</div>':'';
+  var exP=n.type==='text'?hl(snippet(n.content,q),q):(n.type==='voice'?'Pas encore transcrite.':'Pas encore décrite.');
+  return '<div class="card" role="button" tabindex="0" data-a="open" data-id="'+n.id+'" aria-label="Ouvrir : '+esc(n.title)+'">'+thumbP+'<div class="head"><span>'+I(IC[n.type])+TYPE_LABEL[n.type]+(n.type==='voice'?' · '+fmtDur(n.dur):'')+'</span><span>'+fmtDate(n.date)+'</span></div><div class="ttl">'+hl(n.title,q)+'</div><div class="exc">'+exP+'</div><div class="foot"><span class="chip check">À analyser</span><button class="btn" style="height:44px;margin-left:auto;padding:0 14px" data-a="analyze" data-id="'+n.id+'">'+I(IC.spark,16)+'Analyser</button></div></div>';
+ }
+ var thumb=n.type==='image'?'<div class="thumb">'+(n.img?'<img alt="" src="'+esc(n.img)+'">':I(IC.image,24))+'</div>':'';
+ var ex=n.type==='text'&&!q?esc(n.content):hl(snippet(n.content,q),q);
+ var tags=n.tags.map(function(t){return '<span class="chip">#'+hl(t,'')+'</span>'}).join('');
+ var end=(n.locked?'<span aria-label="Classement verrouillé" role="img">'+I(IC.lock,16)+'</span>':'')+(n.ai&&!n.locked&&n.cat?'<span aria-label="Classé par l\'IA" role="img">'+I(IC.spark,16)+'</span>':'');
+ return '<div class="card" role="button" tabindex="0" data-a="open" data-id="'+n.id+'" aria-label="Ouvrir : '+esc(n.title)+'">'+thumb+
+  '<div class="head"><span>'+I(IC[n.type])+TYPE_LABEL[n.type]+(n.type==='voice'?' · '+fmtDur(n.dur):'')+'</span><span>'+fmtDate(n.date)+'</span></div>'+
+  '<div class="ttl">'+hl(n.title,q)+'</div><div class="exc">'+ex+'</div>'+matchLabel(n,q)+
+  '<div class="foot">'+catChip(n.cat)+tags+(end?'<span class="end">'+end+'</span>':'')+'</div></div>';
+}
+function filtered(){
+ var nq=norm(F.q).trim();
+ return S.notes.filter(function(n){
+  if(n.status==='analyzing')return !F.cat&&!F.tags.length&&!nq;
+  if(F.cat==='__none'){if(n.cat||n.status==='pending')return false}else if(F.cat&&n.cat!==F.cat)return false;
+  for(var i=0;i<F.tags.length;i++){if(n.tags.indexOf(F.tags[i])<0)return false}
+  if(nq&&norm(n.title).indexOf(nq)<0&&norm(n.content).indexOf(nq)<0)return false;
+  return true;
+ }).sort(function(a,b){return b.date-a.date});
+}
+function renderHome(){
+ var ready=S.notes.filter(function(n){return n.status==='ready'});
+ var none=ready.filter(function(n){return !n.cat}).length;
+ var ch='<button class="fchip" data-a="fcat" data-id="" aria-pressed="'+(!F.cat)+'">Toutes <small>'+ready.length+'</small></button>';
+ S.cats.forEach(function(c){var k=ready.filter(function(n){return n.cat===c.id}).length;
+  ch+='<button class="fchip cat-'+c.color+'" data-a="fcat" data-id="'+c.id+'" aria-pressed="'+(F.cat===c.id)+'"><i class="dot"></i>'+esc(c.name)+' <small>'+k+'</small></button>'});
+ if(none)ch+='<button class="fchip" data-a="fcat" data-id="__none" aria-pressed="'+(F.cat==='__none')+'">'+I(IC.help,14)+'À vérifier <small>'+none+'</small></button>';
+ $('#catchips').innerHTML=ch;
+ var th='<span class="fchip tag label">Tags</span>';
+ S.tags.forEach(function(t){th+='<button class="fchip tag" data-a="ftag" data-id="'+esc(t.name)+'" aria-pressed="'+(F.tags.indexOf(t.name)>-1)+'">#'+esc(t.name)+'</button>'});
+ $('#tagchips').innerHTML=th;
+ var list=filtered(),active=F.cat||F.tags.length||F.q.trim();
+ $('#resinfo').textContent=active?list.length+(list.length>1?' notes':' note')+' sur '+ready.length:'';
+ $('#clearf').hidden=!active;
+ $('#qclear').hidden=!F.q;
+ var nready=list.filter(function(n){return n.status==='ready'}).length;
+ $('#synth').hidden=!nready;var hn=(S.hist||[]).length;$('#synthhist').hidden=!hn;$('#synthhist').textContent='Historique ('+hn+')';
+ $('#synth').innerHTML=I('<path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h6"/>',16)+'Synthèse des '+nready+(nready>1?' notes':' note');
+ var pend=S.notes.filter(function(n){return n.status==='pending'});
+ var pc=pend.reduce(function(a,n){return a+(n.type==='text'?1:2)},0);
+ $('#pendbar').innerHTML=pend.length?'<div class="pendbar"><span>'+pend.length+(pend.length>1?' notes à analyser':' note à analyser')+'</span><button class="btn primary" style="height:44px" data-a="analyze-all">Tout analyser · '+pc+(pc>1?' appels':' appel')+'</button></div>':'';
+ $('#grid').innerHTML=list.length?list.map(function(n){return card(n,F.q)}).join(''):
+  '<div class="empty"><h3>'+(active?'Aucune note ne correspond':'Aucune note pour l\'instant')+'</h3><p>'+(active?'Essayez un autre mot ou retirez un filtre.':'Ajoutez un texte, un vocal ou une image : le classement se fait tout seul.')+'</p></div>';
+}
+var PROV={infomaniak:'Infomaniak (par défaut)',gemini:'Gemini',claude:'Claude'},FN=[['classif','Classement des notes'],['transcr','Transcription des vocaux'],['vision','Description des images'],['synth','Synthèse des notes affichées']];
+function renderSet(){
+ var st=SET(),o=function(v,cur,l){return '<option value="'+v+'"'+(v===cur?' selected':'')+'>'+l+'</option>'};
+ var fn=FN.map(function(f){var opts=Object.keys(PROV).filter(function(k){return !(f[0]==='transcr'&&k==='claude')}).map(function(k){return o(k,st.prov[f[0]],PROV[k])}).join('');return '<div><label class="l" for="prov-'+f[0]+'">'+f[1]+'</label><select id="prov-'+f[0]+'" class="field" data-prov="'+f[0]+'">'+opts+'</select></div>'}).join('');
+ var keys=['infomaniak','gemini','claude'].map(function(k){return '<div><label class="l" for="key-'+k+'">Clé API '+({infomaniak:'Infomaniak',gemini:'Gemini',claude:'Claude'})[k]+'</label><div class="tagform" style="margin:0"><input id="key-'+k+'" type="password" autocomplete="off" placeholder="'+(k==='infomaniak'?'Jeton Infomaniak':'Optionnelle')+'" value="'+esc(KEYS[k])+'" data-key="'+k+'"><button type="button" class="btn" data-a="key-test" data-id="'+k+'">Tester</button></div></div>'}).join('');
+ var dur=[[30,'30 secondes'],[60,'1 minute'],[120,'2 minutes (maximum)']].map(function(d){return o(String(d[0]),String(st.maxSec),d[1])}).join('');
+ var rc=[['never','Jamais'],['fail','En cas d\'échec'],['ask','À la demande']].map(function(r){return o(r[0],st.recours,r[1])}).join('');
+ $('#setbody').innerHTML='<div class="card" style="padding:16px;display:flex;flex-direction:column;gap:14px"><h3 style="margin:0">Choix des IA</h3>'+fn+'<div><label class="l" for="recours">Recours à un autre fournisseur</label><select id="recours" class="field">'+rc+'</select></div></div>'+
+ '<div class="card" style="padding:16px;display:flex;flex-direction:column;gap:14px;margin-top:12px"><h3 style="margin:0">Création par l\'IA</h3><div><label class="l" for="pr-cat">Carnets</label><select id="pr-cat" class="field">'+o('0',st.propose.cat?'1':'0','Strict : seulement les carnets existants')+o('1',st.propose.cat?'1':'0','L\'IA peut proposer un nouveau carnet')+'</select></div><div><label class="l" for="pr-tag">Tags</label><select id="pr-tag" class="field">'+o('0',st.propose.tag?'1':'0','Strict : seulement les tags existants')+o('1',st.propose.tag?'1':'0','L\'IA peut proposer de nouveaux tags')+'</select></div><div class="help"><span>Une proposition n\'est jamais créée sans votre accord. Aucun appel IA en plus.</span></div></div>'+
+ '<div class="card" style="padding:16px;display:flex;flex-direction:column;gap:14px;margin-top:12px"><h3 style="margin:0">Clés API</h3>'+keys+'<div class="help"><span>Côté serveur, les clés sont chiffrées et jamais renvoyées à l\'écran.</span></div></div>'+
+ '<div class="card" style="padding:16px;display:flex;flex-direction:column;gap:14px;margin-top:12px"><h3 style="margin:0">Audio</h3><div><label class="l" for="maxsec">Durée maximale d\'un vocal</label><select id="maxsec" class="field">'+dur+'</select></div></div>'+
+ '<div class="card" style="padding:16px;display:flex;flex-direction:column;gap:10px;margin-top:12px"><h3 style="margin:0">Déclenchement de l\'analyse</h3><div class="modes" role="group"><button type="button" data-a="mode" data-id="auto" aria-pressed="'+(S.mode!=='manual')+'">Automatique</button><button type="button" data-a="mode" data-id="manual" aria-pressed="'+(S.mode==='manual')+'">Manuel</button></div></div>'+
+ '<div class="card" style="padding:16px;display:flex;flex-direction:column;gap:10px;margin-top:12px"><h3 style="margin:0">Historique des synthèses</h3><p class="sub" style="margin:0">'+(S.hist||[]).length+' enregistrée(s) sur 30 maximum.</p><div class="actions"><button class="btn" data-a="hist-open">Ouvrir l\'historique</button></div></div>'+
+ '<div class="card" style="padding:16px;display:flex;flex-direction:column;gap:10px;margin-top:12px"><h3 style="margin:0">Carnets et tags</h3><p class="sub" style="margin:0">Ajouter, modifier, supprimer et fusionner.</p><div class="actions"><button class="btn" data-a="tab" data-id="cats">Gérer les carnets et les tags</button><button class="btn" data-a="merge-open" data-id="cat">Fusionner des carnets</button><button class="btn" data-a="merge-open" data-id="tag">Fusionner des tags</button></div></div>'+
+ '<div class="actions" style="margin-top:14px"><button class="btn" data-a="reset">Réinitialiser la démo</button></div>';
+}
+function renderCats(){
+ $('#defcat').innerHTML='<option value="">Choisi par l\'IA (aucun défaut)</option>'+S.cats.map(function(c){return '<option value="'+c.id+'"'+(S.defCat===c.id?' selected':'')+'>'+esc(c.name)+'</option>'}).join('');
+ $('#catlist').innerHTML=S.cats.map(function(c){var k=S.notes.filter(function(n){return n.cat===c.id}).length;
+  return '<button class="row cat-'+c.color+'" data-a="cat-edit" data-id="'+c.id+'"><i class="dot"></i><span class="rt"><b>'+esc(c.name)+(S.defCat===c.id?' <small>· par défaut</small>':'')+'</b><span>'+esc(c.desc)+'</span></span><span class="n">'+k+'</span></button>'}).join('')||'<div class="empty">Aucune carnet.</div>';
+ $('#taglist').innerHTML=S.tags.map(function(t){var k=S.notes.filter(function(n){return n.tags.indexOf(t.name)>-1}).length;return '<button class="chip" data-a="tag-edit" data-id="'+esc(t.name)+'" style="height:44px;font-size:14px">#'+esc(t.name)+' · '+k+'</button>'}).join('');
+}
+function render(){
+ var ready=S.notes.filter(function(n){return n.status!=='analyzing'}).length;
+ $('#count').textContent=ready+(ready>1?' notes':' note');
+ $('#m-auto').setAttribute('aria-pressed',S.mode!=='manual');$('#m-manual').setAttribute('aria-pressed',S.mode==='manual');
+ $('#calls').textContent='Appels IA simulés : '+(S.calls||0)+' (un par texte, deux par vocal ou image).';
+ renderHome();renderCats();if(tab==='set')renderSet();save();
+}
+function setTab(t){
+ tab=t;$('#view-home').hidden=t!=='home';$('#view-cats').hidden=t!=='cats';$('#view-set').hidden=t!=='set';$('#tab-set').setAttribute('aria-selected',t==='set');if(t==='set')renderSet();
+ $('#tab-home').setAttribute('aria-selected',t==='home');$('#tab-cats').setAttribute('aria-selected',t==='cats');
+}
+var tt;
+function toast(m){var e=$('#toast');e.textContent=m;e.hidden=false;clearTimeout(tt);tt=setTimeout(function(){e.hidden=true},3200)}
+
+/* ---------- fenêtres ---------- */
+var modal=null,timers={};
+function openModal(html,name){
+ closeTimers();
+ $('#sheet').innerHTML='<div class="grab"></div>'+html;$('#sheet').setAttribute('aria-label',name||'Fenêtre');
+ $('#ov').hidden=false;document.body.style.overflow='hidden';
+ var f=$('#sheet [autofocus]')||$('#sheet button,#sheet input,#sheet textarea,#sheet select');if(f)f.focus();
+}
+function closeModal(){closeTimers();modal=null;$('#ov').hidden=true;document.body.style.overflow='';$('#sheet').innerHTML=''}
+function closeTimers(){for(var k in timers){clearInterval(timers[k])}timers={}}
+function xbtn(){return '<button class="iconbtn" data-a="close" aria-label="Fermer">'+I(IC.x,22)+'</button>'}
+
+var add={tab:'text',text:'',rec:null,img:null};
+function openAdd(t){add={cat:S.defCat||'',tab:t||'text',text:'',rec:null,img:null};modal='add';renderAdd()}
+function renderAdd(){
+ var tb=function(k,l){return '<button data-a="addtab" data-id="'+k+'" aria-pressed="'+(add.tab===k)+'">'+I(IC[k],24)+l+'</button>'};
+ var body='';
+ if(add.tab==='text'){
+  body='<div><label class="l" for="ntext">Votre note</label><textarea id="ntext" class="field" rows="5" placeholder="Écrivez librement…" autofocus>'+esc(add.text)+'</textarea></div><div class="actions"><button class="btn primary" data-a="add-text">Ajouter la note</button></div>';
+ }else if(add.tab==='voice'){
+  var on=add.rec&&add.rec.on;
+  body='<div class="recbox">'+(on?'<div class="recdot"><i></i>Enregistrement en cours</div>':'<div class="sub">Appuyez pour enregistrer</div>')+
+   '<div class="time" id="rtime">'+fmtDur(add.rec?add.rec.sec:0)+'</div><div class="sub">sur '+fmtDur(SET().maxSec)+' maximum, arrêt automatique</div>'+
+   '<div class="wave'+(on?' on':'')+'" aria-hidden="true">'+new Array(24).join('<i></i>')+'</div>'+
+   (on?'<button class="bigbtn" data-a="rec-stop" aria-label="Terminer l\'enregistrement"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg></button>':
+   '<button class="bigbtn" data-a="rec-start" aria-label="Démarrer l\'enregistrement">'+I(IC.voice,34)+'</button>')+
+   '</div><div class="help">'+I(IC.spark,14)+'<span>Enregistrement simulé : le micro n\'est pas utilisé. À l\'arrêt, une transcription d\'exemple est générée puis la note est classée.</span></div>';
+ }else{
+  body='<div class="actions"><label class="btn" for="file" style="cursor:pointer">'+I(IC.upload,18)+'Choisir une image</label><button class="btn" data-a="img-sample">Image d\'exemple</button></div><input id="file" type="file" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0">'+
+   (add.img?'<div class="preview"><img alt="Aperçu de l\'image choisie" src="'+esc(add.img)+'"></div>':'')+
+   '<div class="help">'+I(IC.spark,14)+'<span>La photo est réduite avant envoi. La description est simulée : une description d\'exemple est associée à votre image avant le classement.</span></div><div class="actions"><button class="btn primary" data-a="add-img"'+(add.img?'':' disabled')+'>Ajouter l\'image</button></div>';
+ }
+ var co='<option value=""'+(!add.cat?' selected':'')+'>Choisi par l\'IA</option>'+S.cats.map(function(c){return '<option value="'+c.id+'"'+(add.cat===c.id?' selected':'')+'>'+esc(c.name)+(S.defCat===c.id?' (par défaut)':'')+'</option>'}).join('');
+ $('#sheet').innerHTML='<div class="grab"></div><div class="shead"><h2>Nouvelle note</h2>'+xbtn()+'</div><div class="seg">'+tb('text','Écrire')+tb('voice','Parler')+tb('image','Image')+'</div><div><label class="l" for="addcat">Carnet de destination</label><select id="addcat" class="field">'+co+'</select></div>'+body;
+ $('#ov').hidden=false;document.body.style.overflow='hidden';$('#sheet').setAttribute('aria-label','Nouvelle note');
+ var f=$('#sheet [autofocus]');if(f)f.focus();
+}
+function stopRec(){if(timers.rec){clearInterval(timers.rec);delete timers.rec}}
+
+var curId=null,pl={t:0};
+function openDetail(id){
+ var n=S.notes.filter(function(x){return x.id===id})[0];if(!n)return;
+ curId=id;modal='detail';pl={t:0};
+ var lbl=n.type==='voice'?'Transcription':n.type==='image'?"Description de l'image":'Texte';
+ var opts='<option value="">Sans carnet (à vérifier)</option>'+S.cats.map(function(c){return '<option value="'+c.id+'"'+(n.cat===c.id?' selected':'')+'>'+esc(c.name)+'</option>'}).join('');
+ var tg='';
+ var media=n.type==='voice'?'<div class="player"><button class="play" data-a="play" aria-label="Lire l\'enregistrement">'+I('<path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor"/>',20)+'</button><div class="track"><div class="t"><i id="pbar"></i></div><div class="tm"><span id="ptime">0:00</span><span>'+fmtDur(n.dur)+'</span></div></div></div>':
+  n.type==='image'?'<div class="thumb" style="height:160px">'+(n.img?'<img alt="Image de la note" src="'+esc(n.img)+'">':I(IC.image,32))+'</div>':'';
+ $('#sheet').innerHTML='<div class="grab"></div><div class="shead"><h2>Détail de la note</h2>'+xbtn()+'</div>'+
+  '<div><label class="l" for="dtitle">Titre</label><input id="dtitle" class="field" value="'+esc(n.title)+'"></div>'+
+  '<div class="sub">'+TYPE_LABEL[n.type]+' · '+fmtDate(n.date)+'</div>'+media+
+  '<div><label class="l" for="dcontent">'+lbl+'</label><textarea id="dcontent" class="field" rows="5" placeholder="Pas encore généré">'+esc(n.content)+'</textarea>'+(n.type!=='text'?'<div class="help">'+I(IC.spark,14)+'<span>Généré par l\'IA (simulé), modifiable.</span></div>':'')+'</div>'+
+  '<div><label class="l" for="dcat">Carnet</label><select id="dcat" class="field">'+opts+'</select></div>'+
+  '<div><label class="l" for="dtagq">Tags</label><div class="sel" id="dsel"></div><div class="cbx"><input id="dtagq" class="field" role="combobox" aria-expanded="false" aria-controls="dtaglist" aria-autocomplete="list" autocomplete="off" placeholder="Rechercher ou créer un tag…"><div class="list2" id="dtaglist" role="listbox" hidden></div></div></div>'+
+  (n.sugg?'<div class="card" style="padding:14px;display:flex;flex-direction:column;gap:10px"><div class="l" style="margin:0">'+I(IC.spark,14)+' Suggestions de l\'IA</div>'+(n.sugg.cat?'<div class="actions"><button class="btn" data-a="sg-cat">Créer le carnet « '+esc(n.sugg.cat)+' » et y ranger la note</button></div>':'')+(n.sugg.tag?'<div class="actions"><button class="btn" data-a="sg-tag">Créer le tag #'+esc(n.sugg.tag)+' et l\'ajouter</button></div>':'')+'<div class="actions"><button class="btn ghost" data-a="sg-no">Ignorer</button></div></div>':'')+
+  '<div class="switch"><div><b>Verrouiller ce classement</b><span>Un re-tri ne le modifiera plus.</span></div><button class="sw" role="switch" aria-checked="'+n.locked+'" aria-label="Verrouiller ce classement" data-a="dlock"><i></i></button></div>'+
+  (n.status==='pending'?'<div class="actions"><button class="btn primary" data-a="analyze" data-id="'+n.id+'">'+I(IC.spark,18)+'Analyser avec l\'IA</button></div>':'')+
+  '<div class="actions"><button class="btn danger" data-a="del" id="delbtn">Supprimer la note</button><button class="btn primary" data-a="close">Terminer</button></div>';
+ $('#ov').hidden=false;document.body.style.overflow='hidden';$('#sheet').setAttribute('aria-label','Détail de la note');dtSel();
+}
+var dtI=0,dtOpts=[];
+function dtSel(){var n=curNote();if(!n)return;$('#dsel').innerHTML=n.tags.map(function(t){return '<button type="button" data-a="dtag" data-id="'+esc(t)+'" aria-label="Retirer le tag '+esc(t)+'">#'+esc(t)+' '+I('<path d="M6 6l12 12M18 6 6 18"/>',14)+'</button>'}).join('')}
+function dtList(open){
+ var n=curNote(),inp=$('#dtagq'),box=$('#dtaglist');if(!n||!inp)return;
+ var q=norm(inp.value.replace(/^#/,'').trim());
+ dtOpts=S.tags.filter(function(t){return n.tags.indexOf(t.name)<0&&(!q||norm(t.name).indexOf(q)>-1)}).map(function(t){return {name:t.name,make:false}});
+ if(q&&!S.tags.some(function(t){return norm(t.name)===q}))dtOpts.push({name:inp.value.replace(/^#/,'').trim(),make:true});
+ if(dtI>=dtOpts.length)dtI=Math.max(0,dtOpts.length-1);
+ box.innerHTML=dtOpts.length?dtOpts.map(function(o,i){return '<div role="option" id="dto'+i+'" data-a="dtpick" data-i="'+i+'" aria-selected="'+(i===dtI)+'">'+(o.make?'Créer le tag « '+esc(o.name)+' »':'#'+esc(o.name))+'</div>'}).join(''):'<div class="none">Aucun tag disponible</div>';
+ box.hidden=!open;inp.setAttribute('aria-expanded',String(open));
+ if(open&&dtOpts.length)inp.setAttribute('aria-activedescendant','dto'+dtI);else inp.removeAttribute('aria-activedescendant');
+}
+function dtPick(i){
+ var o=dtOpts[i],n=curNote();if(!o||!n)return;
+ if(o.make){S.tags.push({name:o.name,kw:tokens(o.name)})}
+ if(n.tags.indexOf(o.name)<0)n.tags.push(o.name);
+ manual(n);var inp=$('#dtagq');inp.value='';dtI=0;dtSel();dtList(true);inp.focus();render();toast('Tag ajouté : #'+o.name);
+}
+function curNote(){return S.notes.filter(function(x){return x.id===curId})[0]}
+function manual(n){n.locked=true;n.ai=false}
+
+var ce=null;
+function openCat(id){
+ var c=id?cat(id):null;
+ ce={id:id||null,color:c?c.color:'green'};
+ modal='cat';
+ var nm=c?c.name:'Voyages',ds=c?c.desc:'Billets, réservations, itinéraires, trains et souvenirs de voyage';
+ var sw=COLORS.map(function(k){return '<button type="button" class="cat-'+k+'" data-a="ccolor" data-id="'+k+'" aria-label="'+CNAME[k]+'" aria-pressed="'+(ce.color===k)+'"><i></i></button>'}).join('');
+ $('#sheet').innerHTML='<div class="grab"></div><div class="shead"><h2>'+(c?'Modifier le carnet':'Nouveau carnet')+'</h2>'+xbtn()+'</div>'+
+  '<div><label class="l" for="cname">Nom</label><input id="cname" class="field" value="'+esc(nm)+'" maxlength="28"><div class="err" id="cerr" role="alert" hidden></div></div>'+
+  '<div><label class="l" for="cdesc">Ce qu\'elle doit contenir</label><textarea id="cdesc" class="field" rows="2">'+esc(ds)+'</textarea><div class="help">'+I(IC.spark,14)+'<span>L\'IA s\'appuie sur cette description pour classer.</span></div></div>'+
+  '<div><div class="l">Couleur</div><div class="swatches" id="sw">'+sw+'</div></div>'+
+  '<div class="actions"><button class="btn primary" data-a="csave" data-retri="1">'+I(IC.spark,18)+(c?'Enregistrer et relancer le tri':'Créer et relancer le tri')+'</button></div>'+
+  (c&&S.cats.length>1?'<div><label class="l" for="cmerge">Fusionner dans un autre carnet</label><div class="tagform" style="margin:0"><select id="cmerge" class="field" style="flex:1 1 160px">'+S.cats.filter(function(x){return x.id!==c.id}).map(function(x){return '<option value="'+x.id+'">'+esc(x.name)+'</option>'}).join('')+'</select><button type="button" class="btn" data-a="cmerge">Fusionner</button></div><div class="help"><span>Les notes de « '+esc(c.name)+' » rejoignent le carnet choisi, puis « '+esc(c.name)+' » est supprimé.</span></div></div>':'')+'<div class="actions"><button class="btn" data-a="csave">'+(c?'Enregistrer sans relancer le tri':'Créer sans relancer le tri')+'</button>'+(c?'<button class="btn danger" data-a="cdel" id="cdelbtn">Supprimer</button>':'<button class="btn ghost" data-a="close">Annuler</button>')+'</div>';
+ $('#ov').hidden=false;document.body.style.overflow='hidden';$('#sheet').setAttribute('aria-label','Carnet');
+ $('#cname').focus();
+}
+
+var syn=null;
+function synthIds(){return filtered().filter(function(n){return n.status==='ready'})}
+function filterLabel(){
+ var p=[];p.push(F.cat==='__none'?'À vérifier':F.cat?(cat(F.cat)||{name:'Toutes'}).name:'Tous les carnets');
+ F.tags.forEach(function(t){p.push('#'+t)});if(F.q.trim())p.push('« '+F.q.trim()+' »');return p.join(' · ');
+}
+function openSynth(){
+ var t=synthIds();if(!t.length){toast('Aucune note analysée à résumer');return}
+ var words=t.reduce(function(a,n){return a+(n.title+' '+n.content).split(/\s+/).length},0);
+ var excl=filtered().filter(function(n){return n.status==='pending'}).length;
+ syn={ids:t.map(function(n){return n.id}),words:words,excl:excl,label:filterLabel(),state:'confirm',mode:'short',html:'',text:''};
+ modal='synth';renderSynth();
+}
+var SMODES=[['short','Synthèse courte','Points clés par carnet',.25],['full','Document complet','Tout réorganisé, rien n\'est perdu',1],['prose','Texte rédigé','Texte suivi et structuré',.5]];
+function smode(){return SMODES.filter(function(m){return m[0]===syn.mode})[0]}
+function renderSynth(){
+ var h='<div class="grab"></div><div class="shead"><h2>'+(syn.state==='report'?smode()[1]:'Synthèse des notes affichées')+'</h2>'+xbtn()+'</div>';
+ if(syn.state==='report'&&syn.hid){var he0=(S.hist||[]).filter(function(x){return x.id===syn.hid})[0];if(he0)h+='<div><label class="l" for="htitle">Titre</label><input id="htitle" class="field" maxlength="80" value="'+esc(he0.title)+'"><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">'+(he0.carnets||[]).map(function(c){return '<span class="chip">'+esc(c)+'</span>'}).join('')+(he0.tags||[]).map(function(t){return '<span class="chip">#'+esc(t)+'</span>'}).join('')+'</div></div>'}
+ if(syn.state==='confirm'){
+  h+='<div><div class="l">Format</div><div style="display:flex;flex-direction:column;gap:6px" role="radiogroup" aria-label="Format de la synthèse">'+SMODES.map(function(m){return '<button type="button" class="row" role="radio" aria-checked="'+(syn.mode===m[0])+'" data-a="synth-mode" data-id="'+m[0]+'" style="min-height:56px;'+(syn.mode===m[0]?'border:2px solid var(--accent);background:var(--accent-soft)':'')+'"><span class="rt"><b>'+m[1]+'</b><span>'+m[2]+'</span></span></button>'}).join('')+'</div></div>'+
+   '<div class="summary"><div class="big"><b>'+syn.ids.length+'</b><span style="font-weight:600">'+(syn.ids.length>1?'notes seront résumées':'note sera résumée')+'</span></div>'+
+   '<div class="stats"><div><b>≈ '+syn.words+'</b><span>mots envoyés, texte seulement</span></div><div><b>≈ '+Math.round(syn.words*smode()[3])+'</b><span>mots produits</span></div><div><b>1</b><span>appel IA (Infomaniak, simulé)</span></div></div></div>'+
+   '<div class="help">'+I(IC.search,14)+'<span>Filtres : '+esc(syn.label)+'</span></div>'+
+   (syn.excl?'<div class="help">'+I(IC.help,14)+'<span>'+syn.excl+(syn.excl>1?' notes non analysées sont exclues.':' note non analysée est exclue.')+'</span></div>':'')+
+   '<div class="actions"><button class="btn" data-a="close">Annuler</button><button class="btn primary" data-a="synth-go">'+I(IC.spark,18)+'Générer</button></div>';
+ }else if(syn.state==='loading'){
+  h+='<div class="card busy" aria-busy="true"><div class="bar" style="width:70%"></div><div class="bar" style="width:90%"></div><div class="bar" style="width:55%"></div><div class="status">'+I(IC.spark)+'Synthèse en cours</div></div>';
+ }else{
+  h+='<div class="help" style="margin-top:0">'+I(IC.search,14)+'<span>'+esc(syn.label)+'</span></div><div class="report">'+syn.html+'</div>'+
+   (syn.fromHist?'<div class="help">'+I(IC.spark,14)+'<span>Enregistrée le '+fmtDate(syn.hdate)+'. Aucun nouvel appel IA. Si vos notes ont changé depuis, générez une nouvelle version.</span></div>':'<div class="help">'+I(IC.spark,14)+'<span>'+(syn.mode==='short'?'Synthèse':syn.mode==='full'?'Document':'Texte')+' simulé à partir de '+syn.ids.length+(syn.ids.length>1?' notes':' note')+'. Vérifiez les points importants dans les notes d\'origine. Cette synthèse est enregistrée dans l\'historique.</span></div>')+
+   '<div class="actions"><button class="btn primary" data-a="synth-copy">Copier le texte</button><button class="btn" data-a="synth-pdf">Télécharger en PDF</button></div><div class="actions">'+(syn.fromHist?'<button class="btn ghost" data-a="hist-open">Retour à l\'historique</button>':'<button class="btn ghost" data-a="close">Fermer</button>')+'</div>';
+ }
+ $('#sheet').innerHTML=h;$('#ov').hidden=false;document.body.style.overflow='hidden';$('#sheet').setAttribute('aria-label','Synthèse des notes affichées');
+}
+function histAdd(){
+ var ns=noteList(),cn=[],tc={};
+ ns.forEach(function(n){var c=cat(n.cat),nm=c?c.name:'À vérifier';if(cn.indexOf(nm)<0)cn.push(nm);n.tags.forEach(function(t){tc[t]=(tc[t]||0)+1})});
+ var tg=Object.keys(tc).sort(function(a,b){return tc[b]-tc[a]}).slice(0,6);
+ var title=smode()[1]+' · '+(cn.slice(0,2).join(', ')+(cn.length>2?' et '+(cn.length-2)+' autre'+(cn.length>3?'s':''):''));
+ (S.hist=S.hist||[]).unshift({id:uid(),date:Date.now(),mode:syn.mode,title:title,carnets:cn,tags:tg,label:syn.label,count:ns.length,html:syn.html,text:syn.text});
+ syn.hid=S.hist[0].id;
+}
+function openHist(){
+ modal='hist';var h=S.hist||[];
+ var nm=function(m){return SMODES.filter(function(x){return x[0]===m})[0][1]};
+ $('#sheet').innerHTML='<div class="grab"></div><div class="shead"><h2>Historique des synthèses</h2>'+xbtn()+'</div>'+
+  (h.length?'<div style="display:flex;flex-direction:column;gap:8px">'+h.map(function(e){return '<div style="display:flex;gap:8px;align-items:stretch"><button class="row" data-a="hist-view" data-id="'+e.id+'" style="min-height:84px;height:auto"><span class="rt"><b>'+esc(e.title||nm(e.mode))+'</b><span>'+nm(e.mode)+' · '+e.count+(e.count>1?' notes':' note')+' · '+fmtDate(e.date)+'</span><span style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">'+(e.carnets||[]).map(function(c){return '<span class="chip" style="height:26px;font-size:12px">'+esc(c)+'</span>'}).join('')+(e.tags||[]).map(function(t){return '<span class="chip" style="height:26px;font-size:12px">#'+esc(t)+'</span>'}).join('')+'</span></span></button><button class="btn danger" data-a="hist-del" data-id="'+e.id+'" aria-label="Supprimer cette synthèse" style="height:auto;width:56px;padding:0">'+I('<path d="M6 6l12 12M18 6 6 18"/>',18)+'</button></div>'}).join('')+'</div><div class="help"><span>Ouvrir une synthèse enregistrée ne consomme aucun appel IA.</span></div>':'<div class="empty"><h3>Aucune synthèse enregistrée</h3><p>Chaque synthèse générée est conservée ici.</p></div>');
+ $('#ov').hidden=false;document.body.style.overflow='hidden';$('#sheet').setAttribute('aria-label','Historique des synthèses');
+}
+function firstSentence(s){var t=String(s||'').trim().split(/(?<=[.!?])\s/)[0]||'';return t.length>120?t.slice(0,117)+'…':t}
+function noteList(){return syn.ids.map(function(id){return S.notes.filter(function(x){return x.id===id})[0]}).filter(Boolean)}
+function genFull(){
+ var ns=noteList(),groups={},order=[];
+ ns.forEach(function(n){var k=n.cat||'__none';if(!groups[k]){groups[k]=[];order.push(k)}groups[k].push(n)});
+ var nm=function(k){var c=cat(k==='__none'?null:k);return c?c.name:'À vérifier'};
+ var html='<h3>Sommaire</h3><ol>'+order.map(function(k){return '<li>'+esc(nm(k))+' ('+groups[k].length+')</li>'}).join('')+'</ol>',text='DOCUMENT · '+syn.label+'\n\nSOMMAIRE\n'+order.map(function(k,i){return (i+1)+'. '+nm(k)}).join('\n')+'\n';
+ order.forEach(function(k,i){
+  html+='<h3>'+(i+1)+'. '+esc(nm(k))+'</h3>';text+='\n'+(i+1)+'. '+nm(k).toUpperCase()+'\n';
+  groups[k].slice().sort(function(a,b){return a.date-b.date}).forEach(function(n,j){
+   var meta=TYPE_LABEL[n.type]+' · '+fmtDate(n.date)+(n.tags.length?' · '+n.tags.map(function(t){return '#'+t}).join(' '):'');
+   html+='<p><b>'+(i+1)+'.'+(j+1)+' '+esc(n.title)+'</b><br><small>'+esc(meta)+'</small><br>'+esc(n.content)+'</p>';
+   text+='\n'+(i+1)+'.'+(j+1)+' '+n.title+'\n'+meta+'\n'+n.content+'\n';
+  });
+ });
+ var tg={};ns.forEach(function(n){n.tags.forEach(function(t){tg[t]=(tg[t]||0)+1})});var ks=Object.keys(tg).sort();
+ if(ks.length){html+='<h3>Index des tags</h3><p>'+ks.map(function(t){return '#'+esc(t)+' ('+tg[t]+')'}).join(' · ')+'</p>';text+='\nINDEX DES TAGS\n'+ks.map(function(t){return '#'+t+' ('+tg[t]+')'}).join(' · ')+'\n'}
+ syn.html=html;syn.text=text;
+}
+function genProse(){
+ var ns=noteList(),groups={},order=[];
+ ns.forEach(function(n){var k=n.cat||'__none';if(!groups[k]){groups[k]=[];order.push(k)}groups[k].push(n)});
+ var nm=function(k){var c=cat(k==='__none'?null:k);return c?c.name:'À vérifier'};
+ var conn=['D\'abord, ','Ensuite, ','Par ailleurs, ','Enfin, '];
+ var intro='Ce texte reprend '+ns.length+(ns.length>1?' notes':' note')+' ('+syn.label+') et les organise en '+order.length+(order.length>1?' parties':' partie')+' : '+order.map(nm).join(', ')+'.';
+ var html='<h3>Introduction</h3><p>'+esc(intro)+'</p>',text='TEXTE · '+syn.label+'\n\nINTRODUCTION\n'+intro+'\n';
+ order.forEach(function(k,i){
+  var body=groups[k].map(function(n,j){var f=firstSentence(n.content).replace(/[.!?…]+$/,'');return (j<conn.length?conn[j]:'De plus, ')+(j===0?f.charAt(0).toLowerCase()+f.slice(1):f.charAt(0).toLowerCase()+f.slice(1))+'.'}).join(' ');
+  html+='<h3>'+(i+1)+'. '+esc(nm(k))+'</h3><p>'+esc(body)+'</p>';text+='\n'+(i+1)+'. '+nm(k).toUpperCase()+'\n'+body+'\n';
+ });
+ var rel=ns.filter(function(n){return n.tags.indexOf('à rappeler')>-1}).map(function(n){return n.title});
+ var concl=rel.length?'Points à ne pas oublier : '+rel.join(' ; ')+'.':'Aucun point n\'est marqué « à rappeler » dans cette sélection.';
+ html+='<h3>Conclusion</h3><p>'+esc(concl)+'</p>';text+='\nCONCLUSION\n'+concl+'\n';
+ syn.html=html;syn.text=text;
+}
+function genSynth(){
+ if(syn.mode==='full')return genFull();if(syn.mode==='prose')return genProse();
+ var ns=syn.ids.map(function(id){return S.notes.filter(function(x){return x.id===id})[0]}).filter(Boolean);
+ var groups={},order=[],tagc={};
+ ns.forEach(function(n){var k=n.cat||'__none';if(!groups[k]){groups[k]=[];order.push(k)}groups[k].push(n);n.tags.forEach(function(t){tagc[t]=(tagc[t]||0)+1})});
+ var top=Object.keys(tagc).sort(function(a,b){return tagc[b]-tagc[a]}).slice(0,3).map(function(t){return '#'+t+' ('+tagc[t]+')'});
+ var over='Ces '+ns.length+(ns.length>1?' notes':' note')+' se répartissent en '+order.length+(order.length>1?' carnets':' carnet')+'.'+(top.length?' Tags les plus fréquents : '+top.join(', ')+'.':'');
+ var html='<h3>Vue d\'ensemble</h3><p>'+esc(over)+'</p>',text='SYNTHÈSE · '+syn.label+'\n\n'+over+'\n';
+ order.forEach(function(k){
+  var c=cat(k==='__none'?null:k),nm=c?c.name:'À vérifier';
+  html+='<h3>'+esc(nm)+'</h3><ul>';text+='\n'+nm.toUpperCase()+'\n';
+  groups[k].forEach(function(n){var ex=firstSentence(n.content);html+='<li><b>'+esc(n.title)+'</b>'+(ex?' : '+esc(ex):'')+'</li>';text+='- '+n.title+(ex?' : '+ex:'')+'\n'});
+  html+='</ul>';
+ });
+ var rel=ns.filter(function(n){return n.tags.indexOf('à rappeler')>-1});
+ if(rel.length){html+='<h3>À rappeler</h3><ul>'+rel.map(function(n){return '<li>'+esc(n.title)+'</li>'}).join('')+'</ul>';text+='\nÀ RAPPELER\n'+rel.map(function(n){return '- '+n.title}).join('\n')+'\n'}
+ syn.html=html;syn.text=text;
+}
+function copySynth(){
+ var t=syn.text,done=function(){toast('Copié dans le presse-papiers')},fail=function(){toast('Copie impossible : sélectionnez le texte du rapport')};
+ try{navigator.clipboard.writeText(t).then(done,fail)}catch(e){fail()}
+}
+var recap=null;
+function openRecap(r,label){
+ recap={r:r,label:label};modal='recap';renderRecap();
+}
+function renderRecap(){
+ var r=recap.r,live=r.items.filter(function(i){return !i.undone});
+ var rows=live.slice(0,50).map(function(i){
+  var n=S.notes.filter(function(x){return x.id===i.id})[0];if(!n)return '';
+  var chips='';
+  if(i.from.cat!==i.to.cat)chips+=catChip(i.from.cat)+I(IC.arrow,16)+catChip(i.to.cat);
+  var add=i.to.tags.filter(function(t){return i.from.tags.indexOf(t)<0});
+  if(add.length)chips+=(chips?'':'')+add.map(function(t){return '<span class="chip">+ #'+esc(t)+'</span>'}).join('');
+  return '<div class="mv"><div class="mt">'+esc(n.title)+'</div><div class="mr"><div class="mc">'+chips+'</div><button class="btn ghost" style="height:44px;padding:0 8px" data-a="undo-one" data-id="'+i.id+'">Annuler</button></div></div>';
+ }).join('');
+ $('#sheet').innerHTML='<div class="grab"></div><div class="shead"><h2>Re-tri terminé</h2>'+xbtn()+'</div>'+
+  '<div class="summary"><div class="big"><b>'+live.length+'</b><span style="font-weight:600">'+(live.length>1?'notes modifiées':'note modifiée')+' '+esc(recap.label)+'</span></div>'+
+  '<div class="stats"><div><b>'+r.examined+'</b><span>notes examinées</span></div><div><b>'+r.locked+'</b><span>verrouillées, laissées telles quelles</span></div></div></div>'+
+  (live.length?'<div style="font-weight:600">Notes modifiées</div><div style="display:flex;flex-direction:column;gap:10px">'+rows+'</div>':'<div class="help"><span>Aucune note ne change. Ajustez la description pour guider le classement.</span></div>')+
+  '<div class="actions"><button class="btn" data-a="undo-all"'+(live.length?'':' disabled')+'>Tout annuler</button><button class="btn primary" data-a="close">'+I(IC.check,18)+'Garder le résultat</button></div>';
+ $('#ov').hidden=false;document.body.style.overflow='hidden';$('#sheet').setAttribute('aria-label','Récapitulatif du re-tri');
+}
+function undo(i){
+ var n=S.notes.filter(function(x){return x.id===i.id})[0];
+ if(n){n.cat=i.from.cat;n.tags=i.from.tags.slice()}i.undone=true;
+}
+
+/* ---------- événements ---------- */
+document.addEventListener('click',function(e){
+ var el=e.target.closest('[data-a]');
+ if(!el){if(e.target.id==='ov')closeModal();return}
+ var a=el.getAttribute('data-a'),id=el.getAttribute('data-id');
+ switch(a){
+  case 'tab':setTab(id);break;
+  case 'sg-cat':var nc=curNote();if(nc&&nc.sugg&&nc.sugg.cat){var cn=nc.sugg.cat,ex=S.cats.filter(function(c){return norm(c.name)===norm(cn)})[0];if(!ex){ex={id:uid(),name:cn,desc:'Créé sur suggestion de l\'IA : à compléter pour guider le classement.',color:COLORS[S.cats.length%COLORS.length],extra:[]};S.cats.push(ex)}nc.cat=ex.id;nc.sugg.cat=null;if(!nc.sugg.tag)nc.sugg=null;manual(nc);openDetail(curId);render();toast('Carnet « '+cn+' » créé')}break;
+  case 'sg-tag':var nt=curNote();if(nt&&nt.sugg&&nt.sugg.tag){var tn0=nt.sugg.tag;if(!S.tags.some(function(t){return norm(t.name)===norm(tn0)}))S.tags.push({name:tn0,kw:tokens(tn0)});if(nt.tags.indexOf(tn0)<0)nt.tags.push(tn0);nt.sugg.tag=null;if(!nt.sugg.cat)nt.sugg=null;manual(nt);openDetail(curId);render();toast('Tag #'+tn0+' créé')}break;
+  case 'sg-no':var ns=curNote();if(ns){ns.sugg=null;openDetail(curId);render()}break;
+  case 'merge-open':openMerge(id);break;
+  case 'merge-go':mgGo();break;
+  case 'merge-undo':if(mgSnap){var o=JSON.parse(mgSnap);S.cats=o.cats;S.tags=o.tags;S.notes=o.notes;S.defCat=o.defCat;mgSnap=null;closeModal();render();toast('Fusion annulée')}break;
+  case 'tag-edit':openTag(id);break;
+  case 'tsave':var nm=$('#tname').value.trim().replace(/^#/,''),te2=$('#terr');if(!nm){te2.textContent='Saisissez un nom de tag.';te2.hidden=false;break}
+   if(norm(nm)!==norm(te)&&S.tags.some(function(t){return norm(t.name)===norm(nm)})){te2.textContent='Ce tag existe déjà. Utilisez « Fusionner ».';te2.hidden=false;break}
+   var tg0=S.tags.filter(function(t){return t.name===te})[0];if(tg0){tg0.name=nm;tg0.kw=tokens(nm)}renameTag(te,nm);closeModal();render();toast('Tag modifié');break;
+  case 'tmerge':var to=$('#tmerge').value;renameTag(te,to);S.tags=S.tags.filter(function(t){return t.name!==te});closeModal();render();toast('#'+te+' fusionné dans #'+to);break;
+  case 'tdel':var tb=$('#tdelbtn');if(!tb.getAttribute('data-c')){tb.setAttribute('data-c','1');tb.textContent='Confirmer la suppression';break}
+   S.notes.forEach(function(n){n.tags=n.tags.filter(function(x){return x!==te})});S.tags=S.tags.filter(function(t){return t.name!==te});F.tags=F.tags.filter(function(x){return x!==te});closeModal();render();toast('Tag supprimé');break;
+  case 'cmerge':var tid=$('#cmerge').value,sid=ce.id;S.notes.forEach(function(n){if(n.cat===sid)n.cat=tid});S.cats=S.cats.filter(function(c){return c.id!==sid});if(S.defCat===sid)S.defCat=tid;if(F.cat===sid)F.cat=tid;closeModal();render();toast('Carnets fusionnés dans « '+cat(tid).name+' »');break;
+  case 'key-test':toast(KEYS[id]?'Connexion simulée : clé reçue (démo)':'Saisissez d\'abord une clé');break;
+  case 'add':openAdd();break;
+  case 'close':closeModal();break;
+  case 'reset':S=seed();F={q:'',cat:null,tags:[]};$('#q').value='';render();toast('Démo réinitialisée');break;
+  case 'qclear':F.q='';$('#q').value='';renderHome();$('#q').focus();break;
+  case 'clearf':F={q:'',cat:null,tags:[]};$('#q').value='';renderHome();break;
+  case 'fcat':F.cat=id||null;renderHome();break;
+  case 'ftag':var k=F.tags.indexOf(id);if(k>-1)F.tags.splice(k,1);else F.tags.push(id);renderHome();break;
+  case 'open':openDetail(id);break;
+  case 'synth':openSynth();break;
+  case 'synth-go':syn.state='loading';renderSynth();setTimeout(function(){if(modal!=='synth')return;genSynth();syn.state='report';histAdd();S.hist=S.hist.slice(0,30);S.calls=(S.calls||0)+1;render();renderSynth()},1400);break;
+  case 'synth-mode':syn.mode=id;renderSynth();break;
+  case 'hist-open':openHist();break;
+  case 'hist-view':var he=(S.hist||[]).filter(function(x){return x.id===id})[0];if(he){syn={hid:he.id,title:he.title,carnets:he.carnets||[],tags:he.tags||[],ids:[],mode:he.mode,label:he.label,state:'report',html:he.html,text:he.text,fromHist:true,hdate:he.date,count:he.count};syn.ids=new Array(he.count);modal='synth';renderSynth()}break;
+  case 'hist-del':S.hist=(S.hist||[]).filter(function(x){return x.id!==id});save();render();openHist();break;
+  case 'synth-copy':copySynth();break;
+  case 'synth-pdf':toast('Démo : le téléchargement est bloqué ici. Dans l\'application, le PDF est généré sur le serveur.');break;
+  case 'mode':S.mode=id;render();toast(id==='manual'?"Analyse manuelle : rien n'est envoyé à l'IA tant que vous ne le demandez pas":'Analyse automatique');break;
+  case 'analyze':analyze(id);if(modal==='detail')closeModal();break;
+  case 'analyze-all':S.notes.filter(function(n){return n.status==='pending'}).forEach(function(n){analyze(n.id)});break;
+  case 'addtab':stopRec();add.rec=null;add.tab=id;renderAdd();break;
+  case 'add-text':var t=$('#ntext').value.trim();if(!t){$('#ntext').focus();break}closeModal();addNote({type:'text',content:t,cat:add.cat});break;
+  case 'rec-start':add.rec={on:true,sec:0};renderAdd();timers.rec=setInterval(function(){add.rec.sec++;if(add.rec.sec>=SET().maxSec){var s=add.rec.sec;stopRec();closeModal();addNote({type:'voice',dur:s,cat:add.cat});toast('Durée maximale de 2 minutes atteinte');return}var r=$('#rtime');if(r)r.textContent=fmtDur(add.rec.sec)},1000);break;
+  case 'rec-stop':var sec=add.rec.sec;stopRec();closeModal();addNote({type:'voice',dur:Math.max(sec,2),cat:add.cat});break;
+  case 'img-sample':add.img='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="480" height="300"><rect width="480" height="300" fill="#f4f5f7"/><rect x="24" y="24" width="432" height="252" rx="10" fill="#fff" stroke="#b5bdca" stroke-width="3"/><g fill="none" stroke="#0b6e6e" stroke-width="3"><rect x="48" y="60" width="120" height="180" rx="6"/><rect x="180" y="60" width="120" height="180" rx="6"/><rect x="312" y="60" width="120" height="180" rx="6"/></g><g fill="#e6a23c"><rect x="60" y="80" width="40" height="32" rx="3"/><rect x="192" y="80" width="40" height="32" rx="3"/><rect x="192" y="124" width="40" height="32" rx="3"/><rect x="324" y="80" width="40" height="32" rx="3"/></g></svg>');renderAdd();break;
+  case 'add-img':if(add.img){var im=add.img;closeModal();addNote({type:'image',img:im,cat:add.cat})}break;
+  case 'play':var n0=curNote();if(!n0)break;if(timers.pl){clearInterval(timers.pl);delete timers.pl;break}
+   timers.pl=setInterval(function(){pl.t++;if(pl.t>=n0.dur){pl.t=0;clearInterval(timers.pl);delete timers.pl}var b=$('#pbar'),tm=$('#ptime');if(b)b.style.width=(pl.t/n0.dur*100)+'%';if(tm)tm.textContent=fmtDur(pl.t)},1000);break;
+  case 'dtag':var n1=curNote(),i1=n1.tags.indexOf(id);if(i1>-1)n1.tags.splice(i1,1);else n1.tags.push(id);manual(n1);dtSel();dtList(!$('#dtaglist').hidden);render();break;
+  case 'dtpick':dtPick(+el.getAttribute('data-i'));break;
+  case 'dlock':var n2=curNote();n2.locked=!n2.locked;if(n2.locked)n2.ai=false;openDetail(curId);render();break;
+  case 'del':var b=$('#delbtn');if(b.getAttribute('data-c')){var di=curId;closeModal();S.notes=S.notes.filter(function(x){return x.id!==di});render();toast('Note supprimée')}else{b.setAttribute('data-c','1');b.textContent='Confirmer la suppression'}break;
+  case 'cat-new':openCat();break;
+  case 'cat-edit':openCat(id);break;
+  case 'ccolor':ce.color=id;[].forEach.call(document.querySelectorAll('#sw button'),function(x){x.setAttribute('aria-pressed',x.getAttribute('data-id')===id)});break;
+  case 'csave':saveCat(el.getAttribute('data-retri')==='1');break;
+  case 'cdel':var cb=$('#cdelbtn');if(cb.getAttribute('data-c')){var cid=ce.id;S.notes.forEach(function(n){if(n.cat===cid){n.cat=null}});S.cats=S.cats.filter(function(c){return c.id!==cid});if(S.defCat===cid)S.defCat=null;if(F.cat===cid)F.cat=null;closeModal();render();toast('Carnet supprimée, ses notes passent en « à vérifier »')}else{cb.setAttribute('data-c','1');cb.textContent='Confirmer la suppression'}break;
+  case 'tag-add':e.preventDefault();addTag(el.getAttribute('data-retri')==='1');break;
+  case 'undo-one':recap.r.items.forEach(function(i){if(i.id===id)undo(i)});render();renderRecap();break;
+  case 'undo-all':recap.r.items.forEach(undo);render();closeModal();toast('Re-tri annulé');break;
+ }
+});
+document.addEventListener('keydown',function(e){
+ if(e.key==='Escape'&&!$('#ov').hidden){closeModal();return}
+ if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.card[data-a="open"]')){e.preventDefault();openDetail(e.target.getAttribute('data-id'))}
+});
+document.addEventListener('input',function(e){if(e.target.id==='htitle'){var h1=(S.hist||[]).filter(function(x){return x.id===syn.hid})[0];if(h1){h1.title=e.target.value;save()}}if(e.target.dataset&&e.target.dataset.key){KEYS[e.target.dataset.key]=e.target.value}
+ var t=e.target;
+ if(t.id==='q'){F.q=t.value;renderHome()}
+ else if(t.id==='ntext'){add.text=t.value}
+ else if(t.id==='dtitle'){curNote().title=t.value;manualText();renderHome();save()}
+ else if(t.id==='dcontent'){curNote().content=t.value;renderHome();save()}
+});
+function manualText(){}
+document.addEventListener('input',function(e){if(e.target.id==='dtagq'){dtI=0;dtList(true)}});
+document.addEventListener('focusin',function(e){if(e.target.id==='dtagq')dtList(true)});
+document.addEventListener('mousedown',function(e){var b=$('#dtaglist');if(b&&!b.hidden&&!e.target.closest('.cbx')){dtList(false)}});
+document.addEventListener('keydown',function(e){
+ if(e.target.id!=='dtagq')return;
+ if(e.key==='ArrowDown'){e.preventDefault();dtI=Math.min(dtI+1,dtOpts.length-1);dtList(true)}
+ else if(e.key==='ArrowUp'){e.preventDefault();dtI=Math.max(dtI-1,0);dtList(true)}
+ else if(e.key==='Enter'){e.preventDefault();if(dtOpts.length)dtPick(dtI)}
+ else if(e.key==='Escape'){if(!$('#dtaglist').hidden){e.stopPropagation();dtList(false)}}
+});
+document.addEventListener('change',function(e){
+ var t=e.target;
+ if(t.classList&&t.classList.contains('mgs')||t.id==='mgt'){mgUpdate()}
+ else if(t.id==='addcat'){add.cat=t.value}
+ else if(t.dataset&&t.dataset.prov){SET().prov[t.dataset.prov]=t.value;save();toast('Fournisseur : '+PROV[t.value])}
+ else if(t.id==='pr-cat'||t.id==='pr-tag'){SET().propose[t.id.slice(3)]=t.value==='1';save();toast(t.value==='1'?'Propositions activées':'Mode strict')}
+ else if(t.id==='recours'){SET().recours=t.value;save()}
+ else if(t.id==='maxsec'){SET().maxSec=+t.value;save();toast('Vocaux limités à '+fmtDur(+t.value))}
+ else if(t.id==='defcat'){S.defCat=t.value||null;save();renderCats()}
+ else if(t.id==='dcat'){var n=curNote();n.cat=t.value||null;manual(n);openDetail(curId);render()}
+ else if(t.id==='file'&&t.files&&t.files[0]){
+  var r=new FileReader();r.onload=function(){var im=new Image();im.onload=function(){try{var k=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);add.img=c.toDataURL('image/jpeg',.8)}catch(x){add.img=r.result}renderAdd()};im.onerror=function(){add.img=r.result;renderAdd()};im.src=r.result};r.readAsDataURL(t.files[0]);
+ }
+});
+$('#tagform').addEventListener('submit',function(e){e.preventDefault();addTag(true)});
+
+function saveCat(doRetri){
+ var name=$('#cname').value.trim(),desc=$('#cdesc').value.trim(),er=$('#cerr');
+ if(!name){er.textContent='Donnez un nom au carnet.';er.hidden=false;$('#cname').focus();return}
+ var dup=S.cats.some(function(c){return norm(c.name)===norm(name)&&c.id!==ce.id});
+ if(dup){er.textContent='Un carnet porte déjà ce nom.';er.hidden=false;$('#cname').focus();return}
+ var c=ce.id?cat(ce.id):null;
+ if(c){c.name=name;c.desc=desc;c.color=ce.color}else{c={id:uid(),name:name,desc:desc,color:ce.color,extra:[]};S.cats.push(c)}
+ if(doRetri){var r=retri({cat:true});render();openRecap(r,'après la mise à jour de « '+name+' »')}
+ else{closeModal();render();toast('Carnet enregistré')}
+}
+var mg=null,mgSnap=null;
+function mgItems(){return mg.kind==='cat'?S.cats.map(function(c){return {id:c.id,name:c.name,n:S.notes.filter(function(x){return x.cat===c.id}).length}}):S.tags.map(function(t){return {id:t.name,name:'#'+t.name,n:S.notes.filter(function(x){return x.tags.indexOf(t.name)>-1}).length}})}
+function openMerge(kind){
+ mg={kind:kind};modal='merge';var it=mgItems(),w=kind==='cat'?'carnets':'tags';
+ $('#sheet').innerHTML='<div class="grab"></div><div class="shead"><h2>Fusionner des '+w+'</h2>'+xbtn()+'</div>'+
+  '<div><div class="l">1. Cochez ceux à fusionner</div><div style="display:flex;flex-direction:column;gap:6px">'+it.map(function(x){return '<label class="row" style="min-height:48px;cursor:pointer"><input type="checkbox" class="mgs" value="'+esc(x.id)+'" style="width:22px;height:22px"><span class="rt"><b>'+esc(x.name)+'</b></span><span class="n">'+x.n+'</span></label>'}).join('')+'</div></div>'+
+  '<div><label class="l" for="mgt">2. Les regrouper dans</label><select id="mgt" class="field">'+it.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join('')+'</select></div>'+
+  '<div class="help" id="mgp" role="status"><span>Cochez au moins un élément.</span></div>'+
+  '<div class="actions"><button class="btn primary" data-a="merge-go" id="mgbtn" disabled>Fusionner</button><button class="btn" data-a="close">Annuler</button></div>';
+ $('#ov').hidden=false;document.body.style.overflow='hidden';$('#sheet').setAttribute('aria-label','Fusion');
+}
+function mgUpdate(){
+ var src=[].slice.call(document.querySelectorAll('.mgs:checked')).map(function(x){return x.value}),t=$('#mgt').value;
+ src=src.filter(function(x){return x!==t});var it=mgItems();
+ var nn=it.filter(function(x){return src.indexOf(x.id)>-1}).reduce(function(a,x){return a+x.n},0);
+ var tn=(it.filter(function(x){return x.id===t})[0]||{}).name;
+ $('#mgp').innerHTML=src.length?'<span>'+src.length+(src.length>1?' éléments seront supprimés':' élément sera supprimé')+' ; '+nn+(nn>1?' notes rejoignent':' note rejoint')+' '+esc(tn)+'. Aucun appel IA.</span>':'<span>Cochez au moins un élément (différent de la cible).</span>';
+ $('#mgbtn').disabled=!src.length;return src;
+}
+function mgGo(){
+ var src=mgUpdate(),t=$('#mgt').value;if(!src.length)return;
+ mgSnap=JSON.stringify({cats:S.cats,tags:S.tags,notes:S.notes,defCat:S.defCat||null});var cnt=0;
+ if(mg.kind==='cat'){S.notes.forEach(function(n){if(src.indexOf(n.cat)>-1){n.cat=t;cnt++}});S.cats=S.cats.filter(function(c){return src.indexOf(c.id)<0});if(src.indexOf(S.defCat)>-1)S.defCat=t;if(src.indexOf(F.cat)>-1)F.cat=t}
+ else{src.forEach(function(a){S.notes.forEach(function(n){if(n.tags.indexOf(a)>-1)cnt++});renameTag(a,t)});S.tags=S.tags.filter(function(x){return src.indexOf(x.name)<0})}
+ render();modal='merge';
+ $('#sheet').innerHTML='<div class="grab"></div><div class="shead"><h2>Fusion terminée</h2>'+xbtn()+'</div><p>'+src.length+(src.length>1?' éléments fusionnés':' élément fusionné')+', '+cnt+(cnt>1?' notes concernées.':' note concernée.')+'</p><div class="actions"><button class="btn" data-a="merge-undo">Annuler la fusion</button><button class="btn primary" data-a="close">Terminer</button></div>';
+}
+var te=null;
+function openTag(name){
+ te=name;modal='tag';
+ var others=S.tags.filter(function(t){return t.name!==name});
+ var k=S.notes.filter(function(n){return n.tags.indexOf(name)>-1}).length;
+ $('#sheet').innerHTML='<div class="grab"></div><div class="shead"><h2>Modifier le tag</h2>'+xbtn()+'</div>'+
+  '<div><label class="l" for="tname">Nom</label><input id="tname" class="field" value="'+esc(name)+'" maxlength="24"><div class="err" id="terr" role="alert" hidden></div><div class="help"><span>'+k+(k>1?' notes portent':' note porte')+' ce tag.</span></div></div>'+
+  (others.length?'<div><label class="l" for="tmerge">Fusionner dans un autre tag</label><div class="tagform" style="margin:0"><select id="tmerge" class="field" style="flex:1 1 160px">'+others.map(function(t){return '<option value="'+esc(t.name)+'">#'+esc(t.name)+'</option>'}).join('')+'</select><button type="button" class="btn" data-a="tmerge">Fusionner</button></div></div>':'')+
+  '<div class="actions"><button class="btn primary" data-a="tsave">Enregistrer</button><button class="btn danger" data-a="tdel" id="tdelbtn">Supprimer</button></div>';
+ $('#ov').hidden=false;document.body.style.overflow='hidden';$('#sheet').setAttribute('aria-label','Tag');$('#tname').focus();
+}
+function renameTag(a,b){S.notes.forEach(function(n){var i=n.tags.indexOf(a);if(i>-1){if(n.tags.indexOf(b)>-1)n.tags.splice(i,1);else n.tags[i]=b}});var k=F.tags.indexOf(a);if(k>-1)F.tags[k]=b}
+function addTag(doRetri){
+ var inp=$('#newtag'),name=inp.value.trim().replace(/^#/,''),er=$('#tagerr');
+ if(!name){er.textContent='Saisissez un nom de tag.';er.hidden=false;inp.focus();return}
+ if(S.tags.some(function(t){return norm(t.name)===norm(name)})){er.textContent='Ce tag existe déjà.';er.hidden=false;return}
+ er.hidden=true;
+ S.tags.push({name:name,kw:tokens(name)});inp.value='';
+ if(doRetri){var r=retri({tag:name});render();openRecap(r,'après l\'ajout du tag #'+name)}
+ else{render();toast('Tag ajouté')}
+}
+
+/* ---------- démarrage ---------- */
+S=load();
+S.notes.forEach(function(n){if(n.status==='analyzing'){if(n.type==='voice'&&!n.content){n.content=VOICES[0]}finish(n)}});
+setTab('home');render();
+})();
+</script>

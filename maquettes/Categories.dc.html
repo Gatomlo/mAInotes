@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Carnets et tags</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F5F7; position: relative; overflow: hidden; font-family: 'Instrument Sans', system-ui, sans-serif; color: #17202E; display: flex; flex-direction: column">
+
+<div style="padding: 24px 20px 12px; display: flex; align-items: center; justify-content: space-between">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 30px; font-weight: 700; letter-spacing: -0.5px">Carnets</h1>
+<button aria-label="Ajouter un carnet" style="width: 48px; height: 48px; border-radius: 50%; border: 0; background: #0B6E6E; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+
+<div style="margin: 0 20px; padding: 4px; background: #E8EBF0; border-radius: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px">
+<button aria-pressed="true" style="height: 44px; border-radius: 11px; border: 0; background: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; color: #17202E">Carnets</button>
+<button style="height: 44px; border-radius: 11px; border: 0; background: transparent; font-family: inherit; font-size: 15px; color: #5B6678">Tags</button>
+</div>
+
+<div style="padding: 14px 20px 0; display: flex; flex-direction: column; gap: 10px">
+<div style="background: #E1F1F0; border-radius: 16px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; color: #0B6E6E"><span>Carnet par défaut<br><b style="font-size: 16px">Maison</b></span><span style="display: flex; align-items: center; gap: 4px; font-weight: 600">Changer <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div>
+<div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 12px"><span style="width: 14px; height: 14px; border-radius: 50%; background: #2F5FD0; flex: none"></span><div style="flex: 1; min-width: 0"><div style="font-size: 16px; font-weight: 600">Travail</div><div style="font-size: 13px; color: #5B6678; margin-top: 2px">Réunions, projets, échanges professionnels</div></div><div style="font-size: 15px; color: #5B6678">41</div></div>
+<div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 12px"><span style="width: 14px; height: 14px; border-radius: 50%; background: #B7791F; flex: none"></span><div style="flex: 1; min-width: 0"><div style="font-size: 16px; font-weight: 600">Maison</div><div style="font-size: 13px; color: #5B6678; margin-top: 2px">Travaux, rendez-vous, vie quotidienne</div></div><div style="font-size: 15px; color: #5B6678">33</div></div>
+<div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 12px"><span style="width: 14px; height: 14px; border-radius: 50%; background: #7C4DCC; flex: none"></span><div style="flex: 1; min-width: 0"><div style="font-size: 16px; font-weight: 600">Idées</div><div style="font-size: 13px; color: #5B6678; margin-top: 2px">Projets, inspirations, envies</div></div><div style="font-size: 15px; color: #5B6678">24</div></div>
+<div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 12px"><span style="width: 14px; height: 14px; border-radius: 50%; background: #B8446B; flex: none"></span><div style="flex: 1; min-width: 0"><div style="font-size: 16px; font-weight: 600">Administratif</div><div style="font-size: 13px; color: #5B6678; margin-top: 2px">Factures, courriers, démarches</div></div><div style="font-size: 15px; color: #5B6678">26</div></div>
+</div>
+
+<div style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: rgba(23, 32, 46, 0.5)"></div>
+
+<div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 14px">
+<div style="width: 44px; height: 5px; border-radius: 3px; background: #D3D8E0; align-self: center"></div>
+<div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 22px; font-weight: 700">Nouveau carnet</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="nom" style="font-size: 14px; font-weight: 600">Nom</label>
+<input id="nom" type="text" value="Voyages" style="height: 48px; box-sizing: border-box; border: 1px solid #B5BDCA; border-radius: 12px; padding: 0 14px; font-family: inherit; font-size: 16px; color: #17202E; background: #FFFFFF">
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="desc" style="font-size: 14px; font-weight: 600">Ce qu'elle doit contenir</label>
+<textarea id="desc" rows="2" style="box-sizing: border-box; border: 1px solid #B5BDCA; border-radius: 12px; padding: 12px 14px; font-family: inherit; font-size: 16px; line-height: 1.4; color: #17202E; resize: none; background: #FFFFFF">Billets, réservations, idées d'itinéraires et souvenirs de voyage</textarea>
+<div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5B6678"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0B6E6E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>L'IA s'appuie sur cette description pour classer.</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 14px; font-weight: 600">Couleur</div>
+<div style="display: flex; gap: 4px">
+<button aria-label="Vert" aria-pressed="true" style="width: 48px; height: 48px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center"><span style="width: 32px; height: 32px; border-radius: 50%; background: #1F7A4D; box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px #17202E; display: block"></span></button>
+<button aria-label="Bleu" style="width: 48px; height: 48px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center"><span style="width: 32px; height: 32px; border-radius: 50%; background: #2F5FD0; display: block"></span></button>
+<button aria-label="Violet" style="width: 48px; height: 48px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center"><span style="width: 32px; height: 32px; border-radius: 50%; background: #7C4DCC; display: block"></span></button>
+<button aria-label="Rose" style="width: 48px; height: 48px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center"><span style="width: 32px; height: 32px; border-radius: 50%; background: #B8446B; display: block"></span></button>
+<button aria-label="Ocre" style="width: 48px; height: 48px; border: 0; background: transparent; display: flex; align-items: center; justify-content: center"><span style="width: 32px; height: 32px; border-radius: 50%; background: #B7791F; display: block"></span></button>
+</div>
+</div>
+
+<a href="Retri.dc.html" style="height: 54px; border-radius: 14px; background: #0B6E6E; color: #FFFFFF; font-size: 16px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>Créer et relancer le tri</a>
+<button style="height: 48px; border: 0; background: transparent; font-family: inherit; font-size: 15px; font-weight: 500; color: #5B6678">Créer sans relancer le tri</button>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

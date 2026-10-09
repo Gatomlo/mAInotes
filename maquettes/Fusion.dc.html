@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fusionner des tags</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 640px; box-sizing: border-box; background: rgba(23,32,46,0.45); display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; font-family: 'Instrument Sans', system-ui, sans-serif; color: #17202E">
+<div style="background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 12px 20px 24px; display: flex; flex-direction: column; gap: 16px">
+<div style="width: 40px; height: 4px; border-radius: 2px; background: #D3D8E0; align-self: center"></div>
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 22px; font-weight: 600">Modifier le tag</h1>
+<div><div style="font-size: 14px; font-weight: 600; margin-bottom: 6px">Nom</div><div style="height: 48px; border: 1px solid #B5BDCA; border-radius: 12px; display: flex; align-items: center; padding: 0 14px; font-size: 16px">devis</div><div style="font-size: 13px; color: #5B6678; margin-top: 6px">4 notes portent ce tag.</div></div>
+<div><div style="font-size: 14px; font-weight: 600; margin-bottom: 6px">Fusionner dans un autre tag</div>
+<div style="display: flex; gap: 8px"><div style="flex: 1; height: 48px; border: 1px solid #B5BDCA; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-size: 16px"><span>#devis-toiture</span><span style="color: #5B6678"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></div><div style="height: 48px; padding: 0 16px; border-radius: 14px; border: 1px solid #B5BDCA; display: flex; align-items: center; font-size: 15px; font-weight: 600">Fusionner</div></div>
+<div style="font-size: 13px; line-height: 1.4; color: #5B6678; margin-top: 6px">Les 4 notes recevront #devis-toiture, puis #devis sera supprimé. Cette action peut être annulée juste après.</div></div>
+<div style="display: flex; gap: 10px"><a href="Main.dc.html" style="flex: 1; height: 52px; border-radius: 14px; background: #0B6E6E; color: #FFFFFF; text-decoration: none; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center">Enregistrer</a><a href="Main.dc.html" style="flex: 1; height: 52px; border-radius: 14px; border: 1px solid #B3261E; color: #B3261E; text-decoration: none; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center">Supprimer</a></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":640}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

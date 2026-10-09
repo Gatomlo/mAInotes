@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Ajout d'une note</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F4F5F7; display: flex; flex-direction: column; overflow: hidden; font-family: 'Instrument Sans', system-ui, sans-serif; color: #17202E">
+
+<div style="height: 64px; flex: none; display: flex; align-items: center; padding: 0 8px; position: relative">
+<a href="Main.dc.html" aria-label="Fermer" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #17202E; text-decoration: none"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></a>
+<h1 style="margin: 0; position: absolute; left: 0; right: 0; text-align: center; pointer-events: none; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 20px; font-weight: 600">Nouvelle note</h1>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 8px 20px 0">
+<button style="height: 76px; border-radius: 16px; border: 1px solid #E2E6EC; background: #FFFFFF; color: #17202E; font-family: inherit; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16 5l3 3L8 19l-4 1z"/></svg>Écrire</button>
+<button aria-pressed="true" style="height: 76px; border-radius: 16px; border: 2px solid #0B6E6E; background: #E1F1F0; color: #0B6E6E; font-family: inherit; font-size: 14px; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Parler</button>
+<button style="height: 76px; border-radius: 16px; border: 1px solid #E2E6EC; background: #FFFFFF; color: #17202E; font-family: inherit; font-size: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-5-5-8 8"/></svg>Image</button>
+</div>
+
+<div style="margin: 16px 20px 0"><div style="font-size: 14px; font-weight: 600; margin-bottom: 6px">Carnet de destination</div><div style="height: 48px; border: 1px solid #B5BDCA; border-radius: 12px; background: #FFFFFF; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-size: 16px"><span style="display: flex; align-items: center; gap: 8px"><span style="width: 10px; height: 10px; border-radius: 50%; background: #0B6E6E"></span>Maison <span style="font-size: 13px; color: #5B6678">· par défaut</span></span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></div></div>
+
+<div style="margin: 16px 20px 0; background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 24px; padding: 28px 20px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: #B3261E"><span style="width: 10px; height: 10px; border-radius: 50%; background: #B3261E"></span>Enregistrement en cours</div>
+<div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 64px; font-weight: 700; letter-spacing: -1px; line-height: 1">0:48</div>
+<div style="font-size: 14px; color: #5B6678; margin-top: -6px">sur 2:00 maximum, arrêt automatique</div>
+<svg width="300" height="84" viewBox="0 0 300 84" fill="none" aria-hidden="true"><path d="M6 36v12M18 28v28M30 20v44M42 32v20M54 14v56M66 30v24M78 22v40M90 34v16M102 10v64M114 26v32M126 18v48M138 32v20M150 24v36M162 12v60M174 30v24M186 20v44M198 34v16M210 28v28M222 38v8M234 42v0M246 42v0M258 42v0M270 42v0M282 42v0M294 42v0" stroke="#0B6E6E" stroke-width="5" stroke-linecap="round"/></svg>
+<div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 8px">
+<button style="width: 76px; height: 56px; border: 0; background: transparent; font-family: inherit; font-size: 15px; color: #5B6678">Annuler</button>
+<button aria-label="Terminer l'enregistrement" style="width: 84px; height: 84px; border-radius: 50%; border: 0; background: #0B6E6E; color: #FFFFFF; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(11, 110, 110, 0.35)"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg></button>
+<button aria-label="Mettre en pause" style="width: 56px; height: 56px; margin: 0 10px 0 10px; border-radius: 50%; border: 1px solid #E2E6EC; background: #FFFFFF; color: #17202E; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.5"/><rect x="14" y="5" width="4" height="14" rx="1.5"/></svg></button>
+</div>
+</div>
+
+<div style="margin: 16px 20px 0; display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; color: #5B6678">
+<span style="color: #0B6E6E; flex: none; margin-top: 1px; display: flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg></span>
+<span>Dès l'arrêt, la note est transcrite puis classée automatiquement. Vous pourrez tout corriger ensuite.</span>
+</div>
+
+<div style="margin: auto 20px 28px">
+<button style="width: 100%; height: 52px; border-radius: 14px; border: 1px solid #B5BDCA; background: transparent; font-family: inherit; font-size: 15px; font-weight: 500; color: #17202E; display: flex; align-items: center; justify-content: center; gap: 8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg>Importer un fichier audio</button>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

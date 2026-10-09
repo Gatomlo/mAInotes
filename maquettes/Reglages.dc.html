@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Réglages IA</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 2420px; box-sizing: border-box; background: #F4F5F7; display: flex; flex-direction: column; overflow: hidden; font-family: 'Instrument Sans', system-ui, sans-serif; color: #17202E">
+
+<div style="height: 64px; flex: none; display: flex; align-items: center; padding: 0 8px">
+<a href="Categories.dc.html" aria-label="Retour" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #17202E; text-decoration: none"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></a>
+<h1 style="margin: 0 0 0 4px; font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 24px; font-weight: 700">Réglages IA</h1>
+</div>
+
+<div style="padding: 0 20px; display: flex; flex-direction: column; gap: 14px">
+
+<div style="background: #E1F1F0; border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px; font-size: 14px; line-height: 1.45; color: #17202E">
+<span style="color: #0B6E6E; margin-top: 1px; display: flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></span>
+<span>Vos vocaux et vos photos restent chez Infomaniak, sauf si vous choisissez un autre fournisseur ci-dessous.</span>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 16px; font-weight: 600">Fournisseur par fonction</div>
+<div>
+<label for="f-trans" style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px">Transcription des vocaux</label>
+<select id="f-trans" style="width: 100%; height: 48px; box-sizing: border-box; border: 1px solid #B5BDCA; border-radius: 12px; padding: 0 12px; font-family: inherit; font-size: 16px; color: #17202E; background: #FFFFFF"><option>Infomaniak</option><option>Gemini</option></select>
+</div>
+<div>
+<label for="f-class" style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px">Titre, carnet et tags</label>
+<select id="f-class" style="width: 100%; height: 48px; box-sizing: border-box; border: 1px solid #B5BDCA; border-radius: 12px; padding: 0 12px; font-family: inherit; font-size: 16px; color: #17202E; background: #FFFFFF"><option>Infomaniak</option><option>Claude</option><option>Gemini</option></select>
+</div>
+<div>
+<label for="f-img" style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px">Description des images</label>
+<select id="f-img" style="width: 100%; height: 48px; box-sizing: border-box; border: 1px solid #B5BDCA; border-radius: 12px; padding: 0 12px; font-family: inherit; font-size: 16px; color: #17202E; background: #FFFFFF"><option>À la demande</option><option>Automatique</option><option>Désactivée</option></select>
+<div style="font-size: 13px; color: #5B6678; margin-top: 6px; line-height: 1.4">Sans description, la photo est classée grâce à une légende que vous saisissez.</div>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 16px; font-weight: 600">Déclenchement de l'analyse</div>
+<div><div style="font-size: 14px; font-weight: 600; margin-bottom: 6px">Transcription des vocaux</div><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; background: #E8EBF0; border-radius: 14px"><button aria-pressed="true" style="height: 44px; border-radius: 11px; border: 0; background: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; color: #17202E">Automatique</button><button aria-pressed="false" style="height: 44px; border-radius: 11px; border: 0; background: transparent; font-family: inherit; font-size: 15px; color: #5B6678">Manuel</button></div></div>
+<div><div style="font-size: 14px; font-weight: 600; margin-bottom: 6px">Titre, carnet et tags</div><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 4px; background: #E8EBF0; border-radius: 14px"><button aria-pressed="true" style="height: 44px; border-radius: 11px; border: 0; background: #FFFFFF; font-family: inherit; font-size: 15px; font-weight: 600; color: #17202E">Automatique</button><button aria-pressed="false" style="height: 44px; border-radius: 11px; border: 0; background: transparent; font-family: inherit; font-size: 15px; color: #5B6678">Manuel</button></div></div>
+<div style="font-size: 13px; color: #5B6678; line-height: 1.4">En mode manuel, la note est enregistrée « À analyser » sans aucun appel. Un bouton « Analyser » la traite à la demande, seule ou en groupe, après affichage du nombre d'appels.</div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 16px; font-weight: 600; margin-bottom: 6px">Recours à un autre fournisseur</div>
+<label style="min-height: 56px; display: flex; align-items: center; gap: 12px; cursor: pointer"><input type="radio" name="recours" checked style="width: 22px; height: 22px; accent-color: #0B6E6E; margin: 0"><span><span style="display: block; font-size: 15px; font-weight: 600">Jamais</span><span style="display: block; font-size: 13px; color: #5B6678">Tout reste chez Infomaniak</span></span></label>
+<label style="min-height: 56px; display: flex; align-items: center; gap: 12px; cursor: pointer"><input type="radio" name="recours" style="width: 22px; height: 22px; accent-color: #0B6E6E; margin: 0"><span><span style="display: block; font-size: 15px; font-weight: 600">En cas d'échec</span><span style="display: block; font-size: 13px; color: #5B6678">Un autre fournisseur prend le relais</span></span></label>
+<label style="min-height: 56px; display: flex; align-items: center; gap: 12px; cursor: pointer"><input type="radio" name="recours" style="width: 22px; height: 22px; accent-color: #0B6E6E; margin: 0"><span><span style="display: block; font-size: 15px; font-weight: 600">À la demande</span><span style="display: block; font-size: 13px; color: #5B6678">Un bouton propose d'envoyer la note ailleurs</span></span></label>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 16px; font-weight: 600">Budget du mois</div>
+<div>
+<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="font-weight: 600">Infomaniak</span><span style="color: #5B6678">38 % du plafond</span></div>
+<div style="height: 8px; border-radius: 4px; background: #E2E6EC; margin-top: 8px"><div style="width: 38%; height: 8px; border-radius: 4px; background: #0B6E6E"></div></div>
+</div>
+<div>
+<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="font-weight: 600">Gemini</span><span style="color: #5B6678">Inactif</span></div>
+<div style="height: 8px; border-radius: 4px; background: #E2E6EC; margin-top: 8px"></div>
+</div>
+<div>
+<div style="display: flex; justify-content: space-between; font-size: 14px"><span style="font-weight: 600">Claude</span><span style="color: #5B6678">Inactif</span></div>
+<div style="height: 8px; border-radius: 4px; background: #E2E6EC; margin-top: 8px"></div>
+</div>
+<div>
+<label for="plafond" style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px">Plafond mensuel (alerte à 80 %)</label>
+<input id="plafond" type="text" inputmode="decimal" placeholder="Montant en euros" style="width: 100%; height: 48px; box-sizing: border-box; border: 1px solid #B5BDCA; border-radius: 12px; padding: 0 14px; font-family: inherit; font-size: 16px; color: #17202E; background: #FFFFFF">
+</div>
+<div>
+<label for="duree" style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px">Durée maximale d'un vocal</label>
+<select id="duree" style="width: 100%; height: 48px; box-sizing: border-box; border: 1px solid #B5BDCA; border-radius: 12px; padding: 0 12px; font-family: inherit; font-size: 16px; color: #17202E; background: #FFFFFF"><option>2 minutes (maximum)</option><option>1 minute</option><option>30 secondes</option></select>
+<div style="font-size: 13px; color: #5B6678; margin-top: 6px; line-height: 1.4">Au-delà, l'enregistrement s'arrête tout seul pour limiter la consommation.</div>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 16px; font-weight: 600">Économies automatiques</div>
+<div style="display: flex; gap: 10px; font-size: 14px; line-height: 1.4"><span style="color: #0B6E6E; margin-top: 1px; display: flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span><span>Le classement n'envoie que le texte, jamais le média.</span></div>
+<div style="display: flex; gap: 10px; font-size: 14px; line-height: 1.4"><span style="color: #0B6E6E; margin-top: 1px; display: flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span><span>Chaque vocal n'est transcrit qu'une fois : le re-tri réutilise le texte.</span></div>
+<div style="display: flex; gap: 10px; font-size: 14px; line-height: 1.4"><span style="color: #0B6E6E; margin-top: 1px; display: flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span><span>Une photo peut être classée avec une légende, sans description payante.</span></div>
+<div style="display: flex; gap: 10px; font-size: 14px; line-height: 1.4"><span style="color: #0B6E6E; margin-top: 1px; display: flex"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg></span><span>Gemini et Claude restent inactifs tant que vous ne les activez pas.</span></div>
+<div style="border-top: 1px solid #E2E6EC; padding-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px"><div style="font-size: 15px; font-weight: 500">Petit modèle pour le classement</div><button role="switch" aria-checked="true" aria-label="Petit modèle pour le classement" style="width: 56px; height: 44px; flex: none; border: 0; background: transparent; padding: 0; display: flex; align-items: center"><span style="width: 52px; height: 32px; border-radius: 16px; background: #0B6E6E; position: relative; display: block"><span style="position: absolute; left: 23px; top: 3px; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; display: block"></span></span></button></div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><div style="font-size: 15px; font-weight: 500">Réduire les photos avant envoi</div><button role="switch" aria-checked="true" aria-label="Réduire les photos avant envoi" style="width: 56px; height: 44px; flex: none; border: 0; background: transparent; padding: 0; display: flex; align-items: center"><span style="width: 52px; height: 32px; border-radius: 16px; background: #0B6E6E; position: relative; display: block"><span style="position: absolute; left: 23px; top: 3px; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; display: block"></span></span></button></div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 16px; font-weight: 600; margin-bottom: 6px">Clés d'API</div>
+<div style="min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 8px"><div><div style="font-size: 15px; font-weight: 600">Infomaniak</div><div style="font-size: 13px; color: #5B6678">Enregistrée sur le serveur · ••••••••</div></div><button style="height: 44px; padding: 0 12px; border: 0; background: transparent; font-family: inherit; font-size: 15px; font-weight: 600; color: #0B6E6E">Remplacer</button></div>
+<div style="min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid #E2E6EC"><div><div style="font-size: 15px; font-weight: 600">Gemini</div><div style="font-size: 13px; color: #5B6678">Aucune clé</div></div><button style="height: 44px; padding: 0 12px; border: 0; background: transparent; font-family: inherit; font-size: 15px; font-weight: 600; color: #0B6E6E">Ajouter</button></div>
+<div style="min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid #E2E6EC"><div><div style="font-size: 15px; font-weight: 600">Claude</div><div style="font-size: 13px; color: #5B6678">Aucune clé</div></div><button style="height: 44px; padding: 0 12px; border: 0; background: transparent; font-family: inherit; font-size: 15px; font-weight: 600; color: #0B6E6E">Ajouter</button></div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 12px"><div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 18px; font-weight: 600">Création par l'IA</div><div><div style="font-size: 14px; font-weight: 600; margin-bottom: 6px">Carnets</div><div style="height: 48px; border: 1px solid #B5BDCA; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-size: 15px"><span>Strict : carnets existants seulement</span><span style="color: #5B6678">⌄</span></div></div><div><div style="font-size: 14px; font-weight: 600; margin-bottom: 6px">Tags</div><div style="height: 48px; border: 1px solid #B5BDCA; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font-size: 15px"><span>L'IA peut proposer de nouveaux tags</span><span style="color: #5B6678">⌄</span></div></div><div style="font-size: 13px; line-height: 1.4; color: #5B6678">Une proposition n'est jamais créée sans votre accord.</div></div>
+<div style="background: #FFFFFF; border: 1px solid #E2E6EC; border-radius: 20px; padding: 16px; display: flex; flex-direction: column; gap: 10px"><div style="font-family: 'Bricolage Grotesque', system-ui, sans-serif; font-size: 18px; font-weight: 600">Carnets et tags</div><div style="font-size: 14px; color: #5B6678">Ajouter, modifier, supprimer ou fusionner.</div><a href="Fusion.dc.html" style="height: 48px; border-radius: 12px; border: 1px solid #B5BDCA; color: #17202E; text-decoration: none; font-size: 15px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; padding: 0 14px">Gérer les carnets · 5<span style="color: #5B6678">›</span></a><a href="Fusion.dc.html" style="height: 48px; border-radius: 12px; border: 1px solid #B5BDCA; color: #17202E; text-decoration: none; font-size: 15px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; padding: 0 14px">Gérer les tags · 12<span style="color: #5B6678">›</span></a></div>
+<button style="height: 52px; border-radius: 14px; border: 0; background: #0B6E6E; color: #FFFFFF; font-family: inherit; font-size: 16px; font-weight: 600">Tester la connexion</button>
+
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

@@ -208,7 +208,6 @@ function openDetail(id) {
   var analyzeBtns = '';
   if (!busy && n.type !== 'synthesis') {
     if (n.status === 'pending' || n.status === 'error') analyzeBtns += '<button class="btn primary" data-a="analyze" data-id="' + n.id + '">' + I(IC.spark, 18) + (n.status === 'error' ? 'Relancer l\'analyse' : 'Analyser avec l\'IA') + '</button>';
-    if (st.trigger.enrich !== 'off' && noteText(n) && n.status === 'ready') analyzeBtns += '<button class="btn" data-a="enrich" data-id="' + n.id + '">' + I(IC.spark, 18) + (n.enrichment ? 'Régénérer les pistes' : 'Enrichir') + (st.providers.enrich !== 'infomaniak' ? ' (' + PROV[st.providers.enrich] + ')' : '') + '</button>';
     if (n.type === 'image' && !n.description && st.trigger.vision !== 'off') analyzeBtns += '<button class="btn" data-a="describe" data-id="' + n.id + '">' + I(IC.image, 18) + 'Décrire l\'image' + (st.providers.vision !== 'infomaniak' ? ' (' + PROV[st.providers.vision] + ')' : '') + '</button>';
     if (n.status === 'error' && st.recours === 'ask') {
       S.providers.filter(function (p) { return p.id !== st.providers.classif && p.enabled && p.hasKey; }).forEach(function (p) {
@@ -231,7 +230,7 @@ function openDetail(id) {
       '<div><label class="l" for="dtagq">Tags</label><div class="sel" id="dsel"></div><div class="cbx"><input id="dtagq" class="field" role="combobox" aria-expanded="false" aria-controls="dtaglist" aria-autocomplete="list" autocomplete="off" placeholder="Rechercher ou créer un tag…"><div class="list2" id="dtaglist" role="listbox" hidden></div></div></div>' +
       sugg +
       '<div class="switch"><div><b>Verrouiller ce classement</b><span>Un re-tri ne le modifiera plus. Toute correction le verrouille.</span></div><button class="sw" role="switch" aria-checked="' + !!n.locked + '" aria-label="Verrouiller ce classement" data-a="dlock"><i></i></button></div>' : '') +
-    enrichHtml(n) +
+    (busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
     (analyzeBtns ? '<div class="actions">' + analyzeBtns + '</div>' : '') +
     '<div class="actions">' + (n.trashedAt ? '<button class="btn danger" data-a="purge" data-id="' + n.id + '">Supprimer définitivement</button>' : '<button class="btn danger" data-a="del">Mettre à la corbeille</button>') + '<button class="btn primary" data-a="dsave">Enregistrer et fermer</button></div>', 'Détail de la note');
   if (n.type !== 'synthesis') dtSel();
@@ -553,9 +552,19 @@ function onSynced() {
 }
 
 /* Bloc « Pour aller plus loin » : complément généré par l'IA, liens vérifiés. */
+// Toujours présent dans le détail : sans enrichissement, il propose de le lancer
+// (le texte modifié est enregistré d'abord, puis l'IA travaille sur la version à jour).
+function enrichBtn(n, again) {
+  var st = S.settings;
+  return '<button class="btn" data-a="enrich" data-id="' + n.id + '">' + I(IC.spark, 18) + (again ? 'Régénérer les pistes' : 'Enrichir cette note') + (st.providers.enrich !== 'infomaniak' ? ' (' + PROV[st.providers.enrich] + ')' : '') + '</button>';
+}
 function enrichHtml(n) {
   var e = n.enrichment;
-  if (!e) return '';
+  var st = S.settings;
+  if (!e) {
+    if (st.trigger.enrich === 'off') return '<div class="help">' + I(IC.spark, 14) + '<span>Enrichissement désactivé. <button class="linkbtn" data-a="tab" data-id="set" style="min-height:0;padding:0">Changer le réglage</button></span></div>';
+    return '<div class="panel enrich" style="margin:0"><h3>' + I(IC.spark, 16) + ' Pour aller plus loin</h3><p class="sub" style="margin:0">Explication du sujet, pistes, recherches et sources vérifiées. Un appel IA.</p><div class="actions">' + enrichBtn(n, false) + '</div></div>';
+  }
   var h = '<div class="panel enrich" style="margin:0"><div class="kv"><h3>' + I(IC.spark, 16) + ' Pour aller plus loin</h3><button class="linkbtn" data-a="enrich-del" data-id="' + n.id + '">Retirer</button></div>';
   if (e.explanation) h += '<p style="margin:0">' + esc(e.explanation) + '</p>';
   if (e.leads && e.leads.length) h += '<div><div class="l">Pistes</div><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">' + e.leads.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
@@ -563,6 +572,7 @@ function enrichHtml(n) {
   if (e.searches && e.searches.length) h += '<div><div class="l">Rechercher</div><div style="display:flex;flex-direction:column;gap:6px">' + e.searches.map(function (s) {
     return '<div class="kv" style="justify-content:flex-start"><span style="color:var(--ink)">« ' + esc(s.query) + ' »</span><span><a href="' + esc(s.web) + '" target="_blank" rel="noopener noreferrer">Web</a> · <a href="' + esc(s.scholar) + '" target="_blank" rel="noopener noreferrer">Scholar</a></span></div>';
   }).join('') + '</div></div>';
+  if (st.trigger.enrich !== 'off') h += '<div class="actions">' + enrichBtn(n, true) + '</div>';
   h += '<div class="help" style="margin:0">' + I(IC.help, 14) + '<span>Généré par l\'IA (' + esc(PROV[e.provider] || e.provider) + ') le ' + fmtFull(e.at) + ' : à vérifier. Les sources proposées ont été ouvertes par le serveur' + (e.rejected ? ' ; ' + plural(e.rejected, 'lien introuvable a été écarté', 'liens introuvables ont été écartés') : '') + '.</span></div></div>';
   return h;
 }

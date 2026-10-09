@@ -48,7 +48,8 @@ var ACTIONS = {
   enrich: function (el) {
     el.disabled = true;
     el.textContent = 'Enrichissement en cours…';
-    api('POST', 'notes/' + el.dataset.id + '/enrich', {}).then(function (r) {
+    var save = modal === 'detail' ? saveDetail(false) : Promise.resolve();
+    save.then(function () { return api('POST', 'notes/' + el.dataset.id + '/enrich', {}); }).then(function (r) {
       upsertNote(r.note); render(); if (modal === 'detail') openDetail(el.dataset.id);
       toast(r.empty ? 'Rien à ajouter pour cette note, selon l\'IA.' : 'Pistes ajoutées à la note');
     }, function (e) { fail(e); if (modal === 'detail') openDetail(el.dataset.id); });

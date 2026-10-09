@@ -76,6 +76,21 @@ function renderSet() {
     '<div class="panel"><h3>Carnets et tags</h3><div class="actions"><button class="btn" data-a="tab" data-id="cats">Gérer les carnets et les tags</button></div></div>' +
     '<div class="savebar" id="savebar" hidden><span>Modifications non enregistrées</span><button class="btn primary" data-a="set-save" id="setsave">Enregistrer les réglages</button></div>';
   setDirty = false;
+  autoRefreshModels();
+}
+
+// Charge d'office la liste des modèles de chaque fournisseur qui a une clé, si elle
+// manque ou date de plus de 7 jours (une seule fois par ouverture de l'application).
+var modelsTried = {};
+function autoRefreshModels() {
+  var todo = S.providers.filter(function (p) {
+    return p.hasKey && !modelsTried[p.id] && (!p.models || Date.now() - p.models.at > 7 * 864e5);
+  });
+  var chain = Promise.resolve();
+  todo.forEach(function (p) {
+    modelsTried[p.id] = true;
+    chain = chain.then(function () { return testKey(p.id); });
+  });
 }
 
 function collectSettings() {

@@ -1,6 +1,6 @@
 // Service worker : l'interface s'ouvre sans réseau. L'API n'est jamais mise en cache,
 // sauf les médias déjà consultés (lecture hors connexion).
-const VERSION = 'mainotes-v8';
+const VERSION = 'mainotes-v9';
 // Réseau lent ou muet (signal faible) : passé ce délai, on ouvre la copie locale.
 const NET_TIMEOUT = 3000;
 // Après un délai dépassé, les fichiers suivants partent aussitôt de la copie locale pendant 30 s.

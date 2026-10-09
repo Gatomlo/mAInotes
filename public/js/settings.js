@@ -31,6 +31,22 @@ function accordionize(root) {
     d.addEventListener('toggle', function () { accOpen[key] = d.open; });
   });
 }
+// Consignes pour l'IA selon le type de note (enregistrées avec les autres réglages).
+var INS_TYPES = [
+  ['text', 'Notes écrites', 'ex. Si la note est une liste de courses, titre « Courses » suivi de la date.'],
+  ['voice', 'Notes vocales', 'ex. Les vocaux sont souvent dictés en voiture : ignore les hésitations, titre sur l\'action à faire.'],
+  ['image', 'Images (description et classement)', 'ex. Ticket de caisse : magasin, date et montant total seulement.'],
+  ['link', 'Notes avec un lien', 'ex. Pour une vidéo YouTube, indique la chaîne et la durée si elles sont connues.']
+];
+function insPanel(st) {
+  var ins = st.instructions || {};
+  return '<div class="panel"><h3>Consignes pour l\'IA</h3>' +
+    '<p class="sub" style="margin:0">Une précision par type de note, envoyée seulement avec les notes de ce type (classement, enrichissement, et description pour les images). Le type est connu dès l\'envoi, avant que l\'IA choisisse le carnet. Laissez vide si inutile.</p>' +
+    INS_TYPES.map(function (t) {
+      return '<div><label class="l" for="ins-' + t[0] + '">' + t[1] + '</label><textarea id="ins-' + t[0] + '" class="field" rows="3" maxlength="800" data-set="instructions.' + t[0] + '" placeholder="' + esc(t[2]) + '">' + esc(ins[t[0]] || '') + '</textarea></div>';
+    }).join('') + '</div>';
+}
+
 var FN = [['classif', 'Classement des notes'], ['transcr', 'Transcription des vocaux'], ['vision', 'Description des images'], ['synth', 'Synthèse des notes affichées'], ['enrich', 'Enrichissement des notes']];
 
 // Menu des modèles réellement disponibles (liste lue au dernier test de connexion).
@@ -128,6 +144,7 @@ function renderSet() {
     provPanels +
     '<div class="panel"><h3>Choix des IA</h3>' + fn +
     '<div><label class="l" for="recours">Recours à un autre fournisseur</label><select id="recours" class="field" data-set="recours">' + opt('never', st.recours, 'Jamais') + opt('fail', st.recours, 'En cas d\'échec') + opt('ask', st.recours, 'À la demande (bouton sur la note)') + '</select></div></div>' +
+    insPanel(st) +
     '<div class="panel"><h3>Déclenchement de l\'analyse</h3>' +
     trig('transcr', 'Transcription', [['auto', 'Automatique'], ['manual', 'Manuel']]) +
     trig('classif', 'Classement', [['auto', 'Automatique'], ['manual', 'Manuel']]) +

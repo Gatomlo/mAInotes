@@ -310,22 +310,6 @@ function layoutMasonry() {
   Array.prototype.forEach.call(g.children, function (el) { masonrySpan(el); masonryRO.observe(el); });
 }
 
-// Consignes par type de note : ajoutées au prompt des notes de ce type.
-var INS_TYPES = [
-  ['text', 'Notes écrites', 'ex. Si la note est une liste de courses, titre « Courses » suivi de la date.'],
-  ['voice', 'Notes vocales', 'ex. Les vocaux sont souvent dictés en voiture : ignore les hésitations, titre sur l\'action à faire.'],
-  ['image', 'Images (description et classement)', 'ex. Ticket de caisse : magasin, date et montant total seulement.'],
-  ['link', 'Notes avec un lien', 'ex. Pour une vidéo YouTube, indique la chaîne et la durée si elles sont connues.']
-];
-function insFields(st) {
-  var ins = st.instructions || {};
-  return '<details><summary class="l">Consignes par type de note</summary>' +
-    '<p class="sub" style="margin:0 0 8px">Une précision pour l\'IA, envoyée seulement avec les notes du type concerné (comme la règle des couvertures de livre pour les images). Laissez vide si inutile.</p>' +
-    INS_TYPES.map(function (t) {
-      return '<div style="margin-top:10px"><label class="l" for="ins-' + t[0] + '">' + t[1] + '</label><textarea id="ins-' + t[0] + '" class="field" rows="3" maxlength="800" placeholder="' + esc(t[2]) + '">' + esc(ins[t[0]] || '') + '</textarea></div>';
-    }).join('') + '</details>';
-}
-
 function renderCats() {
   var st = S.settings;
   var def = '<option value="">Choisi par l\'IA (aucun défaut)</option>' + S.notebooks.map(function (c) { return '<option value="' + c.id + '"' + (st.defaultNotebook === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('');
@@ -345,8 +329,7 @@ function renderCats() {
     '<p class="sub" style="margin:0">Qui vous êtes, à quoi servent vos notes, vos sujets du moment. L\'IA la lit à chaque classement pour choisir le bon carnet.</p>' +
     '<textarea id="ctx" class="field" rows="4" maxlength="1500" placeholder="ex. Enseignante en sciences, je note des idées de cours, des lectures sur l\'IA en éducation et les tâches du ranch (chevaux, travaux, factures).">' + esc(st.context || '') + '</textarea>' +
     '<div class="help"><span>Restez bref : quelques phrases suffisent, et chaque mot est envoyé à chaque classement.</span></div>' +
-    insFields(st) +
-    '<div class="actions"><button type="submit" class="btn primary">Enregistrer</button></div></form>' +
+    '<div class="actions"><button type="submit" class="btn primary">Enregistrer la description</button></div></form>' +
     '<p class="sub">Chaque carnet a aussi sa propre description (« Ce qu\'il doit contenir ») : touchez un carnet pour la compléter. Une note n\'appartient qu\'à un seul carnet.</p>' +
     '<div style="margin-top:12px"><label class="l" for="defcat">Carnet par défaut des nouvelles notes</label><select id="defcat" class="field" data-set="defaultNotebook">' + def + '</select><div class="help"><span>Modifiable note par note à la création. Un carnet choisi à la création n\'est jamais changé par l\'IA.</span></div></div>' +
     '<div class="list">' + rows + '</div>' +

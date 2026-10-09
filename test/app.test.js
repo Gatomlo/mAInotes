@@ -402,6 +402,17 @@ test('case « Enrichir cette note » et description du carnet de notes', async (
   const prompt = JSON.stringify(calls[calls.length - 1].messages);
   assert.ok(prompt.includes('Enseignante, je note mes lectures'), 'description transmise au classement');
 
+  // Consigne par type : envoyée seulement avec les notes du type concerné.
+  await call('PATCH', 'settings', { instructions: { text: 'CONSIGNE-TEXTE', voice: 'CONSIGNE-VOCALE' } });
+  before = calls.length;
+  r = await call('POST', 'notes', { type: 'text', content: 'Note avec consigne' });
+  await until(async () => (await call('GET', 'state')).data.notes.find((y) => y.id === r.data.note.id).status === 'ready');
+  const withIns = JSON.stringify(calls[calls.length - 1].messages);
+  assert.ok(withIns.includes('CONSIGNE-TEXTE') && !withIns.includes('CONSIGNE-VOCALE'), 'consigne du type texte seule');
+  const st = (await call('GET', 'state')).data.settings;
+  assert.ok(/livre/.test(st.instructions.image), 'consigne image par défaut : couverture de livre');
+  await call('PATCH', 'settings', { instructions: { text: '', voice: '' } });
+
   await call('PATCH', 'settings', { trigger: { enrich: 'auto' } });
   r = await call('POST', 'notes', { type: 'text', content: 'Autre lecture', enrich: false });
   n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r.data.note.id); return x.status === 'ready' && x; });

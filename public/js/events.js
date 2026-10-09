@@ -288,7 +288,9 @@ document.addEventListener('focusin', function (e) { if (e.target.id === 'dtagq')
 document.addEventListener('submit', function (e) {
   if (e.target.id === 'ctxform') {
     e.preventDefault();
-    saveSettings({ context: $('#ctx').value }).then(function () { toast('Description enregistrée'); renderCats(); });
+    var ins = {};
+    INS_TYPES.forEach(function (t) { ins[t[0]] = $('#ins-' + t[0]).value; });
+    saveSettings({ context: $('#ctx').value, instructions: ins }).then(function () { toast('Description et consignes enregistrées'); renderCats(); });
     return;
   }
   if (e.target.id === 'tagform') {

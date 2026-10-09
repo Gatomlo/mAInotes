@@ -84,7 +84,7 @@ Vingt fonctionnalités, dont quinze indispensables au MVP (Must), organisées en
 | F3 | Capture | Ajout d'image par appareil photo ou import, une ou plusieurs images par note | Must |
 | F4 | Capture | Enregistrement local immédiat, envoi et analyse dès que le réseau revient | Should |
 | F5 | IA média | Transcription complète du vocal, avec détection de la langue (français par défaut) | Must |
-| F6 | IA média | Description de l'image : contenu, texte visible, contexte. Couverture de livre : uniquement les informations du livre (titre, auteur, éditeur…), sans décrire la photo | Must |
+| F6 | IA média | Description de l'image : contenu, texte visible, contexte. Couverture de livre : uniquement les informations du livre (titre, auteur, éditeur…), sans décrire la photo (consigne Image par défaut, F89) | Must |
 | F7 | IA média | Correction manuelle de la transcription et de la description | Must |
 | F8 | Classement | Génération automatique d'un titre court par note | Must |
 | F9 | Classement | Attribution d'une catégorie et de plusieurs tags parmi la liste préétablie | Must |
@@ -383,6 +383,7 @@ Les maquettes montrent le sélecteur de carnet à la création, la liste de tags
 | F51 | Les suggestions sont produites par le même appel que le classement (une ligne de plus dans la réponse), donc sans appel supplémentaire. En mode strict, la consigne envoyée à l'IA est plus courte, ce qui économise des jetons. | Must |
 | F52 | Un carnet créé sur suggestion reçoit une description à compléter, pour guider les classements suivants. | Should |
 | F79 | **Description du carnet de notes** (onglet Carnets) : quelques phrases sur l'utilisateur et l'usage de ses notes, jointes à chaque classement et à chaque enrichissement pour mieux choisir le carnet. Elle complète la description propre à chaque carnet. | Must |
+| F89 | **Consignes par type de note** (onglet Carnets, sous la description) : une précision libre pour les notes écrites, les vocales, les images et les notes avec un lien, jointe au prompt seulement pour les notes du type concerné (classement et enrichissement ; pour les images aussi la description). Par défaut, la consigne Image demande, pour une couverture de livre, uniquement les informations du livre. | Should |
 
 ## Accueil et filtres sur smartphone
 

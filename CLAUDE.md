@@ -1,6 +1,8 @@
 # Consignes pour le développement
 
-Lire d'abord `docs/cahier-des-charges.md`, puis ouvrir `prototype/carnet.html` pour le comportement attendu.
+Lire d'abord `docs/cahier-des-charges.md`. Le comportement de référence est celui de l'app (`public/`).
+
+`prototype/carnet.html` n'a servi qu'avant le codage de l'app : ne plus le modifier ni y reporter les évolutions.
 
 ## Décisions déjà prises
 - Une note appartient à **un seul carnet** et peut avoir **plusieurs tags**. « Catégorie » dans les anciennes sections du cahier = « carnet ».

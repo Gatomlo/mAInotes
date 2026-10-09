@@ -28,22 +28,23 @@ var IC = {
 
 /* ---------- État ---------- */
 var S = { user: null, notebooks: [], tags: [], notes: [], settings: null, providers: [], retri: null, synthesesCount: 0 };
-var F = { q: '', cat: null, tags: [], period: '', from: '', to: '' };
+var F = { q: '', cat: null, tags: [], tagMode: 'all', period: '', from: '', to: '' };
 var VIEW = 'cards';
 try { VIEW = localStorage.getItem('mainotes-view') === 'list' ? 'list' : 'cards'; } catch (e) { /* stockage indisponible */ }
 
 // Période de création choisie dans les filtres : [début, fin] en millisecondes, ou null.
-function dateRange() {
+function dateRange(f) {
+  f = f || F;
   var now = new Date();
   var day = function (d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); };
   var parse = function (v, end) { if (!v) return null; var p = v.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2], end ? 23 : 0, end ? 59 : 0, end ? 59 : 0, end ? 999 : 0).getTime(); };
-  switch (F.period) {
+  switch (f.period) {
     case 'today': return [day(now), Infinity];
     case '7': return [day(now) - 6 * 864e5, Infinity];
     case '30': return [day(now) - 29 * 864e5, Infinity];
     case 'month': return [new Date(now.getFullYear(), now.getMonth(), 1).getTime(), Infinity];
     case 'year': return [new Date(now.getFullYear(), 0, 1).getTime(), Infinity];
-    case 'custom': return F.from || F.to ? [parse(F.from, false) || -Infinity, parse(F.to, true) || Infinity] : null;
+    case 'custom': return f.from || f.to ? [parse(f.from, false) || -Infinity, parse(f.to, true) || Infinity] : null;
     default: return null;
   }
 }

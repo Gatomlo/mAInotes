@@ -1,6 +1,6 @@
 // Service worker : l'interface s'ouvre sans réseau. L'API n'est jamais mise en cache,
 // sauf les médias déjà consultés (lecture hors connexion).
-const VERSION = 'mainotes-v2';
+const VERSION = 'mainotes-v3';
 const SHELL = ['./', 'index.html', 'styles.css', 'manifest.json', 'manifest-new.json', 'icons/icon.svg', 'icons/icon-192.png', 'icons/new-192.png',
   'js/core.js', 'js/auth.js', 'js/views.js', 'js/modals.js', 'js/settings.js', 'js/events.js'];
 

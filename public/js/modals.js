@@ -444,7 +444,8 @@ var syn = null;
 function filterLabel() {
   var p = [];
   p.push(F.cat === '__none' ? 'À vérifier' : F.cat ? (nb(F.cat) || { name: 'Tous les carnets' }).name : 'Tous les carnets');
-  F.tags.forEach(function (id) { var t = tagById(id); if (t) p.push('#' + t.name); });
+  var tg = F.tags.map(function (id) { var t = tagById(id); return t ? '#' + t.name : ''; }).filter(Boolean);
+  if (tg.length) p.push(tg.join(F.tagMode === 'any' ? ' ou ' : ' · '));
   if (F.q.trim()) p.push('« ' + F.q.trim() + ' »');
   if (periodLabel()) p.push('Créées : ' + periodLabel());
   return p.join(' · ');

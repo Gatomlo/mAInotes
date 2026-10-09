@@ -39,9 +39,23 @@ var ACTIONS = {
   flush: function () { flushOutbox(); },
   'outbox-del': function (el) { outbox = outbox.filter(function (x) { return x.clientId !== el.dataset.id; }); idbDel(el.dataset.id); render(); },
 
-  fcat: function (el) { var id = el.dataset.id || null; F.cat = F.cat === id ? null : id; renderHome(); },
+  filters: function () { closeMenu(); openFilters(); },
+  fcat: function (el) { F.cat = el.dataset.id || null; renderHome(); },
   ftag: function (el) { var id = el.dataset.id, i = F.tags.indexOf(id); if (i > -1) F.tags.splice(i, 1); else F.tags.push(id); renderHome(); },
-  clearf: function () { F = { q: '', cat: null, tags: [], period: '', from: '', to: '' }; $('#q').value = ''; $('#ffrom').value = ''; $('#fto').value = ''; renderHome(); },
+  ftagmode: function (el) { F.tagMode = el.dataset.id; renderHome(); },
+  frm: function (el) {
+    var k = el.dataset.k;
+    if (k === 'cat') F.cat = null;
+    if (k === 'tag') F.tags = F.tags.filter(function (x) { return x !== el.dataset.id; });
+    if (k === 'period') { F.period = ''; F.from = ''; F.to = ''; }
+    renderHome();
+  },
+  'fp-more': function (el) { if (el.dataset.id === 'cats') FP.allCats = !FP.allCats; else FP.allTags = !FP.allTags; renderFilterPanel(); },
+  // Toucher un badge sur une note filtre directement sur ce carnet ou ce tag.
+  qcat: function (el) { F.cat = el.dataset.id; renderHome(); window.scrollTo(0, 0); },
+  qtag: function (el) { if (F.tags.indexOf(el.dataset.id) < 0) F.tags.push(el.dataset.id); renderHome(); window.scrollTo(0, 0); },
+  clearf: function () { F = { q: F.q, cat: null, tags: [], tagMode: 'all', period: '', from: '', to: '' }; renderHome(); },
+  menu: function () { var m = $('#homemenu'); if (m.hidden) openMenu(); else closeMenu(); },
   view: function (el) { VIEW = el.dataset.id; try { localStorage.setItem('mainotes-view', VIEW); } catch (e) { /* rien */ } renderHome(); },
   qclear: function () { F.q = ''; $('#q').value = ''; renderHome(); $('#q').focus(); },
   open: function (el) { if (modal === 'detail' && curId !== el.dataset.id) saveDetail(false); openDetail(el.dataset.id); },
@@ -92,7 +106,7 @@ var ACTIONS = {
     api('DELETE', 'notes/' + el.dataset.id + '?purge=1').then(function () { S.notes = S.notes.filter(function (n) { return n.id !== el.dataset.id; }); closeModal(); render(); }, fail);
   },
   restore: function (el) { api('POST', 'notes/' + el.dataset.id + '/restore', {}).then(function (r) { upsertNote(r.note); render(); if (modal === 'trash') openTrash(); else if (modal === 'detail') openDetail(el.dataset.id); toast('Note restaurée'); }, fail); },
-  'trash-open': openTrash,
+  'trash-open': function () { closeMenu(); openTrash(); },
   'trash-empty': function () { if (!confirm('Vider la corbeille ? Les notes et leurs fichiers seront supprimés définitivement.')) return; api('POST', 'trash/empty', {}).then(function () { S.notes = S.notes.filter(function (n) { return !n.trashedAt; }); closeModal(); render(); }, fail); },
 
   'cat-new': function () { openNotebook(null); },
@@ -146,7 +160,7 @@ var ACTIONS = {
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast('Texte copié'); }, function () { toast('Copie impossible sur ce navigateur.'); });
   },
   'synth-note': function () { api('POST', 'syntheses/' + curSynth.id + '/note', {}).then(function (r) { upsertNote(r.note); render(); toast('Synthèse enregistrée comme note'); }, fail); },
-  'hist-open': openHist,
+  'hist-open': function () { closeMenu(); openHist(); },
   'hist-view': function (el) { viewHist(el.dataset.id); },
   'hist-del': function (el) {
     if (!confirm('Supprimer cette synthèse de l\'historique ?')) return;
@@ -192,7 +206,12 @@ var ACTIONS = {
   'sw-local': function (el) { el.setAttribute('aria-checked', String(el.getAttribute('aria-checked') !== 'true')); }
 };
 
+/* Menu ⋯ de l'accueil : affichage, historique des synthèses, corbeille. */
+function openMenu() { $('#homemenu').hidden = false; $('#menubtn').setAttribute('aria-expanded', 'true'); var f = $('#homemenu button:not([hidden])'); if (f) f.focus(); }
+function closeMenu() { var m = $('#homemenu'); if (!m || m.hidden) return; m.hidden = true; $('#menubtn').setAttribute('aria-expanded', 'false'); }
+
 document.addEventListener('click', function (e) {
+  if (!e.target.closest('#homemenu, #menubtn')) closeMenu();
   if (e.target.closest('a[href]')) return; // un vrai lien s'ouvre, sans ouvrir la carte
   var el = e.target.closest('[data-a]');
   if (el && ACTIONS[el.dataset.a]) {
@@ -206,6 +225,8 @@ document.addEventListener('click', function (e) {
 });
 
 document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && !$('#homemenu').hidden) { closeMenu(); $('#menubtn').focus(); return; }
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset && (e.target.dataset.a === 'qcat' || e.target.dataset.a === 'qtag')) { e.preventDefault(); ACTIONS[e.target.dataset.a](e.target); return; }
   if (e.key === 'Escape' && !$('#ov').hidden) {
     if ($('#dtaglist') && !$('#dtaglist').hidden) { dtList(false); return; }
     if (modal === 'detail') saveDetail(true); else closeModal();
@@ -223,14 +244,15 @@ document.addEventListener('keydown', function (e) {
 document.addEventListener('input', function (e) {
   var t = e.target;
   if (t.id === 'q') { F.q = t.value; renderHome(); return; }
+  if (t.classList && t.classList.contains('fpq')) { FP.q = t.value; renderFilterPanel(); return; }
   if (t.id === 'dtagq') { dtI = 0; dtList(true); return; }
   if (t.id === 'mfrom' || t.id === 'mto') { mergeInfo(); return; }
   if (t.closest && t.closest('#view-set') && t.hasAttribute('data-set')) { setDirty = true; var b = $('#savebar'); if (b) b.hidden = false; }
 });
 document.addEventListener('change', function (e) {
   var t = e.target;
-  if (t.id === 'fperiod') { F.period = t.value; renderHome(); if (t.value === 'custom') $('#ffrom').focus(); }
-  if (t.id === 'ffrom' || t.id === 'fto') { F.from = $('#ffrom').value; F.to = $('#fto').value; renderHome(); }
+  if (t.id === 'fperiod') { var box = t.parentNode; F.period = t.value; renderHome(); if (t.value === 'custom') $('#ffrom', box).focus(); }
+  if (t.id === 'ffrom' || t.id === 'fto') { var bx = t.parentNode; F.from = $('#ffrom', bx).value; F.to = $('#fto', bx).value; renderHome(); }
   if (t.id === 'afile') importAudio(t.files[0]);
   if (t.id === 'ifile') { add.notebookId = $('#addcat').value; pickImages(t.files); }
   if (t.id === 'addcat' && add) add.notebookId = t.value;

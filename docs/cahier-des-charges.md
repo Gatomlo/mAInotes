@@ -141,7 +141,7 @@ Cinq écrans couvrent tout le MVP ; ils sont maquettés dans un document sépar�
 
 | Écran | Rôle | Éléments clés |
 |---|---|---|
-| Accueil en cartes | Parcourir, filtrer, chercher | Barre de recherche, filtres par catégorie et tags, grille de cartes, bouton d'ajout |
+| Accueil en cartes | Parcourir, filtrer, chercher | Barre de recherche et bouton « Filtres » (panneau carnet, tags, date), filtres actifs retirables, grille de cartes, bouton d'ajout |
 | Ajout de note | Capturer en un geste | Trois choix (écrire, parler, photographier), enregistrement vocal, aperçu |
 | Détail d'une note | Lire et corriger | Média, transcription ou description éditable, catégorie, tags, historique |
 | Catégories et tags | Gérer la structure | Listes avec compteurs, description, couleur, bouton « Relancer le tri » |
@@ -383,6 +383,16 @@ Les maquettes montrent le sélecteur de carnet à la création, la liste de tags
 | F51 | Les suggestions sont produites par le même appel que le classement (une ligne de plus dans la réponse), donc sans appel supplémentaire. En mode strict, la consigne envoyée à l'IA est plus courte, ce qui économise des jetons. | Must |
 | F52 | Un carnet créé sur suggestion reçoit une description à compléter, pour guider les classements suivants. | Should |
 | F79 | **Description du carnet de notes** (onglet Carnets) : quelques phrases sur l'utilisateur et l'usage de ses notes, jointes à chaque classement et à chaque enrichissement pour mieux choisir le carnet. Elle complète la description propre à chaque carnet. | Must |
+
+## Accueil et filtres sur smartphone
+
+| Réf. | Fonction | Priorité |
+|---|---|---|
+| F80 | L'accueil reste compact : une ligne de recherche avec un bouton **Filtres** (badge = nombre de filtres actifs), puis les filtres actifs, chacun retirable d'une croix. L'affichage cartes/liste, l'historique des synthèses et la corbeille passent dans le menu ⋯. | Must |
+| F81 | Le **panneau de filtres** (fenêtre du bas sur téléphone, colonne latérale sur grand écran) regroupe le carnet (un seul), les tags (plusieurs, « tous » ou « au moins un ») et la date de création. Un champ cherche dans les noms de carnets et de tags. | Must |
+| F82 | Les compteurs du panneau tiennent compte des autres filtres ; les tags sans note dans le résultat sont masqués. Les huit carnets et douze tags les plus utilisés s'affichent d'abord, les autres derrière « Voir tous ». | Must |
+| F83 | Toucher le carnet ou un tag d'une carte filtre directement sur celui-ci. | Should |
+| F84 | Sur téléphone, les onglets Notes, Carnets, Réglages et Compte forment une barre de navigation en bas de l'écran. | Must |
 
 ## Liens dans les notes
 

@@ -394,6 +394,17 @@ Les maquettes montrent le sélecteur de carnet à la création, la liste de tags
 | F83 | Toucher le carnet ou un tag d'une carte filtre directement sur celui-ci. | Should |
 | F84 | Sur téléphone, les onglets Notes, Carnets, Réglages et Compte forment une barre de navigation en bas de l'écran. | Must |
 
+## À lire / Lu
+
+Pour garder des articles ou des vidéos à consulter plus tard sans les perdre.
+
+| Réf. | Fonction | Priorité |
+|---|---|---|
+| F85 | Une note a un état de lecture : aucun (par défaut), **À lire** ou **Lu** (avec la date). Cet état est indépendant du carnet et des tags ; ni l'IA ni un re-tri ne le modifient. | Must |
+| F86 | À la création, une case « À lire plus tard » est cochée d'office quand la note contient un lien (règle locale, sans IA) ; elle reste modifiable. | Must |
+| F87 | Sur la carte, toucher le badge « À lire » marque la note comme lue (et inversement), avec « Annuler » quelques secondes. Le détail de la note propose Aucune / À lire / Lu. | Must |
+| F88 | Le panneau de filtres a une section Lecture (Toutes, À lire, Lues) combinable avec les autres filtres ; le menu ⋯ ouvre directement la liste « À lire ». | Must |
+
 ## Liens dans les notes
 
 | Réf. | Fonction | Priorité |

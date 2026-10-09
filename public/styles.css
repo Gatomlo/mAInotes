@@ -356,3 +356,14 @@ body{padding-top:env(safe-area-inset-top,0px);padding-left:max(16px,env(safe-are
   .fbtn{display:none}
   .homecol{min-width:0}
 }
+
+/* À lire / Lu */
+button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
+.chip.read.todo{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.chip.read.done{background:transparent;color:var(--muted);border:1px solid var(--line);padding:0 8px}
+.chip.read:hover{filter:brightness(.95);text-decoration:underline}
+.readpick{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
+.readpick .modes button{display:inline-flex;align-items:center;gap:6px}
+.toast{display:flex;align-items:center;gap:12px}
+.toast[hidden]{display:none}
+.toast-undo{border:0;background:none;color:inherit;font-weight:700;text-decoration:underline;min-height:36px;padding:0 4px}

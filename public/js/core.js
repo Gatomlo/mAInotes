@@ -23,12 +23,14 @@ var IC = {
   lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   x: '<path d="M6 6l12 12M18 6 6 18"/>',
   upload: '<path d="M12 15V4M7 9l5-5 5 5M4 15v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/>',
-  cloud: '<path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z"/>'
+  cloud: '<path d="M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z"/>',
+  bookmark: '<path d="M7 3h10v18l-5-4-5 4z"/>',
+  check: '<path d="m5 12 5 5 9-10"/>'
 };
 
 /* ---------- État ---------- */
 var S = { user: null, notebooks: [], tags: [], notes: [], settings: null, providers: [], retri: null, synthesesCount: 0 };
-var F = { q: '', cat: null, tags: [], tagMode: 'all', period: '', from: '', to: '' };
+var F = { q: '', cat: null, tags: [], tagMode: 'all', read: '', period: '', from: '', to: '' };
 var VIEW = 'cards';
 try { VIEW = localStorage.getItem('mainotes-view') === 'list' ? 'list' : 'cards'; } catch (e) { /* stockage indisponible */ }
 
@@ -213,7 +215,7 @@ function flushOutbox() {
 }
 
 function sendItem(item) {
-  return api('POST', 'notes', { clientId: item.clientId, type: item.type, content: item.content, notebookId: item.notebookId, dur: item.dur, createdAt: item.createdAt, enrich: item.enrich })
+  return api('POST', 'notes', { clientId: item.clientId, type: item.type, content: item.content, notebookId: item.notebookId, dur: item.dur, createdAt: item.createdAt, enrich: item.enrich, read: item.read ? 'todo' : undefined })
     .then(function (r) {
       var note = r.note;
       if (item.type === 'text' || note.status !== 'uploading') return note;
@@ -322,7 +324,16 @@ if ('serviceWorker' in navigator) {
 
 /* ---------- Petits outils d'affichage ---------- */
 var toastTimer;
-function toast(m) { var e = $('#toast'); e.textContent = m; e.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { e.hidden = true; }, 3600); }
+// Message bref ; avec undo, un bouton « Annuler » reste quelques secondes de plus.
+var toastUndo = null;
+function toast(m, undo) {
+  var e = $('#toast');
+  toastUndo = undo || null;
+  e.innerHTML = esc(m) + (undo ? '<button class="toast-undo" data-a="toast-undo">Annuler</button>' : '');
+  e.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { e.hidden = true; toastUndo = null; }, undo ? 6000 : 3600);
+}
 function fmtDate(ts) {
   var d = new Date(ts), n = new Date(), same = function (a, b) { return a.toDateString() === b.toDateString(); };
   var tm = d.toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' });

@@ -42,19 +42,25 @@ var ACTIONS = {
   filters: function () { closeMenu(); openFilters(); },
   fcat: function (el) { F.cat = el.dataset.id || null; renderHome(); },
   ftag: function (el) { var id = el.dataset.id, i = F.tags.indexOf(id); if (i > -1) F.tags.splice(i, 1); else F.tags.push(id); renderHome(); },
+  fread: function (el) { F.read = el.dataset.id || ''; renderHome(); },
+  'toread-open': function () { closeMenu(); F.read = 'todo'; renderHome(); window.scrollTo(0, 0); },
+  'read-toggle': function (el) { var n = noteById(el.dataset.id); if (n) setRead(n, n.read === 'todo' ? 'done' : 'todo'); },
+  dread: function (el) { var n = curNote(); if (n) setRead(n, el.dataset.id || null).then(function () { if (modal === 'detail' && curId === n.id) openDetail(n.id, false); }); },
+  'toast-undo': function () { var f = toastUndo; toastUndo = null; $('#toast').hidden = true; if (f) f(); },
   ftagmode: function (el) { F.tagMode = el.dataset.id; renderHome(); },
   frm: function (el) {
     var k = el.dataset.k;
     if (k === 'cat') F.cat = null;
     if (k === 'tag') F.tags = F.tags.filter(function (x) { return x !== el.dataset.id; });
     if (k === 'period') { F.period = ''; F.from = ''; F.to = ''; }
+    if (k === 'read') F.read = '';
     renderHome();
   },
   'fp-more': function (el) { if (el.dataset.id === 'cats') FP.allCats = !FP.allCats; else FP.allTags = !FP.allTags; renderFilterPanel(); },
   // Toucher un badge sur une note filtre directement sur ce carnet ou ce tag.
   qcat: function (el) { F.cat = el.dataset.id; renderHome(); window.scrollTo(0, 0); },
   qtag: function (el) { if (F.tags.indexOf(el.dataset.id) < 0) F.tags.push(el.dataset.id); renderHome(); window.scrollTo(0, 0); },
-  clearf: function () { F = { q: F.q, cat: null, tags: [], tagMode: 'all', period: '', from: '', to: '' }; renderHome(); },
+  clearf: function () { F = { q: F.q, cat: null, tags: [], tagMode: 'all', read: '', period: '', from: '', to: '' }; renderHome(); },
   menu: function () { var m = $('#homemenu'); if (m.hidden) openMenu(); else closeMenu(); },
   view: function (el) { VIEW = el.dataset.id; try { localStorage.setItem('mainotes-view', VIEW); } catch (e) { /* rien */ } renderHome(); },
   qclear: function () { F.q = ''; $('#q').value = ''; renderHome(); $('#q').focus(); },
@@ -206,6 +212,18 @@ var ACTIONS = {
   'sw-local': function (el) { el.setAttribute('aria-checked', String(el.getAttribute('aria-checked') !== 'true')); }
 };
 
+// À lire / Lu : affiché tout de suite, enregistré ensuite ; « Annuler » remet l'état précédent.
+function setRead(n, state, quiet) {
+  var before = n.read || null, beforeAt = n.readAt || null;
+  if (before === state) return Promise.resolve();
+  n.read = state; n.readAt = state === 'done' ? Date.now() : null;
+  render();
+  return api('PATCH', 'notes/' + n.id, { read: state }).then(function (r) {
+    upsertNote(r.note); saveCache(); render();
+    if (!quiet) toast(state === 'done' ? 'Marquée comme lue' : state === 'todo' ? 'Ajoutée à la liste « À lire »' : 'Retirée de la liste « À lire »', function () { setRead(noteById(n.id), before, true); });
+  }, function (e) { n.read = before; n.readAt = beforeAt; render(); fail(e); });
+}
+
 /* Menu ⋯ de l'accueil : affichage, historique des synthèses, corbeille. */
 function openMenu() { $('#homemenu').hidden = false; $('#menubtn').setAttribute('aria-expanded', 'true'); var f = $('#homemenu button:not([hidden])'); if (f) f.focus(); }
 function closeMenu() { var m = $('#homemenu'); if (!m || m.hidden) return; m.hidden = true; $('#menubtn').setAttribute('aria-expanded', 'false'); }
@@ -246,6 +264,7 @@ document.addEventListener('input', function (e) {
   if (t.id === 'q') { F.q = t.value; renderHome(); return; }
   if (t.classList && t.classList.contains('fpq')) { FP.q = t.value; renderFilterPanel(); return; }
   if (t.id === 'dtagq') { dtI = 0; dtList(true); return; }
+  if ((t.id === 'ntext' || t.id === 'icap') && add && add.read === null) { var rb = $('#addread'); if (rb) rb.checked = hasLink(t.value); return; }
   if (t.id === 'mfrom' || t.id === 'mto') { mergeInfo(); return; }
   if (t.closest && t.closest('#view-set') && t.hasAttribute('data-set')) { setDirty = true; var b = $('#savebar'); if (b) b.hidden = false; }
 });
@@ -257,6 +276,7 @@ document.addEventListener('change', function (e) {
   if (t.id === 'ifile') { add.notebookId = $('#addcat').value; pickImages(t.files); }
   if (t.id === 'addcat' && add) add.notebookId = t.value;
   if (t.id === 'addenrich' && add) add.enrich = t.checked;
+  if (t.id === 'addread' && add) add.read = t.checked;
   if (t.id === 'defcat') saveSettings({ defaultNotebook: t.value }).then(function () { renderCats(); toast('Carnet par défaut enregistré'); });
   if (t.closest && t.closest('#view-set') && t.tagName === 'SELECT' && t.hasAttribute('data-set')) { setDirty = true; var b = $('#savebar'); if (b) b.hidden = false; }
 });

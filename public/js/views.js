@@ -26,6 +26,12 @@ function catChip(n, quick) {
   if (c) return '<span class="chip cat cat-' + c.color + '"' + q(c.id) + '><i class="dot"></i>' + esc(c.name) + '</span>' + chk;
   return chk;
 }
+// Badge de lecture : le toucher fait passer « À lire » à « Lu » (et inversement).
+function readChip(n) {
+  if (n.read === 'todo') return '<button class="chip read todo" data-a="read-toggle" data-id="' + n.id + '" title="Marquer comme lu">' + I(IC.bookmark, 13) + 'À lire</button>';
+  if (n.read === 'done') return '<button class="chip read done" data-a="read-toggle" data-id="' + n.id + '" title="Lu' + (n.readAt ? ' le ' + esc(fmtFull(n.readAt)) : '') + ' · toucher pour remettre à lire">' + I(IC.check, 13) + 'Lu</button>';
+  return '';
+}
 function tagChips(n, quick) {
   return n.tagIds.map(function (id) { var t = tagById(id); return t ? '<span class="chip"' + (quick ? ' data-a="qtag" data-id="' + t.id + '" role="button" tabindex="0" title="Filtrer sur ce tag"' : '') + '>#' + esc(t.name) + '</span>' : ''; }).join('');
 }
@@ -63,11 +69,11 @@ function card(n, q) {
   var foot;
   if (n.status === 'pending' || n.status === 'error') {
     var lbl = n.status === 'error' ? '<span class="chip err">Erreur d\'analyse</span>' : n.pendingReason === 'budget' ? '<span class="chip check">Plafond atteint</span>' : n.pendingReason === 'quota' ? '<span class="chip check">Quota atteint</span>' : '<span class="chip check">À analyser</span>';
-    foot = (n.notebookId ? catChip(n, true) : '') + lbl + '<button class="btn" style="height:44px;margin-left:auto;padding:0 14px" data-a="analyze" data-id="' + n.id + '">' + I(IC.spark, 16) + (n.status === 'error' ? 'Relancer' : 'Analyser') + '</button>';
+    foot = readChip(n) + (n.notebookId ? catChip(n, true) : '') + lbl + '<button class="btn" style="height:44px;margin-left:auto;padding:0 14px" data-a="analyze" data-id="' + n.id + '">' + I(IC.spark, 16) + (n.status === 'error' ? 'Relancer' : 'Analyser') + '</button>';
   } else {
     var tags = tagChips(n, true);
     var end = (n.locked ? '<span aria-label="Classement verrouillé" role="img">' + I(IC.lock, 16) + '</span>' : '') + (n.ai && !n.locked && n.notebookId ? '<span aria-label="Classé par l\'IA" role="img" title="Classé par l\'IA (' + esc(provLabel(n)) + ')">' + I(IC.spark, 16) + '</span>' : '');
-    foot = (n.type === 'synthesis' ? '<span class="chip">Synthèse</span>' : catChip(n, true)) + tags + (n.enrichment ? '<span class="chip wait" title="Pistes complémentaires">' + I(IC.spark, 12) + 'Pistes</span>' : '') + (end ? '<span class="end">' + end + '</span>' : '');
+    foot = readChip(n) + (n.type === 'synthesis' ? '<span class="chip">Synthèse</span>' : catChip(n, true)) + tags + (n.enrichment ? '<span class="chip wait" title="Pistes complémentaires">' + I(IC.spark, 12) + 'Pistes</span>' : '') + (end ? '<span class="end">' + end + '</span>' : '');
   }
   return '<div class="card" role="button" tabindex="0" data-a="open" data-id="' + n.id + '" aria-label="Ouvrir : ' + esc(n.title) + '">' + thumbHtml(n) + headLine(n) +
     '<div class="ttl">' + hl(n.title, q) + '</div><div class="exc">' + ex + '</div>' + (n.links && n.links.length ? linkCard(n.links[0], true) + (n.links.length > 1 ? '<div class="muted" style="font-size:13px">+ ' + plural(n.links.length - 1, 'autre lien', 'autres liens') + '</div>' : '') : '') + matchLabel(n, q) + '<div class="foot">' + foot + '</div></div>';
@@ -89,7 +95,7 @@ function listRow(n, q) {
   return '<div class="lrow" role="button" tabindex="0" data-a="open" data-id="' + n.id + '" aria-label="Ouvrir : ' + esc(n.title) + '">' +
     '<span class="lt">' + I(IC[n.type] || IC.text, 16) + '<span>' + hl(n.title, q) + '</span>' + (n.enrichment ? I(IC.spark, 13) : '') + '</span>' +
     '<span class="ld" title="' + esc(fmtFull(n.createdAt)) + '">' + d.toLocaleDateString('fr-BE', { day: 'numeric', month: 'short', year: 'numeric' }) + '</span>' +
-    '<span class="lc">' + (n.type === 'synthesis' ? '<span class="chip">Synthèse</span>' : catChip(n, true)) + tags + state + '</span></div>';
+    '<span class="lc">' + readChip(n) + (n.type === 'synthesis' ? '<span class="chip">Synthèse</span>' : catChip(n, true)) + tags + state + '</span></div>';
 }
 
 function live() { return S.notes.filter(function (n) { return !n.trashedAt; }); }
@@ -102,6 +108,7 @@ function filtered(f) {
   return live().filter(function (n) {
     if (range && (n.createdAt < range[0] || n.createdAt > range[1])) return false;
     var busy = n.status === 'queued' || n.status === 'analyzing' || n.status === 'uploading';
+    if (f.read && n.read !== f.read) return false;
     if (busy) return !f.cat && !f.tags.length && !nq;
     if (f.cat === '__none') { if (n.notebookId && !n.needsReview) return false; if (n.type === 'synthesis') return false; }
     else if (f.cat && n.notebookId !== f.cat) return false;
@@ -113,7 +120,8 @@ function filtered(f) {
     return true;
   }).sort(function (a, b) { return b.createdAt - a.createdAt; });
 }
-function filterCount() { return (F.cat ? 1 : 0) + F.tags.length + (dateRange() ? 1 : 0); }
+function filterCount() { return (F.cat ? 1 : 0) + F.tags.length + (F.read ? 1 : 0) + (dateRange() ? 1 : 0); }
+var READ_LABEL = { todo: 'À lire', done: 'Lues' };
 
 /* ---------- Panneau de filtres : carnet, tags, date ---------- */
 // Même contenu dans la fenêtre du bas (téléphone) et dans la colonne latérale (grand écran).
@@ -151,10 +159,19 @@ function renderFilterPanel() {
   var nCats = cats.length;
   if (!FP.allCats && !nq) cats = cats.filter(function (x, i) { return i < FP_MAX_CATS || x.c.id === F.cat; });
   var none = countIn(all, function (n) { return n.type !== 'synthesis' && n.status === 'ready' && (!n.notebookId || n.needsReview); });
-  var radio = function (id, label, k, cls, on) {
-    return '<button class="fp-row' + (cls ? ' ' + cls : '') + (k ? '' : ' zero') + '" role="radio" data-a="fcat" data-id="' + id + '" aria-checked="' + on + '"><i class="rd"></i>' + label + '<small>' + k + '</small></button>';
+  var radio = function (id, label, k, cls, on, act) {
+    return '<button class="fp-row' + (cls ? ' ' + cls : '') + (k ? '' : ' zero') + '" role="radio" data-a="' + (act || 'fcat') + '" data-id="' + id + '" aria-checked="' + on + '"><i class="rd"></i>' + label + '<small>' + k + '</small></button>';
   };
-  var h = '<div class="fp-sec"><div class="l">Carnet</div><div class="fp-list" role="radiogroup" aria-label="Carnet">';
+  // Lecture : affichée dès qu'une note est marquée « à lire » ou « lue ».
+  var h = '';
+  if (F.read || live().some(function (n) { return n.read; })) {
+    var rall = filtered(Object.assign({}, F, { read: '' }));
+    h += '<div class="fp-sec"><div class="l">Lecture</div><div class="fp-list" role="radiogroup" aria-label="Lecture">' +
+      radio('', 'Toutes les notes', rall.length, '', !F.read, 'fread') +
+      radio('todo', I(IC.bookmark, 14) + '<span>À lire</span>', countIn(rall, function (n) { return n.read === 'todo'; }), '', F.read === 'todo', 'fread') +
+      radio('done', I(IC.check, 14) + '<span>Lues</span>', countIn(rall, function (n) { return n.read === 'done'; }), '', F.read === 'done', 'fread') + '</div></div>';
+  }
+  h += '<div class="fp-sec"><div class="l">Carnet</div><div class="fp-list" role="radiogroup" aria-label="Carnet">';
   if (!nq) h += radio('', 'Tous les carnets', all.length, '', !F.cat);
   cats.forEach(function (x) { h += radio(x.c.id, '<i class="dot"></i><span>' + esc(x.c.name) + '</span>', x.k, 'cat-' + x.c.color, F.cat === x.c.id); });
   if ((none || F.cat === '__none') && match('à vérifier')) h += radio('__none', I(IC.help, 14) + '<span>À vérifier</span>', none, '', F.cat === '__none');
@@ -207,6 +224,7 @@ function renderActive() {
   if (F.cat === '__none') h += x('cat', '', 'À vérifier');
   else if (F.cat && nb(F.cat)) h += x('cat', '', '<i class="dot"></i>' + esc(nb(F.cat).name), 'cat-' + nb(F.cat).color);
   F.tags.forEach(function (id, i) { var t = tagById(id); if (t) h += (i && F.tagMode === 'any' ? '<span class="aor">ou</span>' : '') + x('tag', id, '#' + esc(t.name)); });
+  if (F.read) h += x('read', '', I(F.read === 'todo' ? IC.bookmark : IC.check, 14) + READ_LABEL[F.read]);
   if (dateRange()) h += x('period', '', esc(periodLabel()));
   if (filterCount() > 1) h += '<button class="linkbtn" data-a="clearf">Tout effacer</button>';
   $('#actchips').innerHTML = h;
@@ -257,6 +275,9 @@ function renderHome() {
   var trashed = S.notes.filter(function (n) { return n.trashedAt; }).length;
   $('#trashbtn').hidden = !trashed;
   $('#trashbtn').innerHTML = I('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>', 18) + 'Corbeille (' + trashed + ')';
+  var toread = live().filter(function (n) { return n.read === 'todo'; }).length;
+  $('#toreadbtn').hidden = !toread;
+  $('#toreadbtn').innerHTML = I(IC.bookmark, 18) + 'À lire (' + toread + ')';
   $('#synthhist').innerHTML = I(IC.synthesis, 18) + 'Historique des synthèses' + (S.synthesesCount ? ' (' + S.synthesesCount + ')' : '');
   var nready = list.filter(function (n) { return n.status === 'ready' && n.type !== 'synthesis'; }).length;
   $('#synth').hidden = !nready;

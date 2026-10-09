@@ -179,6 +179,24 @@ test('carnet choisi à la création jamais modifié par l\'IA', async () => {
   assert.strictEqual(n.notebookId, travail.id);
 });
 
+test('à lire / lu : choisi à la création, gardé après l\'analyse, modifiable', async () => {
+  const r = await call('POST', 'notes', { type: 'text', content: 'Article à lire https://example.org/article', read: 'todo' });
+  assert.strictEqual(r.data.note.read, 'todo');
+  const n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r.data.note.id); return x.status === 'ready' && x; });
+  assert.strictEqual(n.read, 'todo', 'l\'IA ne touche pas à l\'état de lecture');
+  let p = await call('PATCH', 'notes/' + n.id, { read: 'done' });
+  assert.strictEqual(p.data.note.read, 'done');
+  assert.ok(p.data.note.readAt);
+  assert.strictEqual(p.data.note.locked, n.locked, 'marquer comme lu ne verrouille pas le classement');
+  p = await call('PATCH', 'notes/' + n.id, { read: null });
+  assert.strictEqual(p.data.note.read, null);
+  assert.strictEqual(p.data.note.readAt, null);
+  p = await call('PATCH', 'notes/' + n.id, { read: 'peut-être' });
+  assert.strictEqual(p.status, 400);
+  const plain = await call('POST', 'notes', { type: 'text', content: 'Liste de courses' });
+  assert.strictEqual(plain.data.note.read, null);
+});
+
 test('mode manuel : aucune analyse sans clic', async () => {
   await call('PATCH', 'settings', { trigger: { classif: 'manual' } });
   const before = calls.length;

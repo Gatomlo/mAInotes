@@ -25,7 +25,7 @@ function shead(t) { return '<div class="shead"><h2>' + t + '</h2>' + xbtn() + '<
 /* ---------- Ajout d'une note ---------- */
 var add = null;
 function openAdd(t) {
-  add = { tab: t || 'text', enrich: S.settings.trigger.enrich === 'auto', notebookId: S.settings.defaultNotebook || '', text: '', caption: '', rec: null, audio: null, images: [] };
+  add = { tab: t || 'text', read: null, enrich: S.settings.trigger.enrich === 'auto', notebookId: S.settings.defaultNotebook || '', text: '', caption: '', rec: null, audio: null, images: [] };
   modal = 'add';
   renderAdd();
 }
@@ -58,8 +58,16 @@ function renderAdd() {
   var co = '<option value=""' + (!add.notebookId ? ' selected' : '') + '>Choisi par l\'IA</option>' + S.notebooks.map(function (c) { return '<option value="' + c.id + '"' + (add.notebookId === c.id ? ' selected' : '') + '>' + esc(c.name) + (st.defaultNotebook === c.id ? ' (par défaut)' : '') + '</option>'; }).join('');
   openSheet(shead('Nouvelle note') + '<div class="seg">' + tb('text', 'Écrire') + tb('voice', 'Parler') + tb('image', 'Image') + '</div><div><label class="l" for="addcat">Carnet de destination</label><select id="addcat" class="field">' + co + '</select></div>' +
     (st.trigger.enrich !== 'off' ? '<label class="check"><input type="checkbox" id="addenrich"' + (add.enrich ? ' checked' : '') + '><span><b>Enrichir cette note</b><small>Explication, pistes et sources, dans l\'appel de classement (aucun appel en plus).</small></span></label>' : '') +
+    '<label class="check"><input type="checkbox" id="addread"' + (addReadOn() ? ' checked' : '') + '><span><b>À lire plus tard</b><small>Un article, une vidéo à consulter sans le perdre. Cochée d\'office quand la note contient un lien.</small></span></label>' +
     body, 'Nouvelle note');
 }
+// « À lire » : choix explicite, sinon déduit de la présence d'un lien (règle locale, sans IA).
+function hasLink(v) { URL_RE.lastIndex = 0; return URL_RE.test(String(v || '')); }
+function addReadOn() {
+  if (add.read !== null) return add.read;
+  return add.tab === 'text' ? hasLink(add.text) : add.tab === 'image' ? hasLink(add.caption) : false;
+}
+function addRead() { var b = $('#addread'); return b ? b.checked : false; }
 
 // Valeur envoyée seulement si elle diffère du réglage général (sinon le réglage décide).
 function addEnrich() {
@@ -71,7 +79,7 @@ function addEnrich() {
 function addText() {
   var t = $('#ntext').value.trim();
   if (!t) { toast('La note est vide.'); return; }
-  queueNote({ type: 'text', content: t, notebookId: $('#addcat').value, enrich: addEnrich() });
+  queueNote({ type: 'text', content: t, notebookId: $('#addcat').value, enrich: addEnrich(), read: addRead() });
   closeModal();
   toast(online ? 'Note ajoutée' : 'Note enregistrée sur l\'appareil');
 }
@@ -138,7 +146,7 @@ function addVoice() {
   var b = add.audio.blob;
   var type = (b.type || 'audio/webm').split(';')[0];
   var blob = b.type === type ? b : new Blob([b], { type: type });
-  queueNote({ type: 'voice', content: '', notebookId: $('#addcat').value, enrich: addEnrich(), dur: add.audio.dur, files: [{ original: blob }] });
+  queueNote({ type: 'voice', content: '', notebookId: $('#addcat').value, enrich: addEnrich(), read: addRead(), dur: add.audio.dur, files: [{ original: blob }] });
   closeModal();
   toast(online ? 'Vocal ajouté' : 'Vocal enregistré sur l\'appareil');
 }
@@ -176,7 +184,7 @@ function pickImages(files) {
 }
 function addImages() {
   if (!add.images.length) return;
-  queueNote({ type: 'image', content: $('#icap').value.trim(), notebookId: $('#addcat').value, enrich: addEnrich(), files: add.images.map(function (im) { return { original: im.original, ai: im.ai }; }) });
+  queueNote({ type: 'image', content: $('#icap').value.trim(), notebookId: $('#addcat').value, enrich: addEnrich(), read: addRead(), files: add.images.map(function (im) { return { original: im.original, ai: im.ai }; }) });
   closeModal();
   toast(online ? 'Image ajoutée' : 'Image enregistrée sur l\'appareil');
 }
@@ -249,6 +257,12 @@ function openDetail(id, edit) {
 }
 
 // Lecture : texte mis en forme, liens cliquables, classement en pastilles.
+function readPick(n) {
+  if (n.trashedAt) return '';
+  var b = function (id, label) { return '<button type="button" data-a="dread" data-id="' + id + '" aria-pressed="' + ((n.read || '') === id) + '">' + label + '</button>'; };
+  return '<div class="readpick"><span class="l" style="margin:0">Lecture</span><div class="modes small" role="group" aria-label="Lecture">' + b('', 'Aucune') + b('todo', I(IC.bookmark, 14) + 'À lire') + b('done', I(IC.check, 14) + 'Lu') + '</div>' +
+    (n.read === 'done' && n.readAt ? '<small class="muted">le ' + esc(fmtFull(n.readAt)) + '</small>' : '') + '</div>';
+}
 function readView(n, x) {
   var block = function (label, text, empty) {
     return '<div>' + (label ? '<div class="l">' + label + '</div>' : '') + (text ? '<div class="readtext">' + linkify(text) + '</div>' : '<p class="muted" style="margin:0">' + empty + '</p>') + '</div>';
@@ -263,7 +277,7 @@ function readView(n, x) {
   var classif = n.type === 'synthesis' ? '' : '<div class="foot" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">' + catChip(n) + tags +
     (n.locked ? '<span class="chip">' + I(IC.lock, 13) + 'Verrouillé</span>' : n.ai && n.notebookId ? '<span class="chip">' + I(IC.spark, 13) + 'Classé par l\'IA</span>' : '') + '</div>';
   return '<div class="shead"><h2 style="overflow-wrap:anywhere">' + esc(n.title) + '</h2>' + xbtn() + '</div>' +
-    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + x.media + body + aiNote + x.links +
+    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + readPick(n) + x.media + body + aiNote + x.links +
     (x.busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
     (x.analyzeBtns ? '<div class="actions">' + x.analyzeBtns + '</div>' : '') +
     '<div class="actions">' + (n.trashedAt ? '<button class="btn danger" data-a="purge" data-id="' + n.id + '">Supprimer définitivement</button>' : '') +
@@ -446,6 +460,7 @@ function filterLabel() {
   p.push(F.cat === '__none' ? 'À vérifier' : F.cat ? (nb(F.cat) || { name: 'Tous les carnets' }).name : 'Tous les carnets');
   var tg = F.tags.map(function (id) { var t = tagById(id); return t ? '#' + t.name : ''; }).filter(Boolean);
   if (tg.length) p.push(tg.join(F.tagMode === 'any' ? ' ou ' : ' · '));
+  if (F.read) p.push(F.read === 'todo' ? 'À lire' : 'Lues');
   if (F.q.trim()) p.push('« ' + F.q.trim() + ' »');
   if (periodLabel()) p.push('Créées : ' + periodLabel());
   return p.join(' · ');

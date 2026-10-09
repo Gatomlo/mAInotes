@@ -31,6 +31,7 @@ function matchLabel(n, q) {
   if (norm(n.content).indexOf(nq) > -1) w.push(n.type === 'image' ? 'la légende' : 'le texte');
   if (norm(n.transcript).indexOf(nq) > -1) w.push('la transcription');
   if (norm(n.description).indexOf(nq) > -1) w.push("la description de l'image");
+  if (norm(linksText(n)).indexOf(nq) > -1) w.push('un lien');
   return w.length ? '<div class="match">' + I(IC.search, 13) + 'Trouvé dans ' + w.join(' et ') + '</div>' : '';
 }
 function headLine(n) {
@@ -52,7 +53,7 @@ function card(n, q) {
     return '<div class="card busy" aria-busy="true" role="button" tabindex="0" data-a="open" data-id="' + n.id + '">' + headLine(n) + '<div class="ttl">' + esc(n.title) + '</div><div class="bar" style="width:78%"></div><div class="status">' + I(IC.spark) + what + '</div></div>';
   }
   var body = n.type === 'voice' ? (n.transcript || n.content) : n.type === 'image' ? [n.content, n.description].filter(Boolean).join(' — ') : n.content;
-  var ex = body ? hl(snippet(body, q), q) : '<span class="muted">' + (n.type === 'voice' ? 'Pas encore transcrite.' : n.type === 'image' ? 'Pas encore décrite.' : '') + '</span>';
+  var ex = body ? (norm(q).trim() ? hl(snippet(body, q), q) : linkify(snippet(body, ''))) : '<span class="muted">' + (n.type === 'voice' ? 'Pas encore transcrite.' : n.type === 'image' ? 'Pas encore décrite.' : '') + '</span>';
   var foot;
   if (n.status === 'pending' || n.status === 'error') {
     var lbl = n.status === 'error' ? '<span class="chip err">Erreur d\'analyse</span>' : n.pendingReason === 'budget' ? '<span class="chip check">Plafond atteint</span>' : '<span class="chip check">À analyser</span>';
@@ -60,10 +61,10 @@ function card(n, q) {
   } else {
     var tags = n.tagIds.map(function (id) { var t = tagById(id); return t ? '<span class="chip">#' + esc(t.name) + '</span>' : ''; }).join('');
     var end = (n.locked ? '<span aria-label="Classement verrouillé" role="img">' + I(IC.lock, 16) + '</span>' : '') + (n.ai && !n.locked && n.notebookId ? '<span aria-label="Classé par l\'IA" role="img" title="Classé par l\'IA (' + esc(provLabel(n)) + ')">' + I(IC.spark, 16) + '</span>' : '');
-    foot = (n.type === 'synthesis' ? '<span class="chip">Synthèse</span>' : catChip(n)) + tags + (end ? '<span class="end">' + end + '</span>' : '');
+    foot = (n.type === 'synthesis' ? '<span class="chip">Synthèse</span>' : catChip(n)) + tags + (n.enrichment ? '<span class="chip wait" title="Pistes complémentaires">' + I(IC.spark, 12) + 'Pistes</span>' : '') + (end ? '<span class="end">' + end + '</span>' : '');
   }
   return '<div class="card" role="button" tabindex="0" data-a="open" data-id="' + n.id + '" aria-label="Ouvrir : ' + esc(n.title) + '">' + thumbHtml(n) + headLine(n) +
-    '<div class="ttl">' + hl(n.title, q) + '</div><div class="exc">' + ex + '</div>' + matchLabel(n, q) + '<div class="foot">' + foot + '</div></div>';
+    '<div class="ttl">' + hl(n.title, q) + '</div><div class="exc">' + ex + '</div>' + (n.links && n.links.length ? linkCard(n.links[0], true) + (n.links.length > 1 ? '<div class="muted" style="font-size:13px">+ ' + plural(n.links.length - 1, 'autre lien', 'autres liens') + '</div>' : '') : '') + matchLabel(n, q) + '<div class="foot">' + foot + '</div></div>';
 }
 
 function outboxCard(item) {
@@ -164,7 +165,12 @@ function renderCats() {
   var retriInfo = r ? (r.status === 'running' ? 'Re-tri en cours : ' + r.done + ' / ' + r.total + ' notes examinées.' : 'Dernier re-tri le ' + fmtFull(r.date) + ' : ' + plural(r.items.length, 'note déplacée', 'notes déplacées') + '.') : '';
   $('#view-cats').innerHTML =
     '<div class="sec"><h2>Carnets</h2><button class="btn primary" data-a="cat-new">Nouveau carnet</button></div>' +
-    '<p class="sub">Chaque description guide le classement automatique. Une note n\'appartient qu\'à un seul carnet.</p>' +
+    '<form class="panel" id="ctxform"><h3>Description de votre carnet de notes</h3>' +
+    '<p class="sub" style="margin:0">Qui vous êtes, à quoi servent vos notes, vos sujets du moment. L\'IA la lit à chaque classement pour choisir le bon carnet.</p>' +
+    '<textarea id="ctx" class="field" rows="4" maxlength="1500" placeholder="ex. Enseignante en sciences, je note des idées de cours, des lectures sur l\'IA en éducation et les tâches du ranch (chevaux, travaux, factures).">' + esc(st.context || '') + '</textarea>' +
+    '<div class="help"><span>Restez bref : quelques phrases suffisent, et chaque mot est envoyé à chaque classement.</span></div>' +
+    '<div class="actions"><button type="submit" class="btn primary">Enregistrer la description</button></div></form>' +
+    '<p class="sub">Chaque carnet a aussi sa propre description (« Ce qu\'il doit contenir ») : touchez un carnet pour la compléter. Une note n\'appartient qu\'à un seul carnet.</p>' +
     '<div style="margin-top:12px"><label class="l" for="defcat">Carnet par défaut des nouvelles notes</label><select id="defcat" class="field" data-set="defaultNotebook">' + def + '</select><div class="help"><span>Modifiable note par note à la création. Un carnet choisi à la création n\'est jamais changé par l\'IA.</span></div></div>' +
     '<div class="list">' + rows + '</div>' +
     '<div class="sec"><h2>Tags</h2></div>' +

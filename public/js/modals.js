@@ -25,7 +25,7 @@ function shead(t) { return '<div class="shead"><h2>' + t + '</h2>' + xbtn() + '<
 /* ---------- Ajout d'une note ---------- */
 var add = null;
 function openAdd(t) {
-  add = { tab: t || 'text', notebookId: S.settings.defaultNotebook || '', text: '', caption: '', rec: null, audio: null, images: [] };
+  add = { tab: t || 'text', enrich: S.settings.trigger.enrich === 'auto', notebookId: S.settings.defaultNotebook || '', text: '', caption: '', rec: null, audio: null, images: [] };
   modal = 'add';
   renderAdd();
 }
@@ -56,13 +56,22 @@ function renderAdd() {
       '<div class="actions"><button class="btn primary" data-a="add-img"' + (add.images.length ? '' : ' disabled') + '>Ajouter ' + (add.images.length > 1 ? 'les images' : 'l\'image') + '</button></div>';
   }
   var co = '<option value=""' + (!add.notebookId ? ' selected' : '') + '>Choisi par l\'IA</option>' + S.notebooks.map(function (c) { return '<option value="' + c.id + '"' + (add.notebookId === c.id ? ' selected' : '') + '>' + esc(c.name) + (st.defaultNotebook === c.id ? ' (par défaut)' : '') + '</option>'; }).join('');
-  openSheet(shead('Nouvelle note') + '<div class="seg">' + tb('text', 'Écrire') + tb('voice', 'Parler') + tb('image', 'Image') + '</div><div><label class="l" for="addcat">Carnet de destination</label><select id="addcat" class="field">' + co + '</select></div>' + body, 'Nouvelle note');
+  openSheet(shead('Nouvelle note') + '<div class="seg">' + tb('text', 'Écrire') + tb('voice', 'Parler') + tb('image', 'Image') + '</div><div><label class="l" for="addcat">Carnet de destination</label><select id="addcat" class="field">' + co + '</select></div>' +
+    (st.trigger.enrich !== 'off' ? '<label class="check"><input type="checkbox" id="addenrich"' + (add.enrich ? ' checked' : '') + '><span><b>Enrichir cette note</b><small>Explication, pistes et sources, dans l\'appel de classement (aucun appel en plus).</small></span></label>' : '') +
+    body, 'Nouvelle note');
+}
+
+// Valeur envoyée seulement si elle diffère du réglage général (sinon le réglage décide).
+function addEnrich() {
+  var box = $('#addenrich');
+  if (!box) return undefined;
+  return box.checked === (S.settings.trigger.enrich === 'auto') ? undefined : box.checked;
 }
 
 function addText() {
   var t = $('#ntext').value.trim();
   if (!t) { toast('La note est vide.'); return; }
-  queueNote({ type: 'text', content: t, notebookId: $('#addcat').value });
+  queueNote({ type: 'text', content: t, notebookId: $('#addcat').value, enrich: addEnrich() });
   closeModal();
   toast(online ? 'Note ajoutée' : 'Note enregistrée sur l\'appareil');
 }
@@ -129,7 +138,7 @@ function addVoice() {
   var b = add.audio.blob;
   var type = (b.type || 'audio/webm').split(';')[0];
   var blob = b.type === type ? b : new Blob([b], { type: type });
-  queueNote({ type: 'voice', content: '', notebookId: $('#addcat').value, dur: add.audio.dur, files: [{ original: blob }] });
+  queueNote({ type: 'voice', content: '', notebookId: $('#addcat').value, enrich: addEnrich(), dur: add.audio.dur, files: [{ original: blob }] });
   closeModal();
   toast(online ? 'Vocal ajouté' : 'Vocal enregistré sur l\'appareil');
 }
@@ -167,7 +176,7 @@ function pickImages(files) {
 }
 function addImages() {
   if (!add.images.length) return;
-  queueNote({ type: 'image', content: $('#icap').value.trim(), notebookId: $('#addcat').value, files: add.images.map(function (im) { return { original: im.original, ai: im.ai }; }) });
+  queueNote({ type: 'image', content: $('#icap').value.trim(), notebookId: $('#addcat').value, enrich: addEnrich(), files: add.images.map(function (im) { return { original: im.original, ai: im.ai }; }) });
   closeModal();
   toast(online ? 'Image ajoutée' : 'Image enregistrée sur l\'appareil');
 }
@@ -215,10 +224,13 @@ function openDetail(id) {
     (n.status === 'error' && n.error ? '<div class="err">' + esc(n.error) + '</div>' : '') +
     (n.status === 'pending' && (n.pendingReason === 'budget' || n.pendingReason === 'config') ? '<div class="err">' + esc(n.error || 'Analyse en attente.') + '</div>' : '') +
     media + fields +
+    (n.links && n.links.length ? '<div><div class="l">' + (n.links.length > 1 ? 'Liens' : 'Lien') + '</div><div style="display:flex;flex-direction:column;gap:8px">' + n.links.map(function (l) { return linkCard(l, false); }).join('') + '</div>' +
+      (n.links.some(function (l) { return l.aiDescription; }) ? '<div class="help">' + I(IC.spark, 14) + '<span>Descriptif rédigé par l\'IA pendant le classement, à partir de la page.</span></div>' : '') + '</div>' : '') +
     (n.type !== 'synthesis' ? '<div><label class="l" for="d-cat">Carnet</label><select id="d-cat" class="field">' + opts + '</select>' + (n.notebookChosen ? '<div class="help"><span>Carnet choisi à la création : l\'IA ne le change pas.</span></div>' : '') + '</div>' +
       '<div><label class="l" for="dtagq">Tags</label><div class="sel" id="dsel"></div><div class="cbx"><input id="dtagq" class="field" role="combobox" aria-expanded="false" aria-controls="dtaglist" aria-autocomplete="list" autocomplete="off" placeholder="Rechercher ou créer un tag…"><div class="list2" id="dtaglist" role="listbox" hidden></div></div></div>' +
       sugg +
       '<div class="switch"><div><b>Verrouiller ce classement</b><span>Un re-tri ne le modifiera plus. Toute correction le verrouille.</span></div><button class="sw" role="switch" aria-checked="' + !!n.locked + '" aria-label="Verrouiller ce classement" data-a="dlock"><i></i></button></div>' : '') +
+    (busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
     (analyzeBtns ? '<div class="actions">' + analyzeBtns + '</div>' : '') +
     '<div class="actions">' + (n.trashedAt ? '<button class="btn danger" data-a="purge" data-id="' + n.id + '">Supprimer définitivement</button>' : '<button class="btn danger" data-a="del">Mettre à la corbeille</button>') + '<button class="btn primary" data-a="dsave">Enregistrer et fermer</button></div>', 'Détail de la note');
   if (n.type !== 'synthesis') dtSel();
@@ -537,4 +549,30 @@ function onSynced() {
   } else if (modal === 'retri-recap') {
     renderRetriRecap();
   }
+}
+
+/* Bloc « Pour aller plus loin » : complément généré par l'IA, liens vérifiés. */
+// Toujours présent dans le détail : sans enrichissement, il propose de le lancer
+// (le texte modifié est enregistré d'abord, puis l'IA travaille sur la version à jour).
+function enrichBtn(n, again) {
+  var st = S.settings;
+  return '<button class="btn" data-a="enrich" data-id="' + n.id + '">' + I(IC.spark, 18) + (again ? 'Régénérer les pistes' : 'Enrichir cette note') + (st.providers.enrich !== 'infomaniak' ? ' (' + PROV[st.providers.enrich] + ')' : '') + '</button>';
+}
+function enrichHtml(n) {
+  var e = n.enrichment;
+  var st = S.settings;
+  if (!e) {
+    if (st.trigger.enrich === 'off') return '<div class="help">' + I(IC.spark, 14) + '<span>Enrichissement désactivé. <button class="linkbtn" data-a="tab" data-id="set" style="min-height:0;padding:0">Changer le réglage</button></span></div>';
+    return '<div class="panel enrich" style="margin:0"><h3>' + I(IC.spark, 16) + ' Pour aller plus loin</h3><p class="sub" style="margin:0">Explication du sujet, pistes, recherches et sources vérifiées. Un appel IA.</p><div class="actions">' + enrichBtn(n, false) + '</div></div>';
+  }
+  var h = '<div class="panel enrich" style="margin:0"><div class="kv"><h3>' + I(IC.spark, 16) + ' Pour aller plus loin</h3><button class="linkbtn" data-a="enrich-del" data-id="' + n.id + '">Retirer</button></div>';
+  if (e.explanation) h += '<p style="margin:0">' + esc(e.explanation) + '</p>';
+  if (e.leads && e.leads.length) h += '<div><div class="l">Pistes</div><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">' + e.leads.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>';
+  if (e.links && e.links.length) h += '<div><div class="l">Sources</div><div style="display:flex;flex-direction:column;gap:8px">' + e.links.map(function (l) { return linkCard({ url: l.url, title: l.title, site: l.site, summary: l.summary }, true); }).join('') + '</div></div>';
+  if (e.searches && e.searches.length) h += '<div><div class="l">Rechercher</div><div style="display:flex;flex-direction:column;gap:6px">' + e.searches.map(function (s) {
+    return '<div class="kv" style="justify-content:flex-start"><span style="color:var(--ink)">« ' + esc(s.query) + ' »</span><span><a href="' + esc(s.web) + '" target="_blank" rel="noopener noreferrer">Web</a> · <a href="' + esc(s.scholar) + '" target="_blank" rel="noopener noreferrer">Scholar</a></span></div>';
+  }).join('') + '</div></div>';
+  if (st.trigger.enrich !== 'off') h += '<div class="actions">' + enrichBtn(n, true) + '</div>';
+  h += '<div class="help" style="margin:0">' + I(IC.help, 14) + '<span>Généré par l\'IA (' + esc(PROV[e.provider] || e.provider) + ') le ' + fmtFull(e.at) + ' : à vérifier. Les sources proposées ont été ouvertes par le serveur' + (e.rejected ? ' ; ' + plural(e.rejected, 'lien introuvable a été écarté', 'liens introuvables ont été écartés') : '') + '.</span></div></div>';
+  return h;
 }

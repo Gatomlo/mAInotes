@@ -5,6 +5,31 @@ function analyze(id, extra) {
   return api('POST', 'notes/' + id + '/analyze', extra || {}).then(function (r) { upsertNote(r.note); render(); scheduleSync(); if (modal === 'detail') openDetail(id); }, fail);
 }
 
+// Teste la clé et recharge la liste des modèles disponibles dans les menus.
+function testKey(p) {
+  var out = $('#ktest-' + p);
+  if (out) out.textContent = 'Test en cours…';
+  var pending = setDirty ? saveSettings() : Promise.resolve();
+  return pending.then(function () { return api('POST', 'keys/' + p + '/test', {}); }).then(function (r) {
+    return api('GET', 'state').then(function (d) {
+      S.providers = d.providers; saveCache();
+      var prov = S.providers.filter(function (x) { return x.id === p; })[0];
+      var box = $('#models-' + p);
+      if (box && prov) {
+        $$('select', box).forEach(function (sel) {
+          var k = sel.id.split('-').pop();
+          var tmp = document.createElement('div');
+          tmp.innerHTML = modelSelect(prov, k, sel.value);
+          sel.innerHTML = tmp.firstChild.innerHTML;
+        });
+      }
+      var n = (r.models && r.models.chat || []).length;
+      var o = $('#ktest-' + p);
+      if (o) o.innerHTML = '<span class="ok">Connexion réussie.</span> ' + n + (n > 1 ? ' modèles disponibles' : ' modèle disponible') + ' : choisissez-les dans « Modèles ».';
+    });
+  }, function (e) { var o = $('#ktest-' + p); if (o) o.innerHTML = '<span class="ko">' + esc(e.message) + '</span>'; });
+}
+
 var ACTIONS = {
   reload: function () { location.reload(); },
   'pw-toggle': function (el) { var i = $('#' + el.dataset.id); var show = i.type === 'password'; i.type = show ? 'text' : 'password'; el.textContent = show ? 'Masquer' : 'Afficher'; },
@@ -20,6 +45,16 @@ var ACTIONS = {
   qclear: function () { F.q = ''; $('#q').value = ''; renderHome(); $('#q').focus(); },
   open: function (el) { if (modal === 'detail' && curId !== el.dataset.id) saveDetail(false); openDetail(el.dataset.id); },
   analyze: function (el) { analyze(el.dataset.id); },
+  enrich: function (el) {
+    el.disabled = true;
+    el.textContent = 'Enrichissement en cours…';
+    var save = modal === 'detail' ? saveDetail(false) : Promise.resolve();
+    save.then(function () { return api('POST', 'notes/' + el.dataset.id + '/enrich', {}); }).then(function (r) {
+      upsertNote(r.note); render(); if (modal === 'detail') openDetail(el.dataset.id);
+      toast(r.empty ? 'Rien à ajouter pour cette note, selon l\'IA.' : 'Pistes ajoutées à la note');
+    }, function (e) { fail(e); if (modal === 'detail') openDetail(el.dataset.id); });
+  },
+  'enrich-del': function (el) { api('DELETE', 'notes/' + el.dataset.id + '/enrichment').then(function (r) { upsertNote(r.note); render(); openDetail(el.dataset.id); }, fail); },
   describe: function (el) { analyze(el.dataset.id, { describe: true }); },
   'analyze-with': function (el) { analyze(curId, { provider: el.dataset.id }); },
   'analyze-all': function () {
@@ -129,22 +164,13 @@ var ACTIONS = {
       S.providers = r.providers;
       var en = {}; en[p] = true;
       return saveSettings({ enabled: en });
-    }).then(function () { toast('Clé enregistrée (chiffrée sur le serveur)'); }, fail);
+    }).then(function () { toast('Clé enregistrée (chiffrée sur le serveur)'); return testKey(p); }, fail);
   },
   'key-del': function (el) {
     if (!confirm('Effacer la clé ' + PROV[el.dataset.id] + ' ?')) return;
     api('PUT', 'keys/' + el.dataset.id, { key: '' }).then(function (r) { S.providers = r.providers; renderSet(); render(); }, fail);
   },
-  'key-test': function (el) {
-    var p = el.dataset.id, out = $('#ktest-' + p);
-    out.textContent = 'Test en cours…';
-    var pending = setDirty ? saveSettings() : Promise.resolve();
-    pending.then(function () { return api('POST', 'keys/' + p + '/test', {}); }).then(function (r) {
-      var o = $('#ktest-' + p) || out;
-      o.innerHTML = '<span class="ok">Connexion réussie.</span> ' + (r.models && r.models.length ? 'Modèles disponibles : ' + esc(r.models.slice(0, 30).join(', ')) : '');
-      var dl = $('#ml-' + p); if (dl && r.models) dl.innerHTML = r.models.map(function (m) { return '<option value="' + esc(m) + '">'; }).join('');
-    }, function (e) { var o = $('#ktest-' + p) || out; o.innerHTML = '<span class="ko">' + esc(e.message) + '</span>'; });
-  },
+  'key-test': function (el) { testKey(el.dataset.id); },
   'log-open': openLog,
 
   logout: function () {
@@ -156,6 +182,7 @@ var ACTIONS = {
 };
 
 document.addEventListener('click', function (e) {
+  if (e.target.closest('a[href]')) return; // un vrai lien s'ouvre, sans ouvrir la carte
   var el = e.target.closest('[data-a]');
   if (el && ACTIONS[el.dataset.a]) {
     if (el.tagName === 'A') return;
@@ -194,11 +221,17 @@ document.addEventListener('change', function (e) {
   if (t.id === 'afile') importAudio(t.files[0]);
   if (t.id === 'ifile') { add.notebookId = $('#addcat').value; pickImages(t.files); }
   if (t.id === 'addcat' && add) add.notebookId = t.value;
+  if (t.id === 'addenrich' && add) add.enrich = t.checked;
   if (t.id === 'defcat') saveSettings({ defaultNotebook: t.value }).then(function () { renderCats(); toast('Carnet par défaut enregistré'); });
   if (t.closest && t.closest('#view-set') && t.tagName === 'SELECT' && t.hasAttribute('data-set')) { setDirty = true; var b = $('#savebar'); if (b) b.hidden = false; }
 });
 document.addEventListener('focusin', function (e) { if (e.target.id === 'dtagq') dtList(true); });
 document.addEventListener('submit', function (e) {
+  if (e.target.id === 'ctxform') {
+    e.preventDefault();
+    saveSettings({ context: $('#ctx').value }).then(function () { toast('Description enregistrée'); renderCats(); });
+    return;
+  }
   if (e.target.id === 'tagform') {
     e.preventDefault();
     var v = $('#newtag').value.trim();

@@ -5,11 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mes notes</title>
 <meta name="theme-color" content="#0B6E6E">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Mes notes">
-<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mes notes" id="apple-title">
+<link rel="manifest" href="manifest.json" id="manifest-link">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" id="apple-icon">
+<script>
+/* Avant tout chargement : manifeste choisi pour l'installation (accueil ou « Nouvelle note »). */
+(function () {
+  var q = location.search, pref = '';
+  try { pref = localStorage.getItem('mainotes-install') || ''; } catch (e) {}
+  if (/[?&]action=new/.test(q) || pref === 'new') {
+    document.getElementById('manifest-link').href = 'manifest-new.json';
+    document.getElementById('apple-icon').href = 'icons/new-apple-touch-icon.png';
+    document.getElementById('apple-title').content = 'Nouvelle note';
+  }
+})();
+</script>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>

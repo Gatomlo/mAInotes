@@ -1,17 +1,26 @@
 {
+  "id": "./",
   "name": "Mes notes – carnet intelligent",
   "short_name": "Mes notes",
   "description": "Notes texte, vocales et images rangées automatiquement dans des carnets et des tags.",
   "lang": "fr-BE",
   "start_url": "./",
   "scope": "./",
-  "display": "standalone",
-  "background_color": "#F4F5F7",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#0B6E6E",
   "theme_color": "#0B6E6E",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Écrire une note", "short_name": "Écrire", "url": "./?action=new&type=text", "icons": [{ "src": "icons/new-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Enregistrer un vocal", "short_name": "Parler", "url": "./?action=new&type=voice", "icons": [{ "src": "icons/new-192.png", "sizes": "192x192", "type": "image/png" }] },
+    { "name": "Ajouter une photo", "short_name": "Photo", "url": "./?action=new&type=image", "icons": [{ "src": "icons/new-192.png", "sizes": "192x192", "type": "image/png" }] }
   ]
 }

@@ -48,6 +48,7 @@ function renderSet() {
 
   $('#view-set').innerHTML =
     '<div class="sec"><h2>Réglages</h2></div>' +
+    '<div class="panel" id="installpanel"></div>' +
     '<p class="sub">Tout ce qui pilote l\'IA et la consommation. Les clés restent sur le serveur, chiffrées, et ne sont jamais réaffichées.</p>' +
     '<div class="sec"><h2 style="font-size:18px">Fournisseurs, clés et budget</h2><button class="btn" data-a="log-open">Journal des appels</button></div>' +
     '<p class="sub">Coûts estimés à partir des jetons consommés ; seule la facture du fournisseur fait foi. Alerte à 80 %, blocage à 100 % : les notes restent alors en attente, sans perte.</p>' +
@@ -78,7 +79,40 @@ function renderSet() {
     '<div class="panel"><h3>Carnets et tags</h3><div class="actions"><button class="btn" data-a="tab" data-id="cats">Gérer les carnets et les tags</button></div></div>' +
     '<div class="savebar" id="savebar" hidden><span>Modifications non enregistrées</span><button class="btn primary" data-a="set-save" id="setsave">Enregistrer les réglages</button></div>';
   setDirty = false;
+  renderInstall();
   autoRefreshModels();
+}
+
+/* Installer sur cet appareil : ouverture sur l'accueil ou directement sur « Nouvelle note ». */
+function installPref() { try { return localStorage.getItem('mainotes-install') === 'new' ? 'new' : 'home'; } catch (e) { return 'home'; } }
+function renderInstall() {
+  var box = $('#installpanel');
+  if (!box) return;
+  var pref = installPref();
+  var ua = navigator.userAgent;
+  var ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && 'ontouchend' in document);
+  var android = /Android/.test(ua);
+  var choice = function (v, img, title, sub) {
+    return '<button type="button" data-a="install-pref" data-id="' + v + '" aria-pressed="' + (pref === v) + '"><img src="icons/' + img + '" alt="">' + title + '<small>' + sub + '</small></button>';
+  };
+  var how = installPrompt ? '<div class="actions"><button class="btn primary" data-a="install-go">' + I(IC.upload, 18) + 'Installer « ' + (pref === 'new' ? 'Nouvelle note' : 'Mes notes') + ' »</button></div>'
+    : ios ? '<div class="help"><span>Sur iPhone ou iPad, dans <b>Safari</b> : bouton <b>Partager</b> (carré avec une flèche) › <b>Sur l\'écran d\'accueil</b> › Ajouter.</span></div>'
+    : android ? '<div class="help"><span>Dans <b>Chrome</b> : menu <b>⋮</b> › <b>Installer l\'application</b> (ou « Ajouter à l\'écran d\'accueil »).</span></div>'
+    : '<div class="help"><span>Dans Chrome ou Edge : icône d\'installation à droite de la barre d\'adresse, ou menu › Installer.</span></div>';
+  box.innerHTML = '<h3>Installer sur cet appareil</h3>' +
+    (isInstalled() ? '<p class="sub" style="margin:0">' + I(IC.check || '<path d="m5 12 5 5 9-10"/>', 14) + ' Vous utilisez l\'application installée, en plein écran.</p>' : '<p class="sub" style="margin:0">L\'application s\'ouvre en plein écran, comme une application du téléphone. Choisissez sur quoi elle s\'ouvre :</p>') +
+    '<div class="install-choice">' + choice('home', 'icon-192.png', 'Mes notes', 'Ouvre l\'accueil') + choice('new', 'new-192.png', 'Nouvelle note', 'Ouvre directement la création d\'une note') + '</div>' +
+    how +
+    '<div class="help"><span>Pour avoir les deux icônes, installez une fois avec chaque choix. Sur Android, un appui long sur l\'icône « Mes notes » propose aussi les raccourcis Écrire, Parler et Photo.</span></div>';
+}
+function setInstallPref(v) {
+  try { localStorage.setItem('mainotes-install', v); } catch (e) { /* rien */ }
+  $('#manifest-link').href = v === 'new' ? 'manifest-new.json' : 'manifest.json';
+  $('#apple-icon').href = v === 'new' ? 'icons/new-apple-touch-icon.png' : 'icons/apple-touch-icon.png';
+  $('#apple-title').content = v === 'new' ? 'Nouvelle note' : 'Mes notes';
+  // Safari (iPhone) installe l'adresse affichée : on la fait correspondre au choix.
+  try { history.replaceState(null, '', v === 'new' ? './?action=new' : './'); } catch (e) { /* rien */ }
+  renderInstall();
 }
 
 // Charge d'office la liste des modèles de chaque fournisseur qui a une clé, si elle

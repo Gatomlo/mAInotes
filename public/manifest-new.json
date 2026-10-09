@@ -1,0 +1,19 @@
+{
+  "id": "./?app=nouvelle-note",
+  "name": "Nouvelle note – Mes notes",
+  "short_name": "Nouvelle note",
+  "description": "Ouvre directement la création d'une note.",
+  "lang": "fr-BE",
+  "start_url": "./?action=new",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#0B6E6E",
+  "theme_color": "#0B6E6E",
+  "icons": [
+    { "src": "icons/new-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/new-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/new-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

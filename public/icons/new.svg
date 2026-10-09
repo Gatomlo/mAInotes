@@ -11,5 +11,6 @@
     <g stroke="#0B6E6E" stroke-width="20" stroke-linecap="round" opacity=".85"><path d="M206 172h120"/><path d="M206 228h120"/><path d="M206 284h76"/></g>
     <path d="M372 286c7 34 21 48 55 55-34 7-48 21-55 55-7-34-21-48-55-55 34-7 48-21 55-55z" fill="url(#star)" stroke="#0A5C5C" stroke-width="10" stroke-linejoin="round"/>
     <path d="M318 360c3 14 9 20 23 23-14 3-20 9-23 23-3-14-9-20-23-23 14-3 20-9 23-23z" fill="#FFE38A"/>
+  <g id="plus"><circle cx="388" cy="124" r="62" fill="#FFC233" stroke="#0A5C5C" stroke-width="10"/><path d="M388 96v56M360 124h56" stroke="#0A5C5C" stroke-width="16" stroke-linecap="round"/></g>
   </g>
 </svg>

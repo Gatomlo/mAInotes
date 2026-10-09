@@ -240,6 +240,7 @@ function sync() {
     S.providers = d.providers; S.retri = d.retri; S.synthesesCount = d.synthesesCount;
     saveCache();
     render();
+    if (startAction && S.user) { var t = startAction; startAction = null; openAdd(t); }
     if (typeof onSynced === 'function') onSynced();
   }).catch(function () { render(); }).then(scheduleSync);
 }
@@ -279,11 +280,30 @@ function onLoggedOut(data) {
   showAuth(data && data.setup ? 'setup' : 'login', { setupTokenRequired: false });
 }
 
+// Lancement par l'icône « Nouvelle note » ou un raccourci : ?action=new[&type=voice|image]
+var startAction = (function () {
+  var q = new URLSearchParams(location.search);
+  if (q.get('action') !== 'new') return null;
+  var t = q.get('type');
+  return t === 'voice' || t === 'image' ? t : 'text';
+})();
+
 function showApp() {
   $('#auth').hidden = true;
   $('#app').hidden = false;
   $('#fab').hidden = false;
+  if (startAction) tab = 'home';
   setTab(tab);
+  if (startAction && S.settings) { var t = startAction; startAction = null; openAdd(t); }
+}
+
+/* Installation sur l'appareil (Android, ordinateur) : l'invitation du navigateur est
+   gardée pour être lancée depuis Réglages › Installer sur cet appareil. */
+var installPrompt = null;
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installPrompt = e; if (tab === 'set' && typeof renderInstall === 'function') renderInstall(); });
+window.addEventListener('appinstalled', function () { installPrompt = null; toast('Application installée'); if (tab === 'set' && typeof renderInstall === 'function') renderInstall(); });
+function isInstalled() {
+  return !!(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches));
 }
 
 if ('serviceWorker' in navigator) {

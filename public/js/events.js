@@ -175,6 +175,14 @@ var ACTIONS = {
   },
   'key-test': function (el) { testKey(el.dataset.id); },
   'log-open': openLog,
+  'install-pref': function (el) { setInstallPref(el.dataset.id); },
+  'install-go': function () {
+    if (!installPrompt) return;
+    var p = installPrompt;
+    installPrompt = null;
+    p.prompt();
+    (p.userChoice || Promise.resolve({})).then(function (r) { if (r.outcome === 'dismissed') toast('Installation annulée'); renderInstall(); });
+  },
 
   logout: function () {
     api('POST', 'auth/logout', {}).then(function () { clearCache(); S.user = null; showAuth('login', {}); }, fail);

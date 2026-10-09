@@ -248,3 +248,14 @@ test('suppression du compte : retour à la création', async () => {
   assert.strictEqual(r.data.setup, true);
   assert.deepStrictEqual(fs.readdirSync(path.join(dataDir, 'media')), []);
 });
+
+test('modèle Gemini retiré remplacé au chargement', () => {
+  const { Store } = require('../lib/store');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mainotes-mig-'));
+  const s1 = new Store(dir);
+  s1.db.settings.models.gemini = { chat: 'gemini-2.5-flash-lite', vision: 'mon-modele', audio: 'gemini-2.5-flash-lite' };
+  s1.save();
+  const s2 = new Store(dir);
+  assert.deepStrictEqual(s2.db.settings.models.gemini, { chat: 'gemini-3.5-flash-lite', vision: 'mon-modele', audio: 'gemini-3.5-flash-lite' });
+  fs.rmSync(dir, { recursive: true, force: true });
+});

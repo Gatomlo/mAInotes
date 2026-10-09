@@ -297,6 +297,15 @@ function showApp() {
   if (startAction && S.settings) { var t = startAction; startAction = null; openAdd(t); }
 }
 
+/* Bouton flottant sur grand écran : visible dès que « Nouvelle note » de l'en-tête sort de l'écran. */
+(function () {
+  var head = document.querySelector('.add-desktop');
+  if (!head || !window.IntersectionObserver) { document.body.classList.add('fab-on'); return; }
+  new IntersectionObserver(function (entries) {
+    document.body.classList.toggle('fab-on', !entries[0].isIntersecting);
+  }).observe(head);
+})();
+
 /* Installation sur l'appareil (Android, ordinateur) : l'invitation du navigateur est
    gardée pour être lancée depuis Réglages › Installer sur cet appareil. */
 var installPrompt = null;

@@ -2,6 +2,35 @@
 'use strict';
 
 var setDirty = false, accountLoaded = false;
+
+/* Cartes des onglets Réglages et Compte en accordéons, fermés par défaut. L'état
+   ouvert/fermé est retenu pendant la session, pour survivre aux réaffichages. */
+var accOpen = {};
+function accordionize(root) {
+  if (!root) return;
+  $$('.panel', root).forEach(function (panel) {
+    if (panel.parentElement !== root) return;
+    if (panel.querySelector(':scope > details.acc-d')) return;
+    var first = panel.firstElementChild;
+    if (!first) return;
+    var head = first.tagName === 'H3' || (first.classList.contains('kv') && first.querySelector('h3')) ? first : null;
+    if (!head) return;
+    var key = root.id + ':' + (head.querySelector('h3') || head).textContent.trim();
+    var d = document.createElement('details');
+    d.className = 'acc-d';
+    if (accOpen[key]) d.open = true;
+    var sum = document.createElement('summary');
+    sum.appendChild(head);
+    d.appendChild(sum);
+    var body = document.createElement('div');
+    body.className = 'acc-b';
+    while (panel.firstChild) body.appendChild(panel.firstChild);
+    d.appendChild(body);
+    panel.appendChild(d);
+    panel.classList.add('acc');
+    d.addEventListener('toggle', function () { accOpen[key] = d.open; });
+  });
+}
 var FN = [['classif', 'Classement des notes'], ['transcr', 'Transcription des vocaux'], ['vision', 'Description des images'], ['synth', 'Synthèse des notes affichées'], ['enrich', 'Enrichissement des notes']];
 
 // Menu des modèles réellement disponibles (liste lue au dernier test de connexion).
@@ -148,6 +177,7 @@ function renderInstall() {
     '<div class="install-choice">' + choice('home', 'icon-192.png', 'Mes notes', 'Ouvre l\'accueil') + choice('new', 'new-192.png', 'Nouvelle note', 'Ouvre directement la création d\'une note') + '</div>' +
     how +
     '<div class="help"><span>Pour avoir les deux icônes, installez une fois avec chaque choix. Sur Android, un appui long sur l\'icône « Mes notes » propose aussi les raccourcis Écrire, Parler et Photo.</span></div>';
+  accordionize(box.parentNode);
 }
 function setInstallPref(v) {
   try { localStorage.setItem('mainotes-install', v); } catch (e) { /* rien */ }
@@ -234,6 +264,7 @@ function renderAccount() {
       '<div class="err" id="del-err" role="alert" hidden></div>' +
       '<div class="actions"><button type="submit" class="btn danger">Supprimer définitivement</button></div></form>';
     bindAccountForms(u);
+    accordionize($('#view-account'));
   }, function (e) { $('#view-account').innerHTML = '<p class="err">' + esc(e.message) + '</p>'; });
 }
 

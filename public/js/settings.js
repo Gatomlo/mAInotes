@@ -4,6 +4,16 @@
 var setDirty = false, accountLoaded = false;
 var FN = [['classif', 'Classement des notes'], ['transcr', 'Transcription des vocaux'], ['vision', 'Description des images'], ['synth', 'Synthèse des notes affichées']];
 
+// Menu des modèles réellement disponibles (liste lue au dernier test de connexion).
+// Le modèle en place reste choisi même s'il n'y figure plus, avec un avertissement.
+function modelSelect(p, k, cur) {
+  var list = p.models && p.models[k] ? p.models[k] : [];
+  var h = '';
+  if (cur && list.indexOf(cur) < 0) h += opt(cur, cur, esc(cur) + (list.length ? ' – absent de la liste, à remplacer' : ''));
+  h += list.map(function (m) { return opt(m, cur, esc(m)); }).join('');
+  return '<select id="m-' + p.id + '-' + k + '" class="field" data-set="models.' + p.id + '.' + k + '">' + h + '</select>';
+}
+
 function opt(v, cur, l) { return '<option value="' + esc(v) + '"' + (String(v) === String(cur) ? ' selected' : '') + '>' + l + '</option>'; }
 
 function renderSet() {
@@ -21,14 +31,16 @@ function renderSet() {
     var b = p.budget || {};
     var ratio = b.cap ? Math.min(1, b.ratio) : 0;
     var models = st.models[p.id] || {};
-    var mfield = function (k, l) { return '<div><label class="l" for="m-' + p.id + '-' + k + '">' + l + '</label><input id="m-' + p.id + '-' + k + '" class="field" data-set="models.' + p.id + '.' + k + '" value="' + esc(models[k]) + '" list="ml-' + p.id + '"></div>'; };
+    var mfield = function (k, l) { return '<div><label class="l" for="m-' + p.id + '-' + k + '">' + l + '</label>' + modelSelect(p, k, models[k]) + '</div>'; };
     return '<div class="panel"><div class="kv"><h3>' + esc(p.label) + '</h3><span>' + (p.hasKey ? 'Clé enregistrée' : 'Aucune clé') + '</span></div>' +
       '<div class="switch" style="border:0;padding:0"><div><b>Activé</b><span>' + (p.id === 'infomaniak' ? 'Fournisseur principal.' : 'Rien ne part chez ' + esc(p.label) + ' tant que ce n\'est pas activé.') + '</span></div><button class="sw" role="switch" aria-checked="' + !!p.enabled + '" aria-label="Activer ' + esc(p.label) + '" data-a="set-enable" data-id="' + p.id + '"><i></i></button></div>' +
       (p.id === 'infomaniak' ? '<div><label class="l" for="ik-product">Identifiant du produit IA</label><input id="ik-product" class="field" inputmode="numeric" data-set="infomaniak.productId" value="' + esc(st.infomaniak.productId) + '" placeholder="ex. 104812"><div class="help"><span>Visible dans le manager Infomaniak, rubrique IA (« product_id »).</span></div></div>' +
         '<details><summary class="l">Adresse de l\'API (avancé)</summary><input id="ik-url" class="field" data-set="infomaniak.baseUrl" value="' + esc(st.infomaniak.baseUrl) + '"><div class="help"><span>{product_id} est remplacé automatiquement. À changer seulement si Infomaniak modifie son adresse.</span></div></details>' : '') +
       '<div><label class="l" for="key-' + p.id + '">Clé API</label><div class="pw-row"><input id="key-' + p.id + '" type="password" class="field" autocomplete="off" placeholder="' + (p.hasKey ? '•••••••• (remplacer)' : 'Coller la clé') + '"><button type="button" class="btn" data-a="key-save" data-id="' + p.id + '">Enregistrer</button></div>' +
       '<div class="actions" style="margin-top:8px"><button type="button" class="btn" data-a="key-test" data-id="' + p.id + '"' + (p.hasKey ? '' : ' disabled') + '>Tester la connexion</button>' + (p.hasKey ? '<button type="button" class="btn danger" data-a="key-del" data-id="' + p.id + '">Effacer la clé</button>' : '') + '</div><div class="help" id="ktest-' + p.id + '"></div></div>' +
-      '<details><summary class="l">Modèles</summary><div class="grid2">' + mfield('chat', 'Texte (classement, synthèse)') + mfield('vision', 'Images') + (models.audio !== undefined ? mfield('audio', 'Audio') : '') + '</div><datalist id="ml-' + p.id + '"></datalist><div class="help"><span>Le plus petit modèle suffit pour classer : c\'est le réglage le plus sobre.</span></div></details>' +
+      '<details' + (p.hasKey ? ' open' : '') + '><summary class="l">Modèles</summary><div class="grid2" id="models-' + p.id + '">' + mfield('chat', 'Texte (classement, synthèse)') + mfield('vision', 'Images') + (models.audio !== undefined ? mfield('audio', 'Audio') : '') + '</div>' +
+      '<div class="help"><span>' + (p.models ? 'Modèles ouverts à votre compte, lus le ' + fmtFull(p.models.at) + '. ' : 'Enregistrez la clé puis cliquez « Tester la connexion » pour charger les modèles disponibles. ') + 'Le plus petit modèle suffit pour classer : c\'est le réglage le plus sobre.</span></div>' +
+      (p.hasKey ? '<div class="actions"><button type="button" class="btn" data-a="key-test" data-id="' + p.id + '">Actualiser la liste</button></div>' : '') + '</details>' +
       '<div><label class="l" for="bud-' + p.id + '">Plafond mensuel (€)</label><input id="bud-' + p.id + '" class="field" type="number" min="0" step="0.5" data-set="budgets.' + p.id + '" value="' + (b.cap != null ? b.cap : '') + '" placeholder="Aucun plafond"></div>' +
       '<div class="meter' + (b.blocked ? ' blocked' : b.alert ? ' alert' : '') + '"><i style="width:' + Math.round(ratio * 100) + '%"></i></div>' +
       '<div class="kv"><span>Ce mois-ci</span><span>' + fmtEur(p.usage.cost) + (b.cap ? ' sur ' + fmtEur(b.cap) + ' (' + Math.round(b.ratio * 100) + ' %)' : '') + ' · ' + plural(p.usage.calls, 'appel', 'appels') + '</span></div></div>';

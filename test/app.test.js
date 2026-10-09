@@ -34,7 +34,7 @@ before(async () => {
     }
     res.json({ choices: [{ message: { content } }], usage: { prompt_tokens: 100, completion_tokens: 20 } });
   });
-  m.get('/ai/:pid/v1/models', (req, res) => res.json({ data: [{ id: 'mistral24b' }] }));
+  m.get('/ai/:pid/v1/models', (req, res) => res.json({ data: [{ id: 'mistral24b' }, { id: 'whisper' }, { id: 'bge_multilingual_gemma2' }] }));
   mock = await listen(m);
   mockUrl = `http://127.0.0.1:${mock.address().port}`;
 
@@ -109,7 +109,10 @@ test('note texte : classement par le fournisseur Infomaniak', async () => {
   const raw = fs.readFileSync(path.join(dataDir, 'db.json'), 'utf8');
   assert.ok(!raw.includes('secret-infomaniak'), 'la clé doit être chiffrée');
   r = await call('POST', 'keys/infomaniak/test', {});
-  assert.deepStrictEqual(r.data.models, ['mistral24b']);
+  assert.deepStrictEqual(r.data.models.chat, ['mistral24b']);
+  assert.deepStrictEqual(r.data.models.audio, ['whisper']);
+  const listed = await call('GET', 'state');
+  assert.deepStrictEqual(listed.data.providers[0].models.chat, ['mistral24b'], 'liste gardée pour les menus des réglages');
 
   r = await call('POST', 'notes', { clientId: 'c1', type: 'text', content: 'Relancer le plombier jeudi pour le devis de la salle de bain.' });
   const id = r.data.note.id;

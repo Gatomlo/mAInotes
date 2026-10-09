@@ -5,6 +5,31 @@ function analyze(id, extra) {
   return api('POST', 'notes/' + id + '/analyze', extra || {}).then(function (r) { upsertNote(r.note); render(); scheduleSync(); if (modal === 'detail') openDetail(id); }, fail);
 }
 
+// Teste la clé et recharge la liste des modèles disponibles dans les menus.
+function testKey(p) {
+  var out = $('#ktest-' + p);
+  if (out) out.textContent = 'Test en cours…';
+  var pending = setDirty ? saveSettings() : Promise.resolve();
+  return pending.then(function () { return api('POST', 'keys/' + p + '/test', {}); }).then(function (r) {
+    return api('GET', 'state').then(function (d) {
+      S.providers = d.providers; saveCache();
+      var prov = S.providers.filter(function (x) { return x.id === p; })[0];
+      var box = $('#models-' + p);
+      if (box && prov) {
+        $$('select', box).forEach(function (sel) {
+          var k = sel.id.split('-').pop();
+          var tmp = document.createElement('div');
+          tmp.innerHTML = modelSelect(prov, k, sel.value);
+          sel.innerHTML = tmp.firstChild.innerHTML;
+        });
+      }
+      var n = (r.models && r.models.chat || []).length;
+      var o = $('#ktest-' + p);
+      if (o) o.innerHTML = '<span class="ok">Connexion réussie.</span> ' + n + (n > 1 ? ' modèles disponibles' : ' modèle disponible') + ' : choisissez-les dans « Modèles ».';
+    });
+  }, function (e) { var o = $('#ktest-' + p); if (o) o.innerHTML = '<span class="ko">' + esc(e.message) + '</span>'; });
+}
+
 var ACTIONS = {
   reload: function () { location.reload(); },
   'pw-toggle': function (el) { var i = $('#' + el.dataset.id); var show = i.type === 'password'; i.type = show ? 'text' : 'password'; el.textContent = show ? 'Masquer' : 'Afficher'; },
@@ -129,22 +154,13 @@ var ACTIONS = {
       S.providers = r.providers;
       var en = {}; en[p] = true;
       return saveSettings({ enabled: en });
-    }).then(function () { toast('Clé enregistrée (chiffrée sur le serveur)'); }, fail);
+    }).then(function () { toast('Clé enregistrée (chiffrée sur le serveur)'); return testKey(p); }, fail);
   },
   'key-del': function (el) {
     if (!confirm('Effacer la clé ' + PROV[el.dataset.id] + ' ?')) return;
     api('PUT', 'keys/' + el.dataset.id, { key: '' }).then(function (r) { S.providers = r.providers; renderSet(); render(); }, fail);
   },
-  'key-test': function (el) {
-    var p = el.dataset.id, out = $('#ktest-' + p);
-    out.textContent = 'Test en cours…';
-    var pending = setDirty ? saveSettings() : Promise.resolve();
-    pending.then(function () { return api('POST', 'keys/' + p + '/test', {}); }).then(function (r) {
-      var o = $('#ktest-' + p) || out;
-      o.innerHTML = '<span class="ok">Connexion réussie.</span> ' + (r.models && r.models.length ? 'Modèles disponibles : ' + esc(r.models.slice(0, 30).join(', ')) : '');
-      var dl = $('#ml-' + p); if (dl && r.models) dl.innerHTML = r.models.map(function (m) { return '<option value="' + esc(m) + '">'; }).join('');
-    }, function (e) { var o = $('#ktest-' + p) || out; o.innerHTML = '<span class="ko">' + esc(e.message) + '</span>'; });
-  },
+  'key-test': function (el) { testKey(el.dataset.id); },
   'log-open': openLog,
 
   logout: function () {

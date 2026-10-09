@@ -52,8 +52,10 @@ actuel), mot de passe, appareils connectés, export des données et suppression 
 2. Créez un jeton d'API avec l'accès à l'IA.
 3. Dans mAInotes, onglet **Réglages** › Infomaniak : saisissez l'identifiant du produit, collez le jeton,
    cliquez **Enregistrer** puis **Tester la connexion**. La liste des modèles disponibles s'affiche.
-4. Vérifiez les noms de modèles (section « Modèles ») : `mistral24b` pour le texte et les images, `whisper`
-   pour l'audio par défaut. Choisissez dans la liste affichée par le test si Infomaniak les a renommés.
+4. Choisissez les modèles dans les menus de la section « Modèles » : ils listent ceux réellement ouverts à
+   votre compte (lus au test de connexion, bouton « Actualiser la liste »). Par défaut : `mistral24b` pour
+   le texte et les images, `whisper` pour l'audio. Un modèle retiré par le fournisseur est signalé « absent
+   de la liste, à remplacer ».
 5. Fixez le plafond mensuel (alerte à 80 %, blocage à 100 %).
 
 L'adresse de l'API (`https://api.infomaniak.com/2/ai/{product_id}/openai/v1`) se change dans

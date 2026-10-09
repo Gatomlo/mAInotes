@@ -69,7 +69,9 @@ var ACTIONS = {
   'add-voice': addVoice,
   'add-img': addImages,
 
-  dsave: function () { saveDetail(true); },
+  dsave: function () { saveDetail(false).then(function (ok) { if (ok) openDetail(curId, false); }); },
+  dedit: function () { openDetail(curId, true); },
+  dcancel: function () { openDetail(curId, false); },
   dlock: function (el) { var on = el.getAttribute('aria-checked') !== 'true'; el.setAttribute('aria-checked', String(on)); patchNote({ locked: on }); },
   dtag: function (el) { var n = curNote(); patchNote({ tagIds: n.tagIds.filter(function (x) { return x !== el.dataset.id; }) }).then(function () { dtSel(); dtList(false); }); },
   dtpick: function (el) { dtPick(Number(el.dataset.i)); },

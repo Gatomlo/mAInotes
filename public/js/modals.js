@@ -182,11 +182,15 @@ function addImages() {
 }
 
 /* ---------- Détail d'une note ---------- */
-var curId = null, detailSnap = null;
+var curId = null, detailSnap = null, detailEdit = false;
 function curNote() { return noteById(curId); }
-function openDetail(id) {
+// Une carte s'ouvre en lecture ; « Modifier » passe en édition. Sans mode précisé,
+// une note déjà ouverte garde son mode (mise à jour après analyse, par exemple).
+function openDetail(id, edit) {
   var n = noteById(id);
   if (!n) return;
+  if (edit === undefined) edit = modal === 'detail' && curId === id ? detailEdit : false;
+  detailEdit = !!edit;
   curId = id;
   modal = 'detail';
   detailSnap = JSON.parse(JSON.stringify(n));
@@ -215,8 +219,18 @@ function openDetail(id) {
       });
     }
   }
+  var linksBlock = n.links && n.links.length ? '<div><div class="l">' + (n.links.length > 1 ? 'Liens' : 'Lien') + '</div><div style="display:flex;flex-direction:column;gap:8px">' + n.links.map(function (l) { return linkCard(l, false); }).join('') + '</div>' +
+      (n.links.some(function (l) { return l.aiDescription; }) ? '<div class="help">' + I(IC.spark, 14) + '<span>Descriptif rédigé par l\'IA pendant le classement, à partir de la page.</span></div>' : '') + '</div>' : '';
   var meta = TYPE_LABEL[n.type] + ' · ' + fmtFull(n.createdAt) + (n.updatedAt - n.createdAt > 60000 ? ' · modifiée ' + fmtDate(n.updatedAt) : '') + (provLabel(n) ? ' · IA : ' + provLabel(n) : '') + (n.confidence != null && n.ai ? ' · confiance ' + Math.round(n.confidence * 100) + ' %' : '');
-  openSheet(shead('Détail de la note') +
+  var banners = (n.trashedAt ? '<div class="banner warn">Cette note est dans la corbeille.<button data-a="restore" data-id="' + n.id + '">Restaurer</button></div>' : '') +
+    (busy ? '<div class="status">' + I(IC.spark) + 'Analyse en cours…</div>' : '') +
+    (n.status === 'error' && n.error ? '<div class="err">' + esc(n.error) + '</div>' : '') +
+    (n.status === 'pending' && (n.pendingReason === 'budget' || n.pendingReason === 'config') ? '<div class="err">' + esc(n.error || 'Analyse en attente.') + '</div>' : '');
+  if (!detailEdit) {
+    openSheet(readView(n, { meta: meta, banners: banners, media: media, links: linksBlock, sugg: sugg, analyzeBtns: analyzeBtns, busy: busy }), 'Note');
+    return;
+  }
+  openSheet(shead('Modifier la note') +
     (n.trashedAt ? '<div class="banner warn">Cette note est dans la corbeille.<button data-a="restore" data-id="' + n.id + '">Restaurer</button></div>' : '') +
     '<div><label class="l" for="d-title">Titre</label><input id="d-title" class="field" value="' + esc(n.title) + '" maxlength="200"></div>' +
     '<div class="sub">' + esc(meta) + '</div>' +
@@ -224,16 +238,35 @@ function openDetail(id) {
     (n.status === 'error' && n.error ? '<div class="err">' + esc(n.error) + '</div>' : '') +
     (n.status === 'pending' && (n.pendingReason === 'budget' || n.pendingReason === 'config') ? '<div class="err">' + esc(n.error || 'Analyse en attente.') + '</div>' : '') +
     media + fields +
-    (n.links && n.links.length ? '<div><div class="l">' + (n.links.length > 1 ? 'Liens' : 'Lien') + '</div><div style="display:flex;flex-direction:column;gap:8px">' + n.links.map(function (l) { return linkCard(l, false); }).join('') + '</div>' +
-      (n.links.some(function (l) { return l.aiDescription; }) ? '<div class="help">' + I(IC.spark, 14) + '<span>Descriptif rédigé par l\'IA pendant le classement, à partir de la page.</span></div>' : '') + '</div>' : '') +
+    linksBlock +
     (n.type !== 'synthesis' ? '<div><label class="l" for="d-cat">Carnet</label><select id="d-cat" class="field">' + opts + '</select>' + (n.notebookChosen ? '<div class="help"><span>Carnet choisi à la création : l\'IA ne le change pas.</span></div>' : '') + '</div>' +
       '<div><label class="l" for="dtagq">Tags</label><div class="sel" id="dsel"></div><div class="cbx"><input id="dtagq" class="field" role="combobox" aria-expanded="false" aria-controls="dtaglist" aria-autocomplete="list" autocomplete="off" placeholder="Rechercher ou créer un tag…"><div class="list2" id="dtaglist" role="listbox" hidden></div></div></div>' +
-      sugg +
       '<div class="switch"><div><b>Verrouiller ce classement</b><span>Un re-tri ne le modifiera plus. Toute correction le verrouille.</span></div><button class="sw" role="switch" aria-checked="' + !!n.locked + '" aria-label="Verrouiller ce classement" data-a="dlock"><i></i></button></div>' : '') +
-    (busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
-    (analyzeBtns ? '<div class="actions">' + analyzeBtns + '</div>' : '') +
-    '<div class="actions">' + (n.trashedAt ? '<button class="btn danger" data-a="purge" data-id="' + n.id + '">Supprimer définitivement</button>' : '<button class="btn danger" data-a="del">Mettre à la corbeille</button>') + '<button class="btn primary" data-a="dsave">Enregistrer et fermer</button></div>', 'Détail de la note');
+    '<div class="actions"><button class="btn" data-a="dcancel">Annuler</button><button class="btn primary" data-a="dsave">Enregistrer</button></div>' +
+    '<div class="actions">' + (n.trashedAt ? '<button class="btn danger" data-a="purge" data-id="' + n.id + '">Supprimer définitivement</button>' : '<button class="btn danger" data-a="del">Mettre à la corbeille</button>') + '</div>', 'Modifier la note');
   if (n.type !== 'synthesis') dtSel();
+}
+
+// Lecture : texte mis en forme, liens cliquables, classement en pastilles.
+function readView(n, x) {
+  var block = function (label, text, empty) {
+    return '<div>' + (label ? '<div class="l">' + label + '</div>' : '') + (text ? '<div class="readtext">' + linkify(text) + '</div>' : '<p class="muted" style="margin:0">' + empty + '</p>') + '</div>';
+  };
+  var body = '';
+  if (n.type === 'text') body = block('', n.content, 'Note vide.');
+  else if (n.type === 'synthesis') body = '<div class="report">' + mdToHtml(n.content, []) + '</div>';
+  else if (n.type === 'voice') body = block('Transcription', n.transcript, 'Pas encore transcrite.');
+  else body = (n.content ? block('Légende', n.content) : '') + block('Description de l\'image', n.description, 'Pas encore décrite.');
+  var aiNote = (n.type === 'voice' && n.transcript) || (n.type === 'image' && n.description) ? '<div class="help">' + I(IC.spark, 14) + '<span>' + (n.type === 'voice' ? 'Transcription' : 'Description') + ' générée par l\'IA, modifiable.</span></div>' : '';
+  var tags = n.tagIds.map(function (id) { var t = tagById(id); return t ? '<span class="chip">#' + esc(t.name) + '</span>' : ''; }).join('');
+  var classif = n.type === 'synthesis' ? '' : '<div class="foot" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">' + catChip(n) + tags +
+    (n.locked ? '<span class="chip">' + I(IC.lock, 13) + 'Verrouillé</span>' : n.ai && n.notebookId ? '<span class="chip">' + I(IC.spark, 13) + 'Classé par l\'IA</span>' : '') + '</div>';
+  return '<div class="shead"><h2 style="overflow-wrap:anywhere">' + esc(n.title) + '</h2>' + xbtn() + '</div>' +
+    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + x.media + body + aiNote + x.links + x.sugg +
+    (x.busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
+    (x.analyzeBtns ? '<div class="actions">' + x.analyzeBtns + '</div>' : '') +
+    '<div class="actions">' + (n.trashedAt ? '<button class="btn danger" data-a="purge" data-id="' + n.id + '">Supprimer définitivement</button>' : '') +
+    '<button class="btn" data-a="close">Fermer</button><button class="btn primary" data-a="dedit" autofocus>' + I(IC.text, 18) + 'Modifier</button></div>';
 }
 
 // Seuls les champs modifiés dans le formulaire depuis son ouverture sont envoyés :
@@ -253,8 +286,8 @@ function detailPatch() {
 function saveDetail(close) {
   var p = detailPatch();
   var done = function () { if (close) closeModal(); render(); };
-  if (!Object.keys(p).length) return Promise.resolve(done());
-  return api('PATCH', 'notes/' + curId, p).then(function (r) { upsertNote(r.note); done(); toast('Note enregistrée'); }, fail);
+  if (!Object.keys(p).length) { done(); return Promise.resolve(true); }
+  return api('PATCH', 'notes/' + curId, p).then(function (r) { upsertNote(r.note); done(); toast('Note enregistrée'); return true; }, function (e) { fail(e); return false; });
 }
 function patchNote(p) {
   return api('PATCH', 'notes/' + curId, p).then(function (r) { upsertNote(r.note); render(); return r.note; }, fail);
@@ -545,7 +578,7 @@ function onSynced() {
   if (modal === 'detail') {
     var n = curNote();
     var active = document.activeElement && $('#sheet').contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
-    if (n && detailSnap && n.updatedAt !== detailSnap.updatedAt && !Object.keys(detailPatch()).length && !active) openDetail(curId);
+    if (n && detailSnap && n.updatedAt !== detailSnap.updatedAt && (!detailEdit || (!Object.keys(detailPatch()).length && !active))) openDetail(curId);
   } else if (modal === 'retri-recap') {
     renderRetriRecap();
   }

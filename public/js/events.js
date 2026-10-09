@@ -45,6 +45,15 @@ var ACTIONS = {
   qclear: function () { F.q = ''; $('#q').value = ''; renderHome(); $('#q').focus(); },
   open: function (el) { if (modal === 'detail' && curId !== el.dataset.id) saveDetail(false); openDetail(el.dataset.id); },
   analyze: function (el) { analyze(el.dataset.id); },
+  enrich: function (el) {
+    el.disabled = true;
+    el.textContent = 'Enrichissement en cours…';
+    api('POST', 'notes/' + el.dataset.id + '/enrich', {}).then(function (r) {
+      upsertNote(r.note); render(); if (modal === 'detail') openDetail(el.dataset.id);
+      toast(r.empty ? 'Rien à ajouter pour cette note, selon l\'IA.' : 'Pistes ajoutées à la note');
+    }, function (e) { fail(e); if (modal === 'detail') openDetail(el.dataset.id); });
+  },
+  'enrich-del': function (el) { api('DELETE', 'notes/' + el.dataset.id + '/enrichment').then(function (r) { upsertNote(r.note); render(); openDetail(el.dataset.id); }, fail); },
   describe: function (el) { analyze(el.dataset.id, { describe: true }); },
   'analyze-with': function (el) { analyze(curId, { provider: el.dataset.id }); },
   'analyze-all': function () {

@@ -61,7 +61,7 @@ function card(n, q) {
   } else {
     var tags = n.tagIds.map(function (id) { var t = tagById(id); return t ? '<span class="chip">#' + esc(t.name) + '</span>' : ''; }).join('');
     var end = (n.locked ? '<span aria-label="Classement verrouillé" role="img">' + I(IC.lock, 16) + '</span>' : '') + (n.ai && !n.locked && n.notebookId ? '<span aria-label="Classé par l\'IA" role="img" title="Classé par l\'IA (' + esc(provLabel(n)) + ')">' + I(IC.spark, 16) + '</span>' : '');
-    foot = (n.type === 'synthesis' ? '<span class="chip">Synthèse</span>' : catChip(n)) + tags + (end ? '<span class="end">' + end + '</span>' : '');
+    foot = (n.type === 'synthesis' ? '<span class="chip">Synthèse</span>' : catChip(n)) + tags + (n.enrichment ? '<span class="chip wait" title="Pistes complémentaires">' + I(IC.spark, 12) + 'Pistes</span>' : '') + (end ? '<span class="end">' + end + '</span>' : '');
   }
   return '<div class="card" role="button" tabindex="0" data-a="open" data-id="' + n.id + '" aria-label="Ouvrir : ' + esc(n.title) + '">' + thumbHtml(n) + headLine(n) +
     '<div class="ttl">' + hl(n.title, q) + '</div><div class="exc">' + ex + '</div>' + (n.links && n.links.length ? linkCard(n.links[0], true) + (n.links.length > 1 ? '<div class="muted" style="font-size:13px">+ ' + plural(n.links.length - 1, 'autre lien', 'autres liens') + '</div>' : '') : '') + matchLabel(n, q) + '<div class="foot">' + foot + '</div></div>';

@@ -15,6 +15,12 @@ delete process.env.MAINOTES_SETUP_TOKEN;
 
 let gateway, mock, base, mockUrl;
 const calls = [];
+const ENRICH = (u) => ({
+  explication: 'Weber-Wulff et al. (2023) ont testé 14 outils de détection de textes générés par IA : aucun n\'est fiable.',
+  pistes: ['Comparer avec les études plus récentes.'],
+  recherches: ['Weber-Wulff 2023 testing of detection tools'],
+  liens: [{ titre: 'Article', url: u + '/page' }, { titre: 'Inventé', url: u + '/introuvable' }]
+});
 
 function listen(app) {
   return new Promise((resolve) => { const s = http.createServer(app).listen(0, '127.0.0.1', () => resolve(s)); });
@@ -30,8 +36,11 @@ before(async () => {
     if (prompt.includes('Range cette note')) {
       const nbCode = /C(\d) Maison/.exec(prompt);
       const out = { titre: 'Devis du plombier', carnet: nbCode ? 'C' + nbCode[1] : null, tags: ['T1'], confiance: 0.9 };
+      if (prompt.includes('enrichissement')) out.enrichissement = ENRICH(mockUrl);
       if (prompt.includes('L1 ')) out.liens = { L1: 'Fiche d\'un robinet thermostatique vendu par un magasin de bricolage.' };
       content = JSON.stringify(out);
+    } else if (prompt.includes('Propose un complément')) {
+      content = JSON.stringify({ enrichissement: ENRICH(mockUrl) });
     } else {
       content = '## Maison\n- Relancer le plombier pour le **devis** [1]';
     }
@@ -299,4 +308,39 @@ test('lien vers une adresse interne refusé', async () => {
   assert.strictEqual(l.summary, '');
   assert.ok(isPrivateIp('192.168.1.4') && isPrivateIp('::1') && !isPrivateIp('83.166.133.1'));
   assert.deepStrictEqual(extractUrls('voir www.exemple.be/a. et https://x.org/b), puis ftp://non'), ['https://www.exemple.be/a', 'https://x.org/b']);
+});
+
+test('enrichissement à la demande : liens vérifiés, recherches, un seul appel', async () => {
+  const r = await call('POST', 'notes', { type: 'text', content: 'Weber-Wulff 2023 teste 14 outils de détection d\'IA' });
+  await until(async () => { const s = await call('GET', 'state'); return s.data.notes.find((y) => y.id === r.data.note.id).status === 'ready'; });
+  let st = await call('GET', 'state');
+  assert.strictEqual(st.data.notes.find((y) => y.id === r.data.note.id).enrichment, undefined, 'pas d\'enrichissement par défaut');
+  const before = calls.length;
+  const e = await call('POST', `notes/${r.data.note.id}/enrich`, {});
+  assert.strictEqual(e.status, 200);
+  assert.strictEqual(calls.length - before, 1);
+  const en = e.data.note.enrichment;
+  assert.match(en.explanation, /14 outils/);
+  assert.strictEqual(en.links.length, 1, 'lien inventé écarté');
+  assert.strictEqual(en.links[0].url, mockUrl + '/page');
+  assert.strictEqual(en.rejected, 1);
+  assert.match(en.searches[0].scholar, /^https:\/\/scholar\.google\.com\/scholar\?q=Weber-Wulff/);
+  const d = await call('DELETE', `notes/${r.data.note.id}/enrichment`);
+  assert.strictEqual(d.data.note.enrichment, null);
+});
+
+test('enrichissement automatique : dans l\'appel de classement, jamais au re-tri', async () => {
+  await call('PATCH', 'settings', { trigger: { enrich: 'auto' } });
+  const before = calls.length;
+  const r = await call('POST', 'notes', { type: 'text', content: 'Étude sur les détecteurs de textes IA' });
+  const n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r.data.note.id); return x.status === 'ready' && x; });
+  assert.strictEqual(calls.length - before, 1, 'aucun appel en plus');
+  assert.ok(n.enrichment && n.enrichment.links.length === 1);
+  const op = await call('POST', 'retri', { scope: 'all' });
+  await until(async () => (await call('GET', 'retri/' + op.data.retri.id)).data.retri.status === 'done');
+  const last = calls[calls.length - 1];
+  assert.ok(!JSON.stringify(last.messages).includes('enrichissement'), 're-tri sans enrichissement');
+  await call('PATCH', 'settings', { trigger: { enrich: 'off' } });
+  const off = await call('POST', `notes/${r.data.note.id}/enrich`, {});
+  assert.strictEqual(off.status, 400);
 });

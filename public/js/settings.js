@@ -2,7 +2,7 @@
 'use strict';
 
 var setDirty = false, accountLoaded = false;
-var FN = [['classif', 'Classement des notes'], ['transcr', 'Transcription des vocaux'], ['vision', 'Description des images'], ['synth', 'Synthèse des notes affichées']];
+var FN = [['classif', 'Classement des notes'], ['transcr', 'Transcription des vocaux'], ['vision', 'Description des images'], ['synth', 'Synthèse des notes affichées'], ['enrich', 'Enrichissement des notes']];
 
 // Menu des modèles réellement disponibles (liste lue au dernier test de connexion).
 // Le modèle en place reste choisi même s'il n'y figure plus, avec un avertissement.
@@ -58,6 +58,8 @@ function renderSet() {
     trig('transcr', 'Transcription', [['auto', 'Automatique'], ['manual', 'Manuel']]) +
     trig('classif', 'Classement', [['auto', 'Automatique'], ['manual', 'Manuel']]) +
     trig('vision', 'Description des images', [['off', 'Désactivée'], ['demand', 'À la demande'], ['auto', 'Automatique']]) +
+    trig('enrich', 'Enrichissement des notes', [['off', 'Désactivé'], ['demand', 'À la demande'], ['auto', 'Automatique']]) +
+    '<div class="help">' + I(IC.spark, 14) + '<span>Enrichissement : explication du sujet, pistes, recherches et liens vérifiés. Automatique : demandé dans l\'appel de classement (aucun appel en plus, réponse plus longue, fournisseur du classement), seulement pour les notes qui s\'y prêtent. À la demande : bouton « Enrichir » sur la note, un appel par clic.</span></div>' +
     '<div class="help"><span>En manuel, la note est enregistrée sans appel IA, avec le statut « À analyser ». Le re-tri et la synthèse restent toujours lancés par vous.</span></div></div>' +
     '<div class="panel"><h3>Création par l\'IA</h3>' +
     '<div><label class="l" for="pr-nb">Carnets</label><select id="pr-nb" class="field" data-set="propose.notebook" data-bool="1">' + opt('0', st.propose.notebook ? '1' : '0', 'Strict : seulement les carnets existants') + opt('1', st.propose.notebook ? '1' : '0', 'L\'IA peut proposer un nouveau carnet') + '</select></div>' +

@@ -38,7 +38,7 @@ function nb(id) { return S.notebooks.filter(function (c) { return c.id === id; }
 function tagById(id) { return S.tags.filter(function (t) { return t.id === id; })[0] || null; }
 function noteById(id) { return S.notes.filter(function (n) { return n.id === id; })[0] || null; }
 function linksText(n) { return (n.links || []).map(function (l) { return [l.title, l.description || l.summary, l.site].filter(Boolean).join(' '); }).join('\n'); }
-function noteText(n) { return [n.content, n.transcript, n.description, linksText(n)].filter(Boolean).join('\n\n'); }
+function noteText(n) { return [n.content, n.transcript, n.description, linksText(n), n.enrichment ? n.enrichment.explanation : ''].filter(Boolean).join('\n\n'); }
 
 /* Adresses web rendues cliquables (texte échappé, liens ouverts dans un nouvel onglet). */
 var URL_RE = /\b(?:https?:\/\/|www\.)[^\s<>"'«»]+/gi;

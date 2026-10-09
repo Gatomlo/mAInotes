@@ -389,6 +389,16 @@ Les maquettes montrent le sélecteur de carnet à la création, la liste de tags
 
 Garde-fous : seules les adresses http(s) publiques sont lues (les adresses internes sont refusées), 5 secondes et 512 Ko au plus par page.
 
+## Enrichissement des notes
+
+| Réf. | Fonction | Priorité |
+|---|---|---|
+| F75 | Réglage **Enrichissement des notes** : désactivé, à la demande (par défaut) ou automatique, avec son fournisseur d'IA comme les autres fonctions. | Must |
+| F76 | Un bloc **Pour aller plus loin** sur la note : explication du sujet (2 à 4 phrases), pistes complémentaires, recherches prêtes (Web et Google Scholar) et sources. Les notes pratiques (courses, rappels) ne sont pas enrichies. | Must |
+| F77 | Chaque source proposée par l'IA est ouverte par le serveur ; une adresse qui ne répond pas est écartée et signalée. Le bloc indique qu'il est généré par l'IA et à vérifier ; il peut être retiré ou régénéré. | Must |
+
+Règles de sobriété : en mode automatique, l'enrichissement est demandé dans l'appel de classement (aucun appel en plus, réponse plus longue), une seule fois par note et jamais lors d'un re-tri. À la demande, un appel par clic. L'enrichissement ne sert pas au classement ni aux synthèses ; il est inclus dans la recherche.
+
 ## Compte utilisateur et hébergement
 
 L'application vit sur un hébergement Infomaniak qui n'accepte qu'une seule application Node.js : elle est montée par la passerelle `node-gateway` sur l'adresse `/mainotes/` (voir `docs/deploiement-infomaniak.md`). Elle est personnelle : un seul compte, créé à la première ouverture.

@@ -103,7 +103,10 @@ mark{background:var(--mark);color:inherit;border-radius:3px;padding:0 2px}
 .empty{grid-column:1/-1;text-align:center;padding:48px 16px;color:var(--muted);background:var(--surface);border:1px dashed var(--line-strong);border-radius:16px}
 .empty h3{color:var(--ink);font-size:18px;margin-bottom:6px}
 .fab{position:fixed;right:20px;bottom:calc(24px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(11,110,110,.35);z-index:5}
-@media (min-width:760px){.fab{display:none}.add-desktop{display:inline-flex}}
+/* Tablette et ordinateur : le bouton flottant apparaît quand celui de l'en-tête n'est plus visible. */
+@media (min-width:760px){.add-desktop{display:inline-flex}.fab{opacity:0;transform:scale(.6);pointer-events:none;transition:opacity .18s,transform .18s;right:32px;bottom:32px}body.fab-on .fab{opacity:1;transform:none;pointer-events:auto}}
+.fab:hover{filter:brightness(1.08)}
+@media (prefers-reduced-motion:reduce){.fab{transition:none}}
 
 .list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
 .row{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;text-align:left}

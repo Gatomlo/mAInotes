@@ -268,3 +268,15 @@ body{padding-top:env(safe-area-inset-top,0px);padding-left:max(16px,env(safe-are
 .install-choice button[aria-pressed="true"]{border:2px solid var(--accent);background:var(--accent-soft)}
 .install-choice img{width:64px;height:64px;border-radius:16px}
 .install-choice small{font-weight:400;color:var(--muted);font-size:13px;text-align:center}
+
+/* Accordéons des onglets Réglages et Compte */
+.panel.acc{gap:0;padding:0}
+.acc-d>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;min-height:56px;padding:12px 16px;border-radius:16px}
+.acc-d>summary::-webkit-details-marker{display:none}
+.acc-d>summary>*{flex:1;margin:0}
+.acc-d>summary::after{content:"";width:10px;height:10px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:-4px 4px 0 0;transition:transform .15s;flex:none}
+.acc-d[open]>summary::after{transform:rotate(-135deg);margin-top:4px}
+.acc-d>summary:hover{background:var(--bg)}
+.acc-d>summary .kv{margin:0}
+.acc-b{display:flex;flex-direction:column;gap:14px;padding:4px 16px 16px}
+@media (prefers-reduced-motion:reduce){.acc-d>summary::after{transition:none}}

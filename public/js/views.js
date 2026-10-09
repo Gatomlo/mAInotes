@@ -56,7 +56,7 @@ function card(n, q) {
   var ex = body ? (norm(q).trim() ? hl(snippet(body, q), q) : linkify(snippet(body, ''))) : '<span class="muted">' + (n.type === 'voice' ? 'Pas encore transcrite.' : n.type === 'image' ? 'Pas encore décrite.' : '') + '</span>';
   var foot;
   if (n.status === 'pending' || n.status === 'error') {
-    var lbl = n.status === 'error' ? '<span class="chip err">Erreur d\'analyse</span>' : n.pendingReason === 'budget' ? '<span class="chip check">Plafond atteint</span>' : '<span class="chip check">À analyser</span>';
+    var lbl = n.status === 'error' ? '<span class="chip err">Erreur d\'analyse</span>' : n.pendingReason === 'budget' ? '<span class="chip check">Plafond atteint</span>' : n.pendingReason === 'quota' ? '<span class="chip check">Quota atteint</span>' : '<span class="chip check">À analyser</span>';
     foot = (n.notebookId ? catChip(n) : '') + lbl + '<button class="btn" style="height:44px;margin-left:auto;padding:0 14px" data-a="analyze" data-id="' + n.id + '">' + I(IC.spark, 16) + (n.status === 'error' ? 'Relancer' : 'Analyser') + '</button>';
   } else {
     var tags = n.tagIds.map(function (id) { var t = tagById(id); return t ? '<span class="chip">#' + esc(t.name) + '</span>' : ''; }).join('');
@@ -121,6 +121,7 @@ function renderBanners() {
   if (!online) h += '<div class="banner warn" role="status">' + I(IC.cloud, 18) + '<span>Hors connexion : les nouvelles notes restent sur cet appareil et partiront au retour du réseau.</span></div>';
   if (outbox.length) h += '<div class="banner info"><span>' + plural(outbox.length, 'note en attente d\'envoi', 'notes en attente d\'envoi') + '</span>' + (online ? '<button data-a="flush">Envoyer maintenant</button>' : '') + '</div>';
   (S.providers || []).forEach(function (p) {
+    if (p.quota && p.quota.lastQuota) h += '<div class="banner warn">' + esc(p.quota.lastQuota.message.replace(/ Nouvel essai.*$/, '')) + ' Les notes attendent ; nouvel essai à ' + new Date(p.quota.lastQuota.retryAt).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' }) + '.<button data-a="tab" data-id="set">Réglages</button></div>';
     if (p.budget && p.budget.blocked) h += '<div class="banner warn">Plafond mensuel atteint pour ' + esc(p.label) + ' (' + fmtEur(p.budget.used) + ' sur ' + fmtEur(p.budget.cap) + ') : les analyses sont mises en attente.<button data-a="tab" data-id="set">Réglages</button></div>';
     else if (p.budget && p.budget.alert) h += '<div class="banner warn">' + esc(p.label) + ' : ' + Math.round(p.budget.ratio * 100) + ' % du plafond mensuel consommé (' + fmtEur(p.budget.used) + ' sur ' + fmtEur(p.budget.cap) + ').</div>';
   });

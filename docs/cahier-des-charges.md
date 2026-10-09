@@ -249,6 +249,10 @@ Infomaniak fait le travail par défaut ; Gemini ou Claude n'interviennent que si
 - **F29 (****Must****) Traçabilité** : chaque note indique le fournisseur utilisé, et un journal liste la date, la fonction, le fournisseur et le coût estimé de chaque appel.
 - **F30 (Could) Accès depuis Claude** par un serveur MCP, après la première version.
 
+- **F80 (Must) Quota dépassé chez le fournisseur** : l'erreur est lue (pour Gemini : quota par minute ou par jour, niveau gratuit, valeur, modèle, délai conseillé). La note passe « Quota atteint » et repart seule après le délai ; aucun appel n'est envoyé à ce fournisseur pendant ce délai.
+- **F81 (Must) Limites annoncées** : quand le fournisseur les renvoie (Claude : requêtes et jetons par minute, restant et limite), elles sont relevées à chaque appel et affichées dans les réglages.
+- **F82 (Must) Quotas saisis** : requêtes par minute et par jour, par fournisseur. L'application compte ses appels (journée du Pacifique pour Gemini), patiente au-delà du quota par minute et met les notes en attente au-delà du quota du jour.
+
 **Règles**
 
 - Les clés d'API sont enregistrées chiffrées sur le serveur. L'écran de réglages ne les réaffiche jamais, il propose seulement de les remplacer.

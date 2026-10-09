@@ -225,7 +225,7 @@ function openDetail(id, edit) {
   var banners = (n.trashedAt ? '<div class="banner warn">Cette note est dans la corbeille.<button data-a="restore" data-id="' + n.id + '">Restaurer</button></div>' : '') +
     (busy ? '<div class="status">' + I(IC.spark) + 'Analyse en cours…</div>' : '') +
     (n.status === 'error' && n.error ? '<div class="err">' + esc(n.error) + '</div>' : '') +
-    (n.status === 'pending' && (n.pendingReason === 'budget' || n.pendingReason === 'config') ? '<div class="err">' + esc(n.error || 'Analyse en attente.') + '</div>' : '');
+    (n.status === 'pending' && (n.pendingReason === 'budget' || n.pendingReason === 'config' || n.pendingReason === 'quota') ? '<div class="err">' + esc((n.error || 'Analyse en attente.').replace(/ Nouvel essai.*$/, '')) + (n.retryAt ? ' Nouvel essai automatique à ' + new Date(n.retryAt).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' }) + '.' : '') + '</div>' : '');
   if (!detailEdit) {
     openSheet(readView(n, { meta: meta, banners: banners, media: media, links: linksBlock, analyzeBtns: analyzeBtns, busy: busy }), 'Note');
     return;
@@ -236,7 +236,7 @@ function openDetail(id, edit) {
     '<div class="sub">' + esc(meta) + '</div>' +
     (busy ? '<div class="status">' + I(IC.spark) + 'Analyse en cours…</div>' : '') +
     (n.status === 'error' && n.error ? '<div class="err">' + esc(n.error) + '</div>' : '') +
-    (n.status === 'pending' && (n.pendingReason === 'budget' || n.pendingReason === 'config') ? '<div class="err">' + esc(n.error || 'Analyse en attente.') + '</div>' : '') +
+    (n.status === 'pending' && (n.pendingReason === 'budget' || n.pendingReason === 'config' || n.pendingReason === 'quota') ? '<div class="err">' + esc((n.error || 'Analyse en attente.').replace(/ Nouvel essai.*$/, '')) + (n.retryAt ? ' Nouvel essai automatique à ' + new Date(n.retryAt).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' }) + '.' : '') + '</div>' : '') +
     media + fields +
     linksBlock +
     (n.type !== 'synthesis' ? '<div><label class="l" for="d-cat">Carnet</label><select id="d-cat" class="field">' + opts + '</select>' + (n.notebookChosen ? '<div class="help"><span>Carnet choisi à la création : l\'IA ne le change pas.</span></div>' : '') + '</div>' +

@@ -15,6 +15,7 @@ delete process.env.MAINOTES_SETUP_TOKEN;
 
 let gateway, mock, base, mockUrl;
 const calls = [];
+const gemini = { calls: 0, fail: 0 };
 const ENRICH = (u) => ({
   explication: 'Weber-Wulff et al. (2023) ont testé 14 outils de détection de textes générés par IA : aucun n\'est fiable.',
   pistes: ['Comparer avec les études plus récentes.'],
@@ -48,9 +49,28 @@ before(async () => {
   });
   m.get('/page', (req, res) => res.type('html').send('<html><head><meta charset="utf-8"><title>Robinet &amp; mitigeur</title><meta property="og:site_name" content="Brico"><meta name="description" content="Mitigeur thermostatique chromé."></head><body><script>x()</script><p>Prix : 89 €</p></body></html>'));
   m.get('/redir', (req, res) => res.redirect('/page'));
+  // Faux Gemini : la première requête dépasse le quota (réponse au format de Google).
+  m.post('/gemini/models/:rest', (req, res) => {
+    gemini.calls++;
+    if (gemini.fail > 0) {
+      gemini.fail--;
+      return res.status(429).json({ error: { code: 429, status: 'RESOURCE_EXHAUSTED', message: 'You exceeded your current quota.', details: [
+        { '@type': 'type.googleapis.com/google.rpc.QuotaFailure', violations: [{ quotaMetric: 'generativelanguage.googleapis.com/generate_content_free_tier_requests', quotaId: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', quotaDimensions: { model: 'gemini-3.5-flash-lite' }, quotaValue: '20' }] },
+        { '@type': 'type.googleapis.com/google.rpc.RetryInfo', retryDelay: '2s' }
+      ] } });
+    }
+    res.json({ candidates: [{ content: { parts: [{ text: JSON.stringify({ titre: 'Classée par Gemini', carnet: null, tags: [], confiance: 0.9 }) }] } }], usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 } });
+  });
+  // Faux Claude : les réponses portent les en-têtes de limites d'Anthropic.
+  m.post('/anthropic/v1/messages', (req, res) => {
+    res.set({ 'anthropic-ratelimit-requests-limit': '50', 'anthropic-ratelimit-requests-remaining': '49', 'anthropic-ratelimit-requests-reset': new Date(Date.now() + 60000).toISOString(), 'request-id': 'req_test' });
+    res.json({ id: 'msg_1', type: 'message', role: 'assistant', model: 'claude-haiku-5-5', stop_reason: 'end_turn', stop_sequence: null, content: [{ type: 'text', text: JSON.stringify({ titre: 'Classée par Claude', carnet: null, tags: [], confiance: 0.9 }) }], usage: { input_tokens: 12, output_tokens: 6 } });
+  });
   m.get('/ai/:pid/v1/models', (req, res) => res.json({ data: [{ id: 'mistral24b' }, { id: 'whisper' }, { id: 'bge_multilingual_gemma2' }] }));
   mock = await listen(m);
   mockUrl = `http://127.0.0.1:${mock.address().port}`;
+  process.env.MAINOTES_GEMINI_URL = mockUrl + '/gemini';
+  process.env.ANTHROPIC_BASE_URL = mockUrl + '/anthropic';
 
   const app = require('../server');
   const g = express();
@@ -369,4 +389,51 @@ test('case « Enrichir cette note » et description du carnet de notes', async (
   n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r.data.note.id); return x.status === 'ready' && x; });
   assert.ok(!n.enrichment, 'case décochée : pas d\'enrichissement malgré le mode automatique');
   await call('PATCH', 'settings', { trigger: { enrich: 'demand' }, context: '' });
+});
+
+test('quota Gemini dépassé : note en attente, pas d\'appel pendant le délai, reprise automatique', async () => {
+  await call('PATCH', 'settings', { enabled: { gemini: true }, providers: { classif: 'gemini' }, trigger: { enrich: 'off' } });
+  await call('PUT', 'keys/gemini', { key: 'g' });
+  gemini.fail = 1;
+  const before = gemini.calls;
+  const a = await call('POST', 'notes', { type: 'text', content: 'Première note Gemini' });
+  const na = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === a.data.note.id); return x.status === 'pending' && x; });
+  assert.strictEqual(na.pendingReason, 'quota');
+  assert.match(na.error, /quota gratuit atteint \(20 requêtes par jour, gemini-3\.5-flash-lite\)/);
+  assert.ok(na.retryAt > Date.now());
+  const b = await call('POST', 'notes', { type: 'text', content: 'Deuxième note pendant le délai' });
+  await until(async () => { const s = await call('GET', 'state'); return s.data.notes.find((y) => y.id === b.data.note.id).pendingReason === 'quota'; });
+  assert.strictEqual(gemini.calls - before, 1, 'aucun appel pendant le délai demandé par Google');
+  let st = await call('GET', 'state');
+  assert.ok(st.data.providers.find((p) => p.id === 'gemini').quota.lastQuota.freeTier);
+  const done = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === a.data.note.id); return x.status === 'ready' && x; }, 9000);
+  assert.strictEqual(done.title, 'Classée par Gemini');
+});
+
+test('quota du jour saisi dans les réglages : l\'application s\'arrête avant le fournisseur', async () => {
+  let st = await call('GET', 'state');
+  const today = st.data.providers.find((p) => p.id === 'gemini').quota.today;
+  assert.ok(today >= 2);
+  await call('PATCH', 'settings', { quotas: { gemini: { perDay: today } } });
+  const before = gemini.calls;
+  const r = await call('POST', 'notes', { type: 'text', content: 'Au-delà du quota du jour' });
+  const n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r.data.note.id); return x.status === 'pending' && x; });
+  assert.match(n.error, /quota indiqué dans les réglages atteint/);
+  assert.strictEqual(gemini.calls, before, 'aucun appel envoyé');
+  await call('PATCH', 'settings', { quotas: { gemini: { perDay: '' } } });
+  st = await call('GET', 'state');
+  assert.strictEqual(st.data.settings.quotas.gemini.perDay, null);
+});
+
+test('limites annoncées par Claude relevées à chaque appel', async () => {
+  await call('PATCH', 'settings', { enabled: { claude: true }, providers: { classif: 'claude' } });
+  await call('PUT', 'keys/claude', { key: 'sk-test' });
+  const r = await call('POST', 'notes', { type: 'text', content: 'Note pour Claude' });
+  const n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r.data.note.id); return x.status === 'ready' && x; });
+  assert.strictEqual(n.title, 'Classée par Claude');
+  const st = await call('GET', 'state');
+  const obs = st.data.providers.find((p) => p.id === 'claude').quota.observed;
+  assert.strictEqual(obs.headers['anthropic-ratelimit-requests-limit'], '50');
+  assert.strictEqual(obs.headers['anthropic-ratelimit-requests-remaining'], '49');
+  await call('PATCH', 'settings', { providers: { classif: 'infomaniak' } });
 });

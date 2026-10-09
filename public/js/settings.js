@@ -14,6 +14,50 @@ function modelSelect(p, k, cur) {
   return '<select id="m-' + p.id + '-' + k + '" class="field" data-set="models.' + p.id + '.' + k + '">' + h + '</select>';
 }
 
+// Quotas du fournisseur : limites saisies, compteur du jour, limites annoncées par
+// l'API et dernier blocage (avec l'heure du nouvel essai).
+function quotaHtml(p) {
+  var q = p.quota || {};
+  var set = q.set || {};
+  var hhmm = function (t) { return new Date(t).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' }); };
+  var h = '<details' + (set.perDay || set.perMinute || q.lastQuota || q.observed ? ' open' : '') + '><summary class="l">Quotas du fournisseur</summary><div style="display:flex;flex-direction:column;gap:10px">';
+  if (q.lastQuota) h += '<div class="banner warn" style="margin:0">' + esc(q.lastQuota.message.replace(/ Nouvel essai.*$/, '')) + ' Nouvel essai à ' + hhmm(q.lastQuota.retryAt) + '.</div>';
+  h += '<div class="grid2"><div><label class="l" for="qm-' + p.id + '">Requêtes par minute</label><input id="qm-' + p.id + '" class="field" type="number" min="1" data-set="quotas.' + p.id + '.perMinute" data-num="1" value="' + (set.perMinute || '') + '" placeholder="Sans limite"></div>' +
+    '<div><label class="l" for="qd-' + p.id + '">Requêtes par jour</label><input id="qd-' + p.id + '" class="field" type="number" min="1" data-set="quotas.' + p.id + '.perDay" data-num="1" value="' + (set.perDay || '') + '" placeholder="Sans limite"></div></div>';
+  if (set.perDay) {
+    var r = Math.min(1, q.today / set.perDay);
+    h += '<div class="meter' + (r >= 1 ? ' blocked' : r >= 0.8 ? ' alert' : '') + '"><i style="width:' + Math.round(r * 100) + '%"></i></div>';
+  }
+  h += '<div class="kv"><span>Aujourd\'hui</span><span>' + q.today + (set.perDay ? ' sur ' + set.perDay : '') + ' requête' + (q.today > 1 ? 's' : '') + ' · remise à zéro dans ' + esc(q.resetIn || '') + '</span></div>';
+  if (q.observed) h += observedHtml(p.id, q.observed);
+  h += '<div class="help"><span>' + (p.id === 'gemini' ? 'Clé gratuite : vos limites exactes (par minute et par jour, selon le modèle) sont dans <a href="https://aistudio.google.com" target="_blank" rel="noopener noreferrer">Google AI Studio</a>. Le jour se compte à partir de minuit, heure du Pacifique (9 h en Belgique). ' : '') +
+    'Au-delà du quota par minute, l\'application patiente ; au-delà du quota du jour, les notes attendent le lendemain. Si le fournisseur bloque quand même, elles repartent seules après le délai qu\'il indique.</span></div></div></details>';
+  return h;
+}
+function observedHtml(id, o) {
+  var hd = o.headers || {};
+  var at = new Date(o.at).toLocaleString('fr-BE', { dateStyle: 'short', timeStyle: 'short' });
+  var rows = [];
+  var pair = function (label, base) {
+    var lim = hd[base + '-limit'], rem = hd[base + '-remaining'];
+    if (lim || rem) rows.push('<div class="kv"><span>' + label + '</span><span>' + (rem != null ? esc(rem) + ' restant' + (Number(rem) > 1 ? 's' : '') : '') + (lim ? ' sur ' + esc(lim) : '') + '</span></div>');
+  };
+  if (id === 'claude') {
+    pair('Requêtes par minute', 'anthropic-ratelimit-requests');
+    pair('Jetons d\'entrée par minute', 'anthropic-ratelimit-input-tokens');
+    pair('Jetons de sortie par minute', 'anthropic-ratelimit-output-tokens');
+  } else {
+    // Forme courante des API compatibles OpenAI : x-ratelimit-limit-requests, x-ratelimit-remaining-requests…
+    [['requests', 'Requêtes'], ['tokens', 'Jetons']].forEach(function (k) {
+      var lim = hd['x-ratelimit-limit-' + k[0]], rem = hd['x-ratelimit-remaining-' + k[0]];
+      if (lim || rem) rows.push('<div class="kv"><span>' + k[1] + '</span><span>' + (rem != null ? esc(rem) + ' restants' : '') + (lim ? ' sur ' + esc(lim) : '') + '</span></div>');
+    });
+    if (!rows.length) Object.keys(hd).forEach(function (k) { rows.push('<div class="kv"><span>' + esc(k) + '</span><span>' + esc(hd[k]) + '</span></div>'); });
+  }
+  if (!rows.length) return '';
+  return '<div><div class="l">Limites annoncées par le fournisseur <small class="muted">(dernier appel, ' + at + ')</small></div>' + rows.join('') + '</div>';
+}
+
 function opt(v, cur, l) { return '<option value="' + esc(v) + '"' + (String(v) === String(cur) ? ' selected' : '') + '>' + l + '</option>'; }
 
 function renderSet() {
@@ -43,7 +87,7 @@ function renderSet() {
       (p.hasKey ? '<div class="actions"><button type="button" class="btn" data-a="key-test" data-id="' + p.id + '">Actualiser la liste</button></div>' : '') + '</details>' +
       '<div><label class="l" for="bud-' + p.id + '">Plafond mensuel (€)</label><input id="bud-' + p.id + '" class="field" type="number" min="0" step="0.5" data-set="budgets.' + p.id + '" value="' + (b.cap != null ? b.cap : '') + '" placeholder="Aucun plafond"></div>' +
       '<div class="meter' + (b.blocked ? ' blocked' : b.alert ? ' alert' : '') + '"><i style="width:' + Math.round(ratio * 100) + '%"></i></div>' +
-      '<div class="kv"><span>Ce mois-ci</span><span>' + fmtEur(p.usage.cost) + (b.cap ? ' sur ' + fmtEur(b.cap) + ' (' + Math.round(b.ratio * 100) + ' %)' : '') + ' · ' + plural(p.usage.calls, 'appel', 'appels') + '</span></div></div>';
+      '<div class="kv"><span>Ce mois-ci</span><span>' + fmtEur(p.usage.cost) + (b.cap ? ' sur ' + fmtEur(b.cap) + ' (' + Math.round(b.ratio * 100) + ' %)' : '') + ' · ' + plural(p.usage.calls, 'appel', 'appels') + '</span></div>' + quotaHtml(p) + '</div>';
   }).join('');
 
   $('#view-set').innerHTML =

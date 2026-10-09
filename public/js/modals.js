@@ -227,7 +227,7 @@ function openDetail(id, edit) {
     (n.status === 'error' && n.error ? '<div class="err">' + esc(n.error) + '</div>' : '') +
     (n.status === 'pending' && (n.pendingReason === 'budget' || n.pendingReason === 'config') ? '<div class="err">' + esc(n.error || 'Analyse en attente.') + '</div>' : '');
   if (!detailEdit) {
-    openSheet(readView(n, { meta: meta, banners: banners, media: media, links: linksBlock, sugg: sugg, analyzeBtns: analyzeBtns, busy: busy }), 'Note');
+    openSheet(readView(n, { meta: meta, banners: banners, media: media, links: linksBlock, analyzeBtns: analyzeBtns, busy: busy }), 'Note');
     return;
   }
   openSheet(shead('Modifier la note') +
@@ -241,6 +241,7 @@ function openDetail(id, edit) {
     linksBlock +
     (n.type !== 'synthesis' ? '<div><label class="l" for="d-cat">Carnet</label><select id="d-cat" class="field">' + opts + '</select>' + (n.notebookChosen ? '<div class="help"><span>Carnet choisi à la création : l\'IA ne le change pas.</span></div>' : '') + '</div>' +
       '<div><label class="l" for="dtagq">Tags</label><div class="sel" id="dsel"></div><div class="cbx"><input id="dtagq" class="field" role="combobox" aria-expanded="false" aria-controls="dtaglist" aria-autocomplete="list" autocomplete="off" placeholder="Rechercher ou créer un tag…"><div class="list2" id="dtaglist" role="listbox" hidden></div></div></div>' +
+      sugg +
       '<div class="switch"><div><b>Verrouiller ce classement</b><span>Un re-tri ne le modifiera plus. Toute correction le verrouille.</span></div><button class="sw" role="switch" aria-checked="' + !!n.locked + '" aria-label="Verrouiller ce classement" data-a="dlock"><i></i></button></div>' : '') +
     '<div class="actions"><button class="btn" data-a="dcancel">Annuler</button><button class="btn primary" data-a="dsave">Enregistrer</button></div>' +
     '<div class="actions">' + (n.trashedAt ? '<button class="btn danger" data-a="purge" data-id="' + n.id + '">Supprimer définitivement</button>' : '<button class="btn danger" data-a="del">Mettre à la corbeille</button>') + '</div>', 'Modifier la note');
@@ -262,7 +263,7 @@ function readView(n, x) {
   var classif = n.type === 'synthesis' ? '' : '<div class="foot" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">' + catChip(n) + tags +
     (n.locked ? '<span class="chip">' + I(IC.lock, 13) + 'Verrouillé</span>' : n.ai && n.notebookId ? '<span class="chip">' + I(IC.spark, 13) + 'Classé par l\'IA</span>' : '') + '</div>';
   return '<div class="shead"><h2 style="overflow-wrap:anywhere">' + esc(n.title) + '</h2>' + xbtn() + '</div>' +
-    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + x.media + body + aiNote + x.links + x.sugg +
+    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + x.media + body + aiNote + x.links +
     (x.busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
     (x.analyzeBtns ? '<div class="actions">' + x.analyzeBtns + '</div>' : '') +
     '<div class="actions">' + (n.trashedAt ? '<button class="btn danger" data-a="purge" data-id="' + n.id + '">Supprimer définitivement</button>' : '') +

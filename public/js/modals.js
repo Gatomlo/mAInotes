@@ -261,8 +261,7 @@ function openDetail(id, edit) {
       '<div><label class="l" for="dtagq">Tags</label><div class="sel" id="dsel"></div><div class="cbx"><input id="dtagq" class="field" role="combobox" aria-expanded="false" aria-controls="dtaglist" aria-autocomplete="list" autocomplete="off" placeholder="Rechercher ou créer un tag…"><div class="list2" id="dtaglist" role="listbox" hidden></div></div></div>' +
       sugg +
       '<div class="switch"><div><b>Verrouiller ce classement</b><span>Un re-tri ne le modifiera plus. Toute correction le verrouille.</span></div><button class="sw" role="switch" aria-checked="' + !!n.locked + '" aria-label="Verrouiller ce classement" data-a="dlock"><i></i></button></div>' : '') +
-    '<div class="actions"><button class="btn" data-a="dcancel">Annuler</button><button class="btn primary" data-a="dsave">Enregistrer</button></div>' +
-    '<div class="actions">' + (n.trashedAt ? '<button class="btn danger" data-a="purge" data-id="' + n.id + '">Supprimer définitivement</button>' : '<button class="btn danger" data-a="del">Mettre à la corbeille</button>') + '</div>', 'Modifier la note');
+    '<div class="actions"><button class="btn" data-a="dcancel">Annuler</button><button class="btn primary" data-a="dsave">Enregistrer</button></div>', 'Modifier la note');
   if (n.type !== 'synthesis') dtSel();
 }
 
@@ -290,8 +289,8 @@ function readView(n, x) {
     '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + readPick(n) + x.media + body + aiNote + x.links +
     (x.busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
     (x.analyzeBtns ? '<div class="actions">' + x.analyzeBtns + '</div>' : '') +
-    '<div class="actions">' + (n.trashedAt ? '<button class="btn danger" data-a="purge" data-id="' + n.id + '">Supprimer définitivement</button>' : '') +
-    '<button class="btn" data-a="close">Fermer</button><button class="btn primary" data-a="dedit" autofocus>' + I(IC.text, 18) + 'Modifier</button></div>';
+    '<div class="actions"><button class="btn" data-a="close">Fermer</button><button class="btn primary" data-a="dedit" autofocus>' + I(IC.text, 18) + 'Modifier</button></div>' +
+    '<div class="actions">' + (n.trashedAt ? '<button class="btn danger" data-a="purge" data-id="' + n.id + '">Supprimer définitivement</button>' : '<button class="btn danger" data-a="del">Mettre à la corbeille</button>') + '</div>';
 }
 
 // Seuls les champs modifiés dans le formulaire depuis son ouverture sont envoyés :

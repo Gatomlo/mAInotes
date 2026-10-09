@@ -79,6 +79,8 @@ h1,h2,h3{font-family:var(--font-display);margin:0;letter-spacing:-.3px}
 .fchip.label{border-style:dashed;background:transparent;color:var(--muted);pointer-events:none}
 .resinfo{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;margin-block:10px 8px;color:var(--muted);font-size:14px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px;align-items:start}
+/* Cartes en maçonnerie : chaque carte occupe autant de rangées de 2 px que sa hauteur (calcul dans views.js) */
+.grid.masonry{grid-auto-rows:2px;row-gap:0}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0;cursor:pointer;text-align:left}
 .card:hover{border-color:var(--line-strong)}
 .card.busy{border-style:dashed;cursor:default}
@@ -367,3 +369,9 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
 .toast{display:flex;align-items:center;gap:12px}
 .toast[hidden]{display:none}
 .toast-undo{border:0;background:none;color:inherit;font-weight:700;text-decoration:underline;min-height:36px;padding:0 4px}
+
+/* Bascule Cartes / Liste : visible sur la ligne des résultats dès 760 px, dans le menu ⋯ en dessous */
+.resact{display:inline-flex;align-items:center;gap:12px;margin-left:auto}
+.vtoggle{display:none}
+.vtoggle button{display:inline-flex;align-items:center;gap:6px}
+@media (min-width:760px){.vtoggle{display:inline-flex}.menu .menu-view{display:none}}

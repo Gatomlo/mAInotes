@@ -37,8 +37,8 @@
     <div class="menuwrap">
       <button class="iconbtn" id="menubtn" data-a="menu" aria-label="Plus d'options" aria-haspopup="true" aria-expanded="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button>
       <div class="menu" id="homemenu" hidden>
-        <div class="menu-l">Affichage</div>
-        <div class="modes" role="group" aria-label="Affichage"><button type="button" data-a="view" data-id="cards" aria-pressed="true">Cartes</button><button type="button" data-a="view" data-id="list" aria-pressed="false">Liste</button></div>
+        <div class="menu-l menu-view">Affichage</div>
+        <div class="modes menu-view" role="group" aria-label="Affichage"><button type="button" data-a="view" data-id="cards" aria-pressed="true">Cartes</button><button type="button" data-a="view" data-id="list" aria-pressed="false">Liste</button></div>
         <button class="menu-i" id="toreadbtn" data-a="toread-open" hidden></button>
         <button class="menu-i" id="synthhist" data-a="hist-open">Historique des synthèses</button>
         <button class="menu-i" id="trashbtn" data-a="trash-open" hidden></button>
@@ -67,7 +67,7 @@
         <button class="btn fbtn" id="fbtn" data-a="filters" aria-label="Filtres"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="fbtn-l">Filtres</span><span class="badge" id="fbadge" hidden></span></button>
       </div>
       <div class="actchips" id="actchips" hidden></div>
-      <div class="resinfo"><span id="resinfo" aria-live="polite"></span><button class="linkbtn" id="synth" data-a="synth" hidden></button></div>
+      <div class="resinfo"><span id="resinfo" aria-live="polite"></span><span class="resact"><button class="linkbtn" id="synth" data-a="synth" hidden></button><span class="modes small vtoggle" role="group" aria-label="Affichage"><button type="button" data-a="view" data-id="cards" aria-pressed="true" aria-label="Cartes" title="Cartes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="9" rx="1.5"/><rect x="13" y="4" width="7" height="6" rx="1.5"/><rect x="4" y="15" width="7" height="5" rx="1.5"/><rect x="13" y="12" width="7" height="8" rx="1.5"/></svg>Cartes</button><button type="button" data-a="view" data-id="list" aria-pressed="false" aria-label="Liste" title="Liste"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>Liste</button></span></span></div>
       <div id="pendbar"></div>
       <div class="grid" id="grid"></div>
     </div>

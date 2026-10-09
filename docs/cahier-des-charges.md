@@ -388,7 +388,7 @@ Les maquettes montrent le sélecteur de carnet à la création, la liste de tags
 
 | Réf. | Fonction | Priorité |
 |---|---|---|
-| F80 | L'accueil reste compact : une ligne de recherche avec un bouton **Filtres** (badge = nombre de filtres actifs), puis les filtres actifs, chacun retirable d'une croix. L'affichage cartes/liste, l'historique des synthèses et la corbeille passent dans le menu ⋯. | Must |
+| F80 | L'accueil reste compact : une ligne de recherche avec un bouton **Filtres** (badge = nombre de filtres actifs), puis les filtres actifs, chacun retirable d'une croix. L'historique des synthèses et la corbeille passent dans le menu ⋯ ; la bascule cartes/liste aussi sur téléphone, mais reste visible sur la ligne du nombre de notes dès 760 px. En cartes, chaque carte ne prend que sa hauteur (disposition en maçonnerie, sans trou). | Must |
 | F81 | Le **panneau de filtres** (fenêtre du bas sur téléphone, colonne latérale sur grand écran) regroupe le carnet (un seul), les tags (plusieurs, « tous » ou « au moins un ») et la date de création. Un champ cherche dans les noms de carnets et de tags. | Must |
 | F82 | Les compteurs du panneau tiennent compte des autres filtres ; les tags sans note dans le résultat sont masqués. Les huit carnets et douze tags les plus utilisés s'affichent d'abord, les autres derrière « Voir tous ». | Must |
 | F83 | Toucher le carnet ou un tag d'une carte filtre directement sur celui-ci. | Should |

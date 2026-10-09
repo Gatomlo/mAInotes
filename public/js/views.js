@@ -289,6 +289,25 @@ function renderHome() {
   $('#grid').className = VIEW === 'list' ? 'rows' : 'grid';
   $('#grid').innerHTML = showOutbox + (list.length ? list.map(function (n) { return VIEW === 'list' ? listRow(n, F.q) : card(n, F.q); }).join('') :
     (showOutbox ? '' : '<div class="empty"><h3>' + (active ? 'Aucune note ne correspond' : 'Aucune note pour l\'instant') + '</h3><p>' + (active ? 'Essayez un autre mot ou retirez un filtre.' : 'Ajoutez un texte, un vocal ou une image : le classement se fait tout seul.') + '</p></div>'));
+  layoutMasonry();
+}
+
+/* Maçonnerie : la grille garde l'ordre de lecture (gauche à droite), mais chaque
+   carte n'occupe que la hauteur dont elle a besoin, sans trou sous les petites.
+   Un ResizeObserver recalcule à chaque changement de taille (fenêtre, image chargée). */
+var masonryRO = window.ResizeObserver ? new ResizeObserver(function (entries) { entries.forEach(function (e) { masonrySpan(e.target); }); }) : null;
+function masonrySpan(el) {
+  var g = el.parentNode;
+  if (!g || !g.classList.contains('masonry')) return;
+  var gap = parseFloat(getComputedStyle(g).columnGap) || 0;
+  el.style.gridRowEnd = 'span ' + Math.max(1, Math.ceil((el.getBoundingClientRect().height + gap) / 2));
+}
+function layoutMasonry() {
+  var g = $('#grid');
+  if (masonryRO) masonryRO.disconnect();
+  if (!masonryRO || VIEW === 'list') return; // sans ResizeObserver : grille simple
+  g.classList.add('masonry');
+  Array.prototype.forEach.call(g.children, function (el) { masonrySpan(el); masonryRO.observe(el); });
 }
 
 function renderCats() {

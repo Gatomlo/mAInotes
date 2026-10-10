@@ -203,7 +203,12 @@ var ACTIONS = {
     var p = installPrompt;
     installPrompt = null;
     p.prompt();
-    (p.userChoice || Promise.resolve({})).then(function (r) { if (r.outcome === 'dismissed') toast('Installation annulée'); renderInstall(); });
+    (p.userChoice || Promise.resolve({})).then(function (r) { if (r.outcome === 'dismissed') toast('Installation annulée'); installChanged(); });
+  },
+  'install-hide': function () {
+    try { localStorage.setItem('mainotes-install-hidden', '1'); } catch (e) { /* rien */ }
+    toast('Installation toujours possible dans Réglages');
+    renderBanners();
   },
 
   logout: function () {

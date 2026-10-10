@@ -318,10 +318,16 @@ function showApp() {
 })();
 
 /* Installation sur l'appareil (Android, ordinateur) : l'invitation du navigateur est
-   gardée pour être lancée depuis Réglages › Installer sur cet appareil. */
+   gardée pour être lancée depuis la bannière de l'accueil ou Réglages › Installer sur cet appareil.
+   Passer par elle plutôt que par le menu de Chrome : sur Android, ce menu croit l'app « déjà
+   installée » dès qu'une autre app du même domaine l'est. */
 var installPrompt = null;
-window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installPrompt = e; if (tab === 'set' && typeof renderInstall === 'function') renderInstall(); });
-window.addEventListener('appinstalled', function () { installPrompt = null; toast('Application installée'); if (tab === 'set' && typeof renderInstall === 'function') renderInstall(); });
+function installChanged() {
+  if (typeof renderBanners === 'function') renderBanners();
+  if (tab === 'set' && typeof renderInstall === 'function') renderInstall();
+}
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installPrompt = e; installChanged(); });
+window.addEventListener('appinstalled', function () { installPrompt = null; toast('Application installée'); installChanged(); });
 function isInstalled() {
   return !!(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches));
 }

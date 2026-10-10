@@ -255,6 +255,9 @@ function renderBanners() {
   });
   var main = (S.providers || []).filter(function (p) { return p.id === S.settings.providers.classif; })[0];
   if (main && (!main.hasKey || !main.enabled)) h += '<div class="banner info">' + I(IC.spark, 18) + '<span>L\'IA n\'est pas encore configurée : les notes sont enregistrées mais pas analysées.</span><button data-a="tab" data-id="set">Configurer</button></div>';
+  var hidden = false;
+  try { hidden = localStorage.getItem('mainotes-install-hidden') === '1'; } catch (e) { /* rien */ }
+  if (installPrompt && !isInstalled() && !hidden) h += '<div class="banner info">' + I(IC.upload, 18) + '<span>Installer l\'application sur cet appareil</span><button data-a="install-go">Installer</button><button data-a="install-hide">Plus tard</button></div>';
   el.innerHTML = h;
 }
 

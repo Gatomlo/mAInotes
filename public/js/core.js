@@ -321,8 +321,8 @@ function showApp() {
 /* Installation sur l'appareil (Android, ordinateur) : l'invitation du navigateur est
    gardée pour être lancée depuis Réglages › Installer sur cet appareil. */
 var installPrompt = null;
-window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installPrompt = e; if (tab === 'me' && typeof renderInstall === 'function') renderInstall(); });
-window.addEventListener('appinstalled', function () { installPrompt = null; toast('Application installée'); if (tab === 'me' && typeof renderInstall === 'function') renderInstall(); });
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installPrompt = e; if (tab === 'set' && typeof renderInstall === 'function') renderInstall(); });
+window.addEventListener('appinstalled', function () { installPrompt = null; toast('Application installée'); if (tab === 'set' && typeof renderInstall === 'function') renderInstall(); });
 function isInstalled() {
   return !!(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches));
 }

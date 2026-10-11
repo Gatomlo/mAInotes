@@ -136,7 +136,6 @@ function renderSet() {
   }).join('');
 
   $('#view-set').innerHTML =
-    '<div class="sec"><h2>Réglages</h2></div>' +
     '<div class="panel" id="installpanel"></div>' +
     '<p class="sub">Tout ce qui pilote l\'IA et la consommation. Les clés restent sur le serveur, chiffrées, et ne sont jamais réaffichées.</p>' +
     '<div class="sec"><h2 style="font-size:18px">Fournisseurs, clés et budget</h2><button class="btn" data-a="log-open">Journal des appels</button></div>' +
@@ -238,7 +237,7 @@ function saveSettings(extra) {
   return api('PATCH', 'settings', body).then(function (r) {
     S.settings = r.settings; S.providers = r.providers; saveCache();
     setDirty = false;
-    if (tab === 'me') renderSet();
+    if (tab === 'set') renderSet();
     render();
     if (!extra) toast('Réglages enregistrés');
   }, fail);
@@ -252,8 +251,7 @@ function renderAccount() {
     var u = r.user;
     S.user = u;
     $('#view-account').innerHTML =
-      '<div class="sec"><h2>Compte</h2><button class="btn" data-a="logout">Se déconnecter</button></div>' +
-      '<p class="sub">Compte unique de cette application, créé le ' + fmtFull(u.createdAt) + '.</p>' +
+      '<div class="sec" style="margin-top:8px"><p class="sub" style="margin:0;flex:1 1 200px">' + esc(u.name || u.login) + ' · compte unique de cette application, créé le ' + fmtFull(u.createdAt) + '.</p><button class="btn" data-a="logout">Se déconnecter</button></div>' +
       '<form class="panel" id="f-profile"><h3>Profil</h3>' +
       '<div><label class="l" for="acc-name">Nom affiché</label><input id="acc-name" class="field" maxlength="80" value="' + esc(u.name) + '" autocomplete="name"></div>' +
       '<div><label class="l" for="acc-login">Identifiant de connexion</label><input id="acc-login" class="field" maxlength="120" value="' + esc(u.login) + '" autocomplete="username"></div>' +

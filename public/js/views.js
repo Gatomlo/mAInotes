@@ -241,11 +241,11 @@ function render() {
   renderHome();
   if (tab === 'cats') renderCats();
   if (tab === 'toread') renderToread();
-  if (tab === 'me') {
+  if (tab === 'set') {
     renderMeHead();
     if (typeof renderSet === 'function' && !setDirty) renderSet();
-    if (typeof renderAccount === 'function' && !accountLoaded) renderAccount();
   }
+  if (tab === 'account' && typeof renderAccount === 'function' && !accountLoaded) renderAccount();
 }
 
 // Pastille d'état dans l'en-tête : synchronisé, hors connexion ou envoi en attente.
@@ -358,7 +358,7 @@ function renderToread() {
     '<div class="tabdock"><div class="modes seg2" role="group" aria-label="Lecture"><button type="button" data-a="trmode" data-id="todo" aria-pressed="' + (TR === 'todo') + '">À lire · ' + todo.length + '</button><button type="button" data-a="trmode" data-id="done" aria-pressed="' + (TR === 'done') + '">Lues · ' + done.length + '</button></div></div>';
 }
 
-/* Onglet « Moi » : consommation IA du mois et raccourcis, puis réglages et compte. */
+/* Onglet Réglages : consommation IA du mois et raccourcis, puis les réglages. */
 function renderMeHead() {
   var box = $('#me-head');
   if (!box || !S.settings) return;
@@ -410,18 +410,21 @@ function renderCats() {
     '<p class="help"><span>Renommer, supprimer et fusionner n\'appellent jamais l\'IA. Seul le re-tri, lancé par vous, le fait.</span></p>';
 }
 
-var TAB_TITLE = { home: 'Mes notes', cats: 'Carnets', toread: 'À lire', me: 'Moi' };
+var TAB_TITLE = { home: 'Mes notes', cats: 'Carnets', toread: 'À lire', set: 'Réglages', account: 'Mon compte' };
+var TAB_VIEW = { home: 'view-home', cats: 'view-cats', toread: 'view-toread', set: 'view-settings', account: 'view-account' };
 function setTab(t) {
-  // Réglages et Compte sont regroupés dans l'onglet « Moi ».
-  if (t === 'set' || t === 'account') t = 'me';
   if (!TAB_TITLE[t]) t = 'home';
   tab = t;
   document.body.dataset.tab = t;
   $('#vtitle').textContent = TAB_TITLE[t];
-  ['home', 'cats', 'toread', 'me'].forEach(function (k) {
-    $('#view-' + k).hidden = k !== t;
-    $('#tab-' + k).setAttribute('aria-selected', String(k === t));
+  Object.keys(TAB_VIEW).forEach(function (k) {
+    $('#' + TAB_VIEW[k]).hidden = k !== t;
+    var b = $('#tab-' + k);
+    if (b) b.setAttribute('aria-selected', String(k === t));
   });
-  if (t === 'me') { setDirty = false; accountLoaded = false; }
+  // Mon compte s'ouvre depuis l'icône en haut à droite, hors de la barre d'onglets.
+  if (t === 'account') $('#acctbtn').setAttribute('aria-current', 'page'); else $('#acctbtn').removeAttribute('aria-current');
+  if (t === 'set') setDirty = false;
+  if (t === 'account') accountLoaded = false;
   if (S.user && S.settings) render();
 }

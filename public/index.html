@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mes notes</title>
-<meta name="theme-color" content="#0B6E6E">
+<meta name="theme-color" content="#EEF2F1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F141B" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -33,22 +34,14 @@
 
 <div class="wrap" id="app" hidden>
   <header class="top">
-    <div class="brand"><h1>Mes notes</h1><p class="sub" id="count"></p></div>
-    <div class="menuwrap">
-      <button class="iconbtn" id="menubtn" data-a="menu" aria-label="Plus d'options" aria-haspopup="true" aria-expanded="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg></button>
-      <div class="menu" id="homemenu" hidden>
-        <div class="menu-l menu-view">Affichage</div>
-        <div class="modes menu-view" role="group" aria-label="Affichage"><button type="button" data-a="view" data-id="cards" aria-pressed="true">Cartes</button><button type="button" data-a="view" data-id="list" aria-pressed="false">Liste</button></div>
-        <button class="menu-i" id="toreadbtn" data-a="toread-open" hidden></button>
-        <button class="menu-i" id="synthhist" data-a="hist-open">Historique des synthèses</button>
-        <button class="menu-i" id="trashbtn" data-a="trash-open" hidden></button>
-      </div>
-    </div>
+    <div class="brand"><h1 id="vtitle">Mes notes</h1><p class="sub" id="count"></p></div>
+    <span class="syncpill" id="syncpill" role="status"></span>
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" role="tab" id="tab-home" aria-selected="true" data-a="tab" data-id="home"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h4"/></svg><span>Notes</span></button>
       <button class="tab" role="tab" id="tab-cats" aria-selected="false" data-a="tab" data-id="cats"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg><span>Carnets</span></button>
-      <button class="tab" role="tab" id="tab-set" aria-selected="false" data-a="tab" data-id="set"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Réglages</span></button>
-      <button class="tab" role="tab" id="tab-account" aria-selected="false" data-a="tab" data-id="account"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Compte</span></button>
+      <span class="tab-gap" aria-hidden="true"></span>
+      <button class="tab" role="tab" id="tab-toread" aria-selected="false" data-a="tab" data-id="toread"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10v18l-5-4-5 4z"/></svg><span>À lire</span><i class="tab-badge" id="toreadbadge" hidden></i></button>
+      <button class="tab" role="tab" id="tab-me" aria-selected="false" data-a="tab" data-id="me"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Moi</span></button>
     </nav>
     <button class="btn primary add-desktop" data-a="add"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nouvelle note</button>
   </header>
@@ -58,27 +51,36 @@
   <main id="view-home">
     <aside class="fside" id="fside" aria-label="Filtres"></aside>
     <div class="homecol">
-      <div class="searchrow">
-        <div class="search">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <input id="q" type="search" autocomplete="off" aria-label="Rechercher dans les titres et le contenu" placeholder="Rechercher">
-          <button class="iconbtn" id="qclear" data-a="qclear" aria-label="Effacer la recherche" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-        </div>
-        <button class="btn fbtn" id="fbtn" data-a="filters" aria-label="Filtres"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="fbtn-l">Filtres</span><span class="badge" id="fbadge" hidden></span></button>
-      </div>
       <div class="actchips" id="actchips" hidden></div>
-      <div class="resinfo"><span id="resinfo" aria-live="polite"></span><span class="resact"><button class="linkbtn" id="synth" data-a="synth" hidden></button><span class="modes small vtoggle" role="group" aria-label="Affichage"><button type="button" data-a="view" data-id="cards" aria-pressed="true" aria-label="Cartes" title="Cartes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="9" rx="1.5"/><rect x="13" y="4" width="7" height="6" rx="1.5"/><rect x="4" y="15" width="7" height="5" rx="1.5"/><rect x="13" y="12" width="7" height="8" rx="1.5"/></svg>Cartes</button><button type="button" data-a="view" data-id="list" aria-pressed="false" aria-label="Liste" title="Liste"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>Liste</button></span></span></div>
+      <div class="resinfo"><span id="resinfo" aria-live="polite"></span><span class="resact"><span class="modes small vtoggle" role="group" aria-label="Affichage"><button type="button" data-a="view" data-id="cards" aria-pressed="true" aria-label="Cartes" title="Cartes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="9" rx="1.5"/><rect x="13" y="4" width="7" height="6" rx="1.5"/><rect x="4" y="15" width="7" height="5" rx="1.5"/><rect x="13" y="12" width="7" height="8" rx="1.5"/></svg><span class="vt-l">Cartes</span></button><button type="button" data-a="view" data-id="list" aria-pressed="false" aria-label="Liste" title="Liste"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span class="vt-l">Liste</span></button></span></span></div>
       <div id="pendbar"></div>
       <div class="grid" id="grid"></div>
+      <!-- Sur téléphone, ce bloc se fixe en bas de l'écran, sous le pouce. -->
+      <div class="dock">
+        <div class="qchips" id="qchips" role="group" aria-label="Carnets"></div>
+        <div class="searchrow">
+          <div class="search">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="q" type="search" autocomplete="off" enterkeyhint="search" aria-label="Rechercher dans les titres et le contenu" placeholder="Rechercher">
+            <button class="iconbtn" id="qclear" data-a="qclear" aria-label="Effacer la recherche" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+          </div>
+          <button class="btn fbtn" id="fbtn" data-a="filters" aria-label="Filtres"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="fbtn-l">Filtres</span><span class="badge" id="fbadge" hidden></span></button>
+          <button class="btn fbtn" id="synth" data-a="synth" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h6"/></svg><span class="fbtn-l">Synthèse</span></button>
+        </div>
+      </div>
     </div>
   </main>
 
   <main id="view-cats" hidden></main>
-  <main id="view-set" hidden></main>
-  <main id="view-account" hidden></main>
+  <main id="view-toread" hidden></main>
+  <main id="view-me" hidden>
+    <div id="me-head"></div>
+    <div id="view-set"></div>
+    <div id="view-account"></div>
+  </main>
 </div>
 
-<button class="fab" data-a="add" aria-label="Nouvelle note" title="Nouvelle note" id="fab" hidden><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+<button class="fab" data-a="add" aria-label="Nouvelle note (appui long : note vocale, glisser vers le haut : image)" title="Nouvelle note · appui long : vocal · glisser vers le haut : image" id="fab" hidden><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
 
 <div class="overlay" id="ov" hidden><section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Fenêtre"></section></div>
 <div class="lightbox" id="lb" role="dialog" aria-modal="true" aria-label="Image agrandie" hidden><img alt=""><button type="button" class="iconbtn lb-close" aria-label="Fermer"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>

@@ -389,11 +389,20 @@ Les maquettes montrent le sélecteur de carnet à la création, la liste de tags
 
 | Réf. | Fonction | Priorité |
 |---|---|---|
-| F80 | L'accueil reste compact : une ligne de recherche avec un bouton **Filtres** (badge = nombre de filtres actifs), puis les filtres actifs, chacun retirable d'une croix. L'historique des synthèses et la corbeille passent dans le menu ⋯ ; la bascule cartes/liste aussi sur téléphone, mais reste visible sur la ligne du nombre de notes dès 760 px. En cartes, chaque carte ne prend que sa hauteur (disposition en maçonnerie, sans trou). | Must |
+| F80 | L'accueil reste compact. Sur téléphone, tout ce qui se touche souvent est dans le tiers bas de l'écran, au-dessus de la navigation : une rangée de **carnets rapides** (Tout, chaque carnet, « À vérifier »), puis la recherche avec les boutons **Filtres** (badge = nombre de filtres actifs) et **Synthèse**. Les filtres actifs restent en haut, chacun retirable d'une croix. La bascule cartes/liste est sur la ligne des résultats. L'historique des synthèses et la corbeille sont dans l'onglet **Moi**. En cartes, deux colonnes sur téléphone, et chaque carte ne prend que sa hauteur (disposition en maçonnerie, sans trou). | Must |
 | F81 | Le **panneau de filtres** (fenêtre du bas sur téléphone, colonne latérale sur grand écran) regroupe le carnet (un seul), les tags (plusieurs, « tous » ou « au moins un ») et la date de création. Un champ cherche dans les noms de carnets et de tags. | Must |
 | F82 | Les compteurs du panneau tiennent compte des autres filtres ; les tags sans note dans le résultat sont masqués. Les huit carnets et douze tags les plus utilisés s'affichent d'abord, les autres derrière « Voir tous ». | Must |
 | F83 | Toucher le carnet ou un tag d'une carte filtre directement sur celui-ci. | Should |
-| F84 | Sur téléphone, les onglets Notes, Carnets, Réglages et Compte forment une barre de navigation en bas de l'écran. | Must |
+| F84 | Sur téléphone, une barre de navigation en bas de l'écran : **Notes**, **Carnets**, le bouton **+** au centre, **À lire** (badge = nombre de notes à lire) et **Moi** (consommation IA du mois, raccourcis Synthèses, À vérifier et Corbeille, puis Réglages et Compte). Sur grand écran, les mêmes onglets sont dans l'en-tête. | Must |
+
+## Usage à une main sur téléphone
+
+| Réf. | Fonction | Priorité |
+|---|---|---|
+| F90 | Toutes les fenêtres (nouvelle note, fiche, filtres, synthèse…) montent du bas de l'écran ; leur bouton principal est sur la dernière ligne, collée en bas. | Must |
+| F91 | Nouvelle note : le texte d'abord, puis le carnet en pastilles et les options « À lire plus tard » et « Enrichir » ; en dernière ligne, micro, photo et « Enregistrer ». | Must |
+| F92 | Bouton **+** : appui court pour écrire, appui long pour lancer tout de suite un vocal, glisser vers le haut pour une image. | Should |
+| F93 | Sur une carte : glisser vers la droite marque « À lire » (ou « Lu » si elle l'était), glisser vers la gauche met à la corbeille ; chaque geste propose « Annuler » quelques secondes. Un appui long (ou un clic droit) ouvre les actions rapides : Ouvrir, Modifier, À lire, Corbeille. | Should |
 
 ## À lire / Lu
 
@@ -404,7 +413,7 @@ Pour garder des articles ou des vidéos à consulter plus tard sans les perdre.
 | F85 | Une note a un état de lecture : aucun (par défaut), **À lire** ou **Lu** (avec la date). Cet état est indépendant du carnet et des tags ; ni l'IA ni un re-tri ne le modifient. | Must |
 | F86 | À la création, une case « À lire plus tard » est cochée d'office quand la note contient un lien (règle locale, sans IA) ; elle reste modifiable. | Must |
 | F87 | Sur la carte, toucher le badge « À lire » marque la note comme lue (et inversement), avec « Annuler » quelques secondes. Le détail de la note propose Aucune / À lire / Lu. | Must |
-| F88 | Le panneau de filtres a une section Lecture (Toutes, À lire, Lues) combinable avec les autres filtres ; le menu ⋯ ouvre directement la liste « À lire ». | Must |
+| F88 | Le panneau de filtres a une section Lecture (Toutes, À lire, Lues) combinable avec les autres filtres. L'onglet **À lire** liste les notes à lire (ou lues), chacune marquée lue d'un toucher. | Must |
 
 ## Liens dans les notes
 

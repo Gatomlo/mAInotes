@@ -238,7 +238,7 @@ function saveSettings(extra) {
   return api('PATCH', 'settings', body).then(function (r) {
     S.settings = r.settings; S.providers = r.providers; saveCache();
     setDirty = false;
-    if (tab === 'set') renderSet();
+    if (tab === 'me') renderSet();
     render();
     if (!extra) toast('Réglages enregistrés');
   }, fail);

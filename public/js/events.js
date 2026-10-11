@@ -41,11 +41,11 @@ var ACTIONS = {
   flush: function () { flushOutbox(); },
   'outbox-del': function (el) { outbox = outbox.filter(function (x) { return x.clientId !== el.dataset.id; }); idbDel(el.dataset.id); render(); },
 
-  filters: function () { closeMenu(); openFilters(); },
-  fcat: function (el) { F.cat = el.dataset.id || null; renderHome(); },
+  filters: function () { openFilters(); },
+  fcat: function (el) { F.cat = el.dataset.id || null; renderHome(); if (el.classList.contains('qchip')) window.scrollTo(0, 0); },
   ftag: function (el) { var id = el.dataset.id, i = F.tags.indexOf(id); if (i > -1) F.tags.splice(i, 1); else F.tags.push(id); renderHome(); },
   fread: function (el) { F.read = el.dataset.id || ''; renderHome(); },
-  'toread-open': function () { closeMenu(); F.read = 'todo'; renderHome(); window.scrollTo(0, 0); },
+  trmode: function (el) { TR = el.dataset.id; renderToread(); window.scrollTo(0, 0); },
   'read-toggle': function (el) { var n = noteById(el.dataset.id); if (n) setRead(n, n.read === 'todo' ? 'done' : 'todo'); },
   dread: function (el) { var n = curNote(); if (n) setRead(n, el.dataset.id || null).then(function () { if (modal === 'detail' && curId === n.id) openDetail(n.id, false); }); },
   'toast-undo': function () { var f = toastUndo; toastUndo = null; $('#toast').hidden = true; if (f) f(); },
@@ -60,10 +60,9 @@ var ACTIONS = {
   },
   'fp-more': function (el) { if (el.dataset.id === 'cats') FP.allCats = !FP.allCats; else FP.allTags = !FP.allTags; renderFilterPanel(); },
   // Toucher un badge sur une note filtre directement sur ce carnet ou ce tag.
-  qcat: function (el) { F.cat = el.dataset.id; renderHome(); window.scrollTo(0, 0); },
+  qcat: function (el) { F.cat = el.dataset.id; if (tab !== 'home') setTab('home'); else renderHome(); window.scrollTo(0, 0); },
   qtag: function (el) { if (F.tags.indexOf(el.dataset.id) < 0) F.tags.push(el.dataset.id); renderHome(); window.scrollTo(0, 0); },
   clearf: function () { F = { q: F.q, cat: null, tags: [], tagMode: 'all', read: '', period: '', from: '', to: '' }; renderHome(); },
-  menu: function () { var m = $('#homemenu'); if (m.hidden) openMenu(); else closeMenu(); },
   view: function (el) { VIEW = el.dataset.id; try { localStorage.setItem('mainotes-view', VIEW); } catch (e) { /* rien */ } renderHome(); },
   qclear: function () { F.q = ''; $('#q').value = ''; renderHome(); $('#q').focus(); },
   open: function (el) { if (modal === 'detail' && curId !== el.dataset.id) saveDetail(false); openDetail(el.dataset.id); },
@@ -86,6 +85,7 @@ var ACTIONS = {
 
   addtab: function (el) { if (add.rec && add.rec.on) return; if ($('#ntext')) add.text = $('#ntext').value; if ($('#icap')) add.caption = $('#icap').value; add.notebookId = $('#addcat').value; add.tab = el.dataset.id; renderAdd(); },
   'add-text': addText,
+  addcat: function (el) { add.notebookId = el.dataset.id; $('#addcat').value = el.dataset.id; $$('[data-a="addcat"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === el)); }); },
   'rec-start': function () { add.notebookId = $('#addcat').value; startRecording(); },
   'rec-stop': function () { stopRecording(); },
   'rec-discard': function () { if (add.audio) URL.revokeObjectURL(add.audio.url); add.audio = null; renderAdd(); },
@@ -106,15 +106,16 @@ var ACTIONS = {
       if (el.dataset.id === 'notebook') toast('Carnet créé : complétez sa description dans l\'onglet Carnets.');
     }, fail);
   },
-  del: function () {
-    api('DELETE', 'notes/' + curId).then(function () { var n = curNote(); if (n) n.trashedAt = Date.now(); closeModal(); render(); toast('Note mise à la corbeille'); }, fail);
-  },
+  del: function () { var n = curNote(); closeModal(); if (n) trashNote(n); },
+  qedit: function (el) { openDetail(el.dataset.id, true); },
+  qread: function (el) { var n = noteById(el.dataset.id); closeModal(); if (n) setRead(n, n.read === 'todo' ? 'done' : 'todo'); },
+  qtrash: function (el) { var n = noteById(el.dataset.id); closeModal(); if (n) trashNote(n); },
   purge: function (el) {
     if (!confirm('Supprimer définitivement cette note et ses fichiers ?')) return;
     api('DELETE', 'notes/' + el.dataset.id + '?purge=1').then(function () { S.notes = S.notes.filter(function (n) { return n.id !== el.dataset.id; }); closeModal(); render(); }, fail);
   },
   restore: function (el) { api('POST', 'notes/' + el.dataset.id + '/restore', {}).then(function (r) { upsertNote(r.note); render(); if (modal === 'trash') openTrash(); else if (modal === 'detail') openDetail(el.dataset.id); toast('Note restaurée'); }, fail); },
-  'trash-open': function () { closeMenu(); openTrash(); },
+  'trash-open': function () { openTrash(); },
   'trash-empty': function () { if (!confirm('Vider la corbeille ? Les notes et leurs fichiers seront supprimés définitivement.')) return; api('POST', 'trash/empty', {}).then(function () { S.notes = S.notes.filter(function (n) { return !n.trashedAt; }); closeModal(); render(); }, fail); },
 
   'cat-new': function () { openNotebook(null); },
@@ -168,7 +169,7 @@ var ACTIONS = {
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { toast('Texte copié'); }, function () { toast('Copie impossible sur ce navigateur.'); });
   },
   'synth-note': function () { api('POST', 'syntheses/' + curSynth.id + '/note', {}).then(function (r) { upsertNote(r.note); render(); toast('Synthèse enregistrée comme note'); }, fail); },
-  'hist-open': function () { closeMenu(); openHist(); },
+  'hist-open': function () { openHist(); },
   'hist-view': function (el) { viewHist(el.dataset.id); },
   'hist-del': function (el) {
     if (!confirm('Supprimer cette synthèse de l\'historique ?')) return;
@@ -226,12 +227,95 @@ function setRead(n, state, quiet) {
   }, function (e) { n.read = before; n.readAt = beforeAt; render(); fail(e); });
 }
 
-/* Menu ⋯ de l'accueil : affichage, historique des synthèses, corbeille. */
-function openMenu() { $('#homemenu').hidden = false; $('#menubtn').setAttribute('aria-expanded', 'true'); var f = $('#homemenu button:not([hidden])'); if (f) f.focus(); }
-function closeMenu() { var m = $('#homemenu'); if (!m || m.hidden) return; m.hidden = true; $('#menubtn').setAttribute('aria-expanded', 'false'); }
+// Corbeille immédiate, avec « Annuler » quelques secondes (la note est restaurée).
+function trashNote(n) {
+  var id = n.id;
+  n.trashedAt = Date.now();
+  render();
+  return api('DELETE', 'notes/' + id).then(function () {
+    toast('Note mise à la corbeille', function () {
+      api('POST', 'notes/' + id + '/restore', {}).then(function (r) { upsertNote(r.note); render(); }, fail);
+    });
+  }, function (e) { n.trashedAt = null; render(); fail(e); });
+}
+
+/* ---------- Gestes tactiles ----------
+   Carte : glisser à droite = À lire / Lu, glisser à gauche = corbeille, appui long = actions rapides.
+   Bouton + : appui long = vocal immédiat, glisser vers le haut = image. */
+var SWIPE = 84, gest = null, swallowClick = 0;
+function gestCard(t) { return t && t.closest ? t.closest('#grid [data-a="open"]') : null; }
+function gestReset(g) {
+  clearTimeout(g.timer);
+  if (g.mode !== 'swipe') return;
+  g.el.classList.remove('swiping');
+  g.el.style.transform = '';
+  delete g.el.dataset.sw;
+}
+function longPress(g) {
+  swallowClick = Date.now();
+  if (navigator.vibrate) navigator.vibrate(12);
+  if (g.fab) { closeModal(); openAdd('voice'); startRecording(); return; }
+  openQuick(g.el.dataset.id);
+}
+document.addEventListener('pointerdown', function (e) {
+  if (e.button > 0) return;
+  if (gest) { gestReset(gest); gest = null; }
+  var fab = e.target.closest('#fab');
+  var el = fab || gestCard(e.target);
+  if (!el || (!fab && e.target.closest('a[href]'))) return;
+  gest = { el: el, fab: !!fab, x: e.clientX, y: e.clientY, id: e.pointerId, touch: e.pointerType !== 'mouse', mode: '' };
+  if (gest.touch || fab) gest.timer = setTimeout(function () { if (gest && !gest.mode) { gest.mode = 'long'; longPress(gest); } }, 480);
+});
+document.addEventListener('pointermove', function (e) {
+  var g = gest;
+  if (!g || e.pointerId !== g.id || g.mode === 'long') return;
+  var dx = e.clientX - g.x, dy = e.clientY - g.y;
+  if (g.fab) {
+    if (!g.mode && dy < -36 && Math.abs(dx) < 60) { g.mode = 'up'; clearTimeout(g.timer); }
+    else if (!g.mode && Math.abs(dx) > 24) { clearTimeout(g.timer); }
+    return;
+  }
+  if (!g.mode) {
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) clearTimeout(g.timer);
+    if (g.touch && Math.abs(dx) > 14 && Math.abs(dx) > Math.abs(dy) * 1.5) { g.mode = 'swipe'; g.el.classList.add('swiping'); }
+    else if (Math.abs(dy) > 10) { gest = null; return; }
+    else return;
+  }
+  var n = noteById(g.el.dataset.id);
+  g.el.style.transform = 'translateX(' + dx + 'px)';
+  g.el.dataset.sw = dx > SWIPE ? (n && n.read === 'todo' ? 'done' : 'todo') : dx < -SWIPE ? 'trash' : '';
+});
+document.addEventListener('pointerup', function (e) {
+  var g = gest;
+  if (!g || e.pointerId !== g.id) return;
+  gest = null;
+  var act = g.el.dataset.sw;
+  gestReset(g);
+  if (g.mode === 'long') swallowClick = Date.now(); // le doigt se lève sur la fenêtre qui vient de s'ouvrir
+  else if (g.fab && g.mode === 'up') {
+    swallowClick = Date.now();
+    closeModal(); openAdd('image');
+    var f = $('#ifile'); if (f) f.click();
+  } else if (g.mode === 'swipe') {
+    swallowClick = Date.now();
+    var n = noteById(g.el.dataset.id);
+    if (n && act === 'trash') trashNote(n);
+    else if (n && act) setRead(n, act);
+  }
+});
+document.addEventListener('pointercancel', function () { if (gest) { gestReset(gest); gest = null; } });
+// Clic droit (ordinateur) ou appui long natif (Android) : mêmes actions rapides.
+document.addEventListener('contextmenu', function (e) {
+  if (e.target.closest('#fab')) { e.preventDefault(); return; }
+  var el = gestCard(e.target);
+  if (!el || e.target.closest('a[href]')) return;
+  e.preventDefault();
+  if (modal !== 'quick') openQuick(el.dataset.id);
+});
 
 document.addEventListener('click', function (e) {
-  if (!e.target.closest('#homemenu, #menubtn')) closeMenu();
+  if (swallowClick && Date.now() - swallowClick < 700) { swallowClick = 0; e.preventDefault(); return; }
+  swallowClick = 0;
   if (e.target.closest('a[href]')) return; // un vrai lien s'ouvre, sans ouvrir la carte
   if (e.target.closest('#lb')) { closeZoom(); return; }
   var el = e.target.closest('[data-a]');
@@ -247,7 +331,6 @@ document.addEventListener('click', function (e) {
 
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape' && !$('#lb').hidden) { closeZoom(); return; }
-  if (e.key === 'Escape' && !$('#homemenu').hidden) { closeMenu(); $('#menubtn').focus(); return; }
   if ((e.key === 'Enter' || e.key === ' ') && e.target.dataset && (e.target.dataset.a === 'qcat' || e.target.dataset.a === 'qtag')) { e.preventDefault(); ACTIONS[e.target.dataset.a](e.target); return; }
   if (e.key === 'Escape' && !$('#ov').hidden) {
     if ($('#dtaglist') && !$('#dtaglist').hidden) { dtList(false); return; }

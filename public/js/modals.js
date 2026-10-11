@@ -20,6 +20,7 @@ function closeModal() {
   document.body.style.overflow = '';
   $('#sheet').innerHTML = '';
 }
+var TRASH = '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>';
 function xbtn() { return '<button class="iconbtn" data-a="close" aria-label="Fermer">' + I(IC.x, 22) + '</button>'; }
 function shead(t) { return '<div class="shead"><h2>' + t + '</h2>' + xbtn() + '</div>'; }
 
@@ -41,14 +42,18 @@ function openAdd(t) {
 }
 function renderAdd() {
   var st = S.settings;
-  var tb = function (k, l) { return '<button data-a="addtab" data-id="' + k + '" aria-pressed="' + (add.tab === k) + '">' + I(IC[k], 24) + l + '</button>'; };
-  var body = '';
+  // Les deux autres formats, en boutons ronds sur la dernière ligne, sous le pouce.
+  var other = function (k, l) { return '<button type="button" class="rbtn" data-a="addtab" data-id="' + k + '" aria-label="' + l + '" title="' + l + '">' + I(IC[k], 24) + '</button>'; };
+  var modes = (add.tab !== 'text' ? other('text', 'Écrire une note') : '') + (add.tab !== 'voice' ? other('voice', 'Enregistrer un vocal') : '') + (add.tab !== 'image' ? other('image', 'Ajouter une image') : '');
+  var body = '', go = '';
   if (add.tab === 'text') {
-    body = '<div><label class="l" for="ntext">Votre note</label><textarea id="ntext" class="field" rows="6" placeholder="Écrivez librement…" autofocus>' + esc(add.text) + '</textarea></div><div class="actions"><button class="btn primary" data-a="add-text">Ajouter la note</button></div>';
+    body = '<div class="addtext"><label class="sr" for="ntext">Votre note</label><textarea id="ntext" class="field big" rows="6" placeholder="Écrivez librement…" autofocus>' + esc(add.text) + '</textarea></div>';
+    go = '<button class="btn primary" data-a="add-text">' + I(IC.check, 20) + 'Enregistrer</button>';
   } else if (add.tab === 'voice') {
     var on = add.rec && add.rec.on;
     if (add.audio) {
-      body = '<div class="recbox"><div class="sub">Enregistrement prêt · ' + fmtDur(add.audio.dur) + '</div><audio controls src="' + add.audio.url + '"></audio><div class="actions" style="width:100%"><button class="btn" data-a="rec-discard">Recommencer</button><button class="btn primary" data-a="add-voice">Ajouter le vocal</button></div></div>';
+      body = '<div class="recbox"><div class="sub">Enregistrement prêt · ' + fmtDur(add.audio.dur) + '</div><audio controls src="' + add.audio.url + '"></audio><button class="btn" data-a="rec-discard">Recommencer</button></div>';
+      go = '<button class="btn primary" data-a="add-voice">' + I(IC.check, 20) + 'Ajouter le vocal</button>';
     } else {
       body = '<div class="recbox">' + (on ? '<div class="recdot"><i></i>Enregistrement en cours</div>' : '<div class="sub">Appuyez pour enregistrer</div>') +
         '<div class="time" id="rtime">' + fmtDur(add.rec ? add.rec.sec : 0) + '</div><div class="sub">sur ' + fmtDur(st.maxVoiceSec) + ' maximum, arrêt automatique</div>' +
@@ -57,19 +62,22 @@ function renderAdd() {
           '<button class="bigbtn" data-a="rec-start" aria-label="Démarrer l\'enregistrement">' + I(IC.voice, 34) + '</button>') +
         '</div><div class="actions"><label class="btn" for="afile" style="cursor:pointer">' + I(IC.upload, 18) + 'Importer un fichier audio</label></div><input id="afile" type="file" accept="audio/*" style="position:absolute;width:1px;height:1px;opacity:0">' +
         '<div class="help">' + I(IC.spark, 14) + '<span>' + (st.trigger.transcr === 'auto' ? 'Le vocal est transcrit une seule fois, puis classé à partir du texte.' : 'Transcription manuelle : le vocal attendra votre clic sur « Analyser ».') + '</span></div>';
+      go = on ? '<button class="btn primary" data-a="rec-stop">Terminer</button>' : '<button class="btn primary" data-a="rec-start">' + I(IC.voice, 20) + 'Enregistrer</button>';
     }
   } else {
     body = '<div class="actions"><label class="btn" for="ifile" style="cursor:pointer">' + I(IC.upload, 18) + 'Choisir ou photographier</label></div><input id="ifile" type="file" accept="image/*" multiple style="position:absolute;width:1px;height:1px;opacity:0">' +
       (add.images.length ? '<div class="thumbs">' + add.images.map(function (im, i) { return '<img alt="Image ' + (i + 1) + '" src="' + im.url + '">'; }).join('') + '</div>' : '') +
       '<div><label class="l" for="icap">Légende (facultative)</label><textarea id="icap" class="field" rows="2" placeholder="Ce que montre la photo, pourquoi vous la gardez…">' + esc(add.caption) + '</textarea>' +
-      '<div class="help">' + I(IC.spark, 14) + '<span>' + (st.trigger.vision === 'auto' ? 'La photo ' + (st.reduceImage ? 'réduite ' : '') + 'sera décrite automatiquement.' : st.trigger.vision === 'off' ? 'Description d\'image désactivée : la note est classée sur la légende.' : 'Avec une légende, la photo est classée sans description payante. Sinon, la description se lance à la demande.') + (st.providers.vision !== 'infomaniak' && st.trigger.vision !== 'off' ? ' Cette photo sera envoyée à ' + PROV[st.providers.vision] + ' si une description est demandée.' : '') + '</span></div></div>' +
-      '<div class="actions"><button class="btn primary" data-a="add-img"' + (add.images.length ? '' : ' disabled') + '>Ajouter ' + (add.images.length > 1 ? 'les images' : 'l\'image') + '</button></div>';
+      '<div class="help">' + I(IC.spark, 14) + '<span>' + (st.trigger.vision === 'auto' ? 'La photo ' + (st.reduceImage ? 'réduite ' : '') + 'sera décrite automatiquement.' : st.trigger.vision === 'off' ? 'Description d\'image désactivée : la note est classée sur la légende.' : 'Avec une légende, la photo est classée sans description payante. Sinon, la description se lance à la demande.') + (st.providers.vision !== 'infomaniak' && st.trigger.vision !== 'off' ? ' Cette photo sera envoyée à ' + PROV[st.providers.vision] + ' si une description est demandée.' : '') + '</span></div></div>';
+    go = '<button class="btn primary" data-a="add-img"' + (add.images.length ? '' : ' disabled') + '>' + I(IC.check, 20) + 'Ajouter ' + (add.images.length > 1 ? 'les images' : 'l\'image') + '</button>';
   }
-  var co = '<option value=""' + (!add.notebookId ? ' selected' : '') + '>Choisi par l\'IA</option>' + S.notebooks.map(function (c) { return '<option value="' + c.id + '"' + (add.notebookId === c.id ? ' selected' : '') + '>' + esc(c.name) + (st.defaultNotebook === c.id ? ' (par défaut)' : '') + '</option>'; }).join('');
-  openSheet(shead('Nouvelle note') + '<div class="seg">' + tb('text', 'Écrire') + tb('voice', 'Parler') + tb('image', 'Image') + '</div><div><label class="l" for="addcat">Carnet de destination</label><select id="addcat" class="field">' + co + '</select></div>' +
-    (st.trigger.enrich !== 'off' ? '<label class="check"><input type="checkbox" id="addenrich"' + (add.enrich ? ' checked' : '') + '><span><b>Enrichir cette note</b><small>Explication, pistes et sources, dans l\'appel de classement (aucun appel en plus).</small></span></label>' : '') +
-    '<label class="check"><input type="checkbox" id="addread"' + (addReadOn() ? ' checked' : '') + '><span><b>À lire plus tard</b><small>Un article, une vidéo à consulter sans le perdre. Cochée d\'office quand la note contient un lien.</small></span></label>' +
-    body, 'Nouvelle note');
+  // Carnet de destination : pastilles à faire défiler du pouce (la valeur part dans #addcat).
+  var cb = function (id, label, cls) { return '<button type="button" class="qchip' + (cls ? ' ' + cls : '') + '" data-a="addcat" data-id="' + id + '" aria-pressed="' + ((add.notebookId || '') === id) + '">' + label + '</button>'; };
+  var cats = cb('', I(IC.spark, 15) + 'Choisi par l\'IA', 'ai') + S.notebooks.map(function (c) { return cb(c.id, '<i class="dot"></i>' + esc(c.name) + (st.defaultNotebook === c.id ? ' <small>· défaut</small>' : ''), 'cat-' + c.color); }).join('');
+  var opts = '<div class="addopts"><div class="l">Carnet</div><input type="hidden" id="addcat" value="' + esc(add.notebookId || '') + '"><div class="qchips inline" role="group" aria-label="Carnet de destination">' + cats + '</div>' +
+    '<div class="pills"><label class="pill"><input type="checkbox" id="addread"' + (addReadOn() ? ' checked' : '') + '>' + I(IC.bookmark, 16) + 'À lire plus tard</label>' +
+    (st.trigger.enrich !== 'off' ? '<label class="pill"><input type="checkbox" id="addenrich"' + (add.enrich ? ' checked' : '') + '>' + I(IC.spark, 16) + 'Enrichir</label>' : '') + '</div></div>';
+  openSheet(shead('Nouvelle note') + body + opts + '<div class="actions sfoot">' + modes + go + '</div>', 'Nouvelle note');
 }
 // « À lire » : choix explicite, sinon déduit de la présence d'un lien (règle locale, sans IA).
 function hasLink(v) { URL_RE.lastIndex = 0; return URL_RE.test(String(v || '')); }
@@ -289,8 +297,9 @@ function readView(n, x) {
     '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + readPick(n) + x.media + body + aiNote + x.links +
     (x.busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
     (x.analyzeBtns ? '<div class="actions">' + x.analyzeBtns + '</div>' : '') +
-    '<div class="actions"><button class="btn" data-a="close">Fermer</button><button class="btn primary" data-a="dedit" autofocus>' + I(IC.text, 18) + 'Modifier</button></div>' +
-    '<div class="actions">' + (n.trashedAt ? '<button class="btn danger" data-a="purge" data-id="' + n.id + '">Supprimer définitivement</button>' : '<button class="btn danger" data-a="del">Mettre à la corbeille</button>') + '</div>';
+    '<div class="actions sfoot"><button type="button" class="rbtn" data-a="close" aria-label="Fermer" title="Fermer">' + I('<path d="m15 6-6 6 6 6"/>', 24) + '</button>' +
+    (n.trashedAt ? '<button type="button" class="rbtn danger" data-a="purge" data-id="' + n.id + '" aria-label="Supprimer définitivement" title="Supprimer définitivement">' + I(TRASH, 22) + '</button>' : '<button type="button" class="rbtn" data-a="del" aria-label="Mettre à la corbeille" title="Mettre à la corbeille">' + I(TRASH, 22) + '</button>') +
+    '<button class="btn primary" data-a="dedit" autofocus>' + I(IC.text, 18) + 'Modifier</button></div>';
 }
 
 // Seuls les champs modifiés dans le formulaire depuis son ouverture sont envoyés :
@@ -635,4 +644,16 @@ function enrichHtml(n) {
   if (st.trigger.enrich !== 'off') h += '<div class="actions">' + enrichBtn(n, true) + '</div>';
   h += '<div class="help" style="margin:0">' + I(IC.help, 14) + '<span>Généré par l\'IA (' + esc(PROV[e.provider] || e.provider) + ') le ' + fmtFull(e.at) + ' : à vérifier. Les sources proposées ont été ouvertes par le serveur' + (e.rejected ? ' ; ' + plural(e.rejected, 'lien introuvable a été écarté', 'liens introuvables ont été écartés') : '') + '.</span></div></div>';
   return h;
+}
+
+/* Actions rapides d'une carte (appui long ou clic droit). */
+function openQuick(id) {
+  var n = noteById(id);
+  if (!n) return;
+  modal = 'quick';
+  var b = function (act, icon, label, cls) { return '<button type="button" class="qact' + (cls ? ' ' + cls : '') + '" data-a="' + act + '" data-id="' + n.id + '">' + I(icon, 24) + '<span>' + label + '</span></button>'; };
+  openSheet(shead(esc(n.title)) + '<div class="qgrid">' +
+    b('open', IC.synthesis, 'Ouvrir') + b('qedit', IC.text, 'Modifier') +
+    b('qread', n.read === 'todo' ? IC.check : IC.bookmark, n.read === 'todo' ? 'Marquer lue' : 'À lire') +
+    b('qtrash', TRASH, 'Corbeille', 'danger') + '</div>', 'Actions rapides');
 }

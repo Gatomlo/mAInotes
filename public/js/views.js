@@ -47,7 +47,7 @@ function matchLabel(n, q) {
   return w.length ? '<div class="match">' + I(IC.search, 13) + 'Trouvé dans ' + w.join(' et ') + '</div>' : '';
 }
 function headLine(n) {
-  return '<div class="head"><span>' + I(IC[n.type] || IC.text) + TYPE_LABEL[n.type] + (n.type === 'voice' ? ' · ' + fmtDur(n.dur) : '') + '</span><span>' + fmtDate(n.createdAt) + '</span></div>';
+  return '<div class="head"><span>' + I(IC[n.type] || IC.text) + '<span class="hl">' + TYPE_LABEL[n.type] + (n.type === 'voice' ? ' · ' : '') + '</span>' + (n.type === 'voice' ? fmtDur(n.dur) : '') + '</span><span>' + fmtDate(n.createdAt) + '</span></div>';
 }
 function thumbHtml(n) {
   if (n.type !== 'image' || !n.media.length) return '';
@@ -234,12 +234,27 @@ function renderActive() {
 function render() {
   if (!S.user || !S.settings) return;
   var all = live();
-  $('#count').textContent = plural(all.length, 'note', 'notes') + (S.user.name ? ' · ' + S.user.name : '');
+  var check = all.filter(function (n) { return n.type !== 'synthesis' && n.status === 'ready' && (!n.notebookId || n.needsReview); }).length;
+  $('#count').textContent = tab === 'home' ? plural(all.length, 'note', 'notes') + (check ? ' · ' + check + ' à vérifier' : '') : '';
   renderBanners();
+  renderSync();
   renderHome();
   if (tab === 'cats') renderCats();
-  if (tab === 'set' && typeof renderSet === 'function' && !setDirty) renderSet();
-  if (tab === 'account' && typeof renderAccount === 'function' && !accountLoaded) renderAccount();
+  if (tab === 'toread') renderToread();
+  if (tab === 'me') {
+    renderMeHead();
+    if (typeof renderSet === 'function' && !setDirty) renderSet();
+    if (typeof renderAccount === 'function' && !accountLoaded) renderAccount();
+  }
+}
+
+// Pastille d'état dans l'en-tête : synchronisé, hors connexion ou envoi en attente.
+function renderSync() {
+  var el = $('#syncpill');
+  if (!el) return;
+  var st = !online ? ['off', 'Hors connexion'] : outbox.length ? ['wait', plural(outbox.length, 'envoi', 'envois') + ' en attente'] : ['ok', 'Synchronisé'];
+  el.className = 'syncpill ' + st[0];
+  el.innerHTML = '<i></i>' + st[1];
 }
 
 function renderBanners() {
@@ -270,18 +285,17 @@ function renderHome() {
   renderActive();
   renderFilterPanel();
   $$('[data-a="view"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.id === VIEW)); });
-  $('#resinfo').textContent = active ? plural(list.length, 'note', 'notes') + ' sur ' + live().length : plural(live().length, 'note', 'notes');
+  $('#resinfo').textContent = active ? plural(list.length, 'note', 'notes') + ' sur ' + live().length : '';
   $('#qclear').hidden = !F.q;
-  var trashed = S.notes.filter(function (n) { return n.trashedAt; }).length;
-  $('#trashbtn').hidden = !trashed;
-  $('#trashbtn').innerHTML = I('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>', 18) + 'Corbeille (' + trashed + ')';
   var toread = live().filter(function (n) { return n.read === 'todo'; }).length;
-  $('#toreadbtn').hidden = !toread;
-  $('#toreadbtn').innerHTML = I(IC.bookmark, 18) + 'À lire (' + toread + ')';
-  $('#synthhist').innerHTML = I(IC.synthesis, 18) + 'Historique des synthèses' + (S.synthesesCount ? ' (' + S.synthesesCount + ')' : '');
+  $('#toreadbadge').hidden = !toread;
+  $('#toreadbadge').textContent = toread > 99 ? '99+' : toread;
+  $('#tab-toread').setAttribute('aria-label', 'À lire' + (toread ? ' (' + toread + ')' : ''));
   var nready = list.filter(function (n) { return n.status === 'ready' && n.type !== 'synthesis'; }).length;
   $('#synth').hidden = !nready;
-  $('#synth').innerHTML = I(IC.synthesis, 16) + 'Synthèse des ' + plural(nready, 'note', 'notes');
+  $('#synth').setAttribute('aria-label', 'Synthèse des ' + plural(nready, 'note affichée', 'notes affichées'));
+  $('#synth').title = 'Synthèse des ' + plural(nready, 'note', 'notes');
+  renderQuickCats();
   var pend = live().filter(function (n) { return n.status === 'pending' || n.status === 'error'; });
   var calls = pend.reduce(function (a, n) { return a + 1 + ((n.type === 'voice' && !n.transcript) || (n.type === 'image' && !n.description && !n.content) ? 1 : 0); }, 0);
   $('#pendbar').innerHTML = pend.length ? '<div class="pendbar"><span>' + plural(pend.length, 'note à analyser', 'notes à analyser') + '</span><button class="btn primary" style="height:44px" data-a="analyze-all">Tout analyser · ≈ ' + plural(calls, 'appel', 'appels') + '</button></div>' : '';
@@ -310,6 +324,60 @@ function layoutMasonry() {
   Array.prototype.forEach.call(g.children, function (el) { masonrySpan(el); masonryRO.observe(el); });
 }
 
+/* Carnets rapides, juste au-dessus de la recherche : un toucher filtre sur le carnet. */
+function renderQuickCats() {
+  var box = $('#qchips');
+  if (!box) return;
+  var all = live();
+  var cats = S.notebooks.map(function (c) { return { c: c, k: all.filter(function (n) { return n.notebookId === c.id; }).length }; })
+    .sort(function (a, b) { return b.k - a.k || a.c.name.localeCompare(b.c.name, 'fr'); });
+  var check = all.filter(function (n) { return n.type !== 'synthesis' && n.status === 'ready' && (!n.notebookId || n.needsReview); }).length;
+  var b = function (id, label, cls) { return '<button type="button" class="qchip' + (cls ? ' ' + cls : '') + '" data-a="fcat" data-id="' + id + '" aria-pressed="' + ((F.cat || '') === id) + '">' + label + '</button>'; };
+  box.innerHTML = b('', 'Tout') + cats.map(function (x) { return b(x.c.id, '<i class="dot"></i>' + esc(x.c.name), 'cat-' + x.c.color); }).join('') +
+    (check || F.cat === '__none' ? b('__none', I(IC.help, 14) + 'À vérifier', 'chk') : '');
+  box.hidden = !S.notebooks.length;
+}
+
+/* Onglet « À lire » : la liste des notes à consulter, marquées lues d'un toucher. */
+var TR = 'todo';
+function renderToread() {
+  var all = live();
+  var todo = all.filter(function (n) { return n.read === 'todo'; }).sort(function (a, b) { return b.createdAt - a.createdAt; });
+  var done = all.filter(function (n) { return n.read === 'done'; }).sort(function (a, b) { return (b.readAt || 0) - (a.readAt || 0); });
+  var list = TR === 'done' ? done : todo;
+  var row = function (n) {
+    var c = nb(n.notebookId);
+    var meta = [c ? esc(c.name) : '', n.links && n.links[0] && n.links[0].site ? esc(n.links[0].site) : TYPE_LABEL[n.type]].filter(Boolean).join(' · ');
+    return '<li class="trow" data-id="' + n.id + '"><button type="button" class="trow-open" data-a="open" data-id="' + n.id + '"><small>' + meta + (n.read === 'done' && n.readAt ? ' · lue ' + esc(fmtDate(n.readAt)) : '') + '</small><b>' + esc(n.title) + '</b></button>' +
+      '<button type="button" class="trow-chk' + (n.read === 'done' ? ' on' : '') + '" data-a="read-toggle" data-id="' + n.id + '" aria-label="' + (n.read === 'done' ? 'Remettre à lire' : 'Marquer comme lue') + '">' + I(n.read === 'done' ? IC.bookmark : IC.check, 22) + '</button></li>';
+  };
+  $('#view-toread').innerHTML =
+    '<p class="sub tr-sub">' + (TR === 'done' ? plural(done.length, 'note lue', 'notes lues') : todo.length ? plural(todo.length, 'note en attente', 'notes en attente') : '') + '</p>' +
+    (list.length ? '<ul class="tlist">' + list.map(row).join('') + '</ul>' :
+      '<div class="empty"><h3>' + (TR === 'done' ? 'Aucune note lue' : 'Rien à lire') + '</h3><p>' + (TR === 'done' ? 'Les notes marquées lues apparaîtront ici.' : 'Une note avec un lien est mise « à lire » d\'office. Glissez une carte vers la droite pour l\'ajouter.') + '</p></div>') +
+    '<div class="tabdock"><div class="modes seg2" role="group" aria-label="Lecture"><button type="button" data-a="trmode" data-id="todo" aria-pressed="' + (TR === 'todo') + '">À lire · ' + todo.length + '</button><button type="button" data-a="trmode" data-id="done" aria-pressed="' + (TR === 'done') + '">Lues · ' + done.length + '</button></div></div>';
+}
+
+/* Onglet « Moi » : consommation IA du mois et raccourcis, puis réglages et compte. */
+function renderMeHead() {
+  var box = $('#me-head');
+  if (!box || !S.settings) return;
+  var p = (S.providers || []).filter(function (x) { return x.id === S.settings.providers.classif; })[0];
+  var b = p && p.budget;
+  var meter = '';
+  if (b && b.cap) {
+    var pct = Math.min(100, Math.round((b.ratio || 0) * 100));
+    meter = '<section class="mecard"><div class="kv"><b>IA ce mois-ci</b><span class="mebig">' + pct + ' %</span></div><div class="meter' + (b.blocked ? ' blocked' : b.alert ? ' alert' : '') + '"><i style="width:' + pct + '%"></i></div><p class="sub" style="margin:0">' + esc(p.label) + ' · ' + fmtEur(b.used) + ' sur ' + fmtEur(b.cap) + ' · alerte à 80 %</p></section>';
+  }
+  var check = live().filter(function (n) { return n.type !== 'synthesis' && n.status === 'ready' && (!n.notebookId || n.needsReview); }).length;
+  var trashed = S.notes.filter(function (n) { return n.trashedAt; }).length;
+  var tile = function (act, id, icon, label) { return '<button type="button" class="metile" data-a="' + act + '"' + (id ? ' data-id="' + id + '"' : '') + '>' + I(icon, 22) + '<span>' + label + '</span></button>'; };
+  box.innerHTML = meter + '<div class="metiles">' +
+    tile('hist-open', '', IC.synthesis, 'Synthèses' + (S.synthesesCount ? ' · ' + S.synthesesCount : '')) +
+    tile('qcat', '__none', IC.help, 'À vérifier' + (check ? ' · ' + check : '')) +
+    tile('trash-open', '', '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>', 'Corbeille' + (trashed ? ' · ' + trashed : '')) + '</div>';
+}
+
 function renderCats() {
   var st = S.settings;
   var def = '<option value="">Choisi par l\'IA (aucun défaut)</option>' + S.notebooks.map(function (c) { return '<option value="' + c.id + '"' + (st.defaultNotebook === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('');
@@ -324,34 +392,36 @@ function renderCats() {
   var r = S.retri;
   var retriInfo = r ? (r.status === 'running' ? 'Re-tri en cours : ' + r.done + ' / ' + r.total + ' notes examinées.' : 'Dernier re-tri le ' + fmtFull(r.date) + ' : ' + plural(r.items.length, 'note déplacée', 'notes déplacées') + '.') : '';
   $('#view-cats').innerHTML =
-    '<div class="sec"><h2>Carnets</h2><button class="btn primary" data-a="cat-new">Nouveau carnet</button></div>' +
-    '<form class="panel" id="ctxform"><h3>Description de votre carnet de notes</h3>' +
+    '<div class="list">' + rows + '</div>' +
+    '<div class="tabdock"><button class="btn" data-a="retri-open">' + I(IC.spark, 18) + 'Relancer le tri</button><button class="btn primary" data-a="cat-new">' + I('<path d="M12 5v14M5 12h14"/>', 18) + 'Nouveau carnet</button></div>' +
+    '<form class="panel" id="ctxform" style="margin-top:20px"><h3>Description de votre carnet de notes</h3>' +
     '<p class="sub" style="margin:0">Qui vous êtes, à quoi servent vos notes, vos sujets du moment. L\'IA la lit à chaque classement pour choisir le bon carnet.</p>' +
     '<textarea id="ctx" class="field" rows="4" maxlength="1500" placeholder="ex. Enseignante en sciences, je note des idées de cours, des lectures sur l\'IA en éducation et les tâches du ranch (chevaux, travaux, factures).">' + esc(st.context || '') + '</textarea>' +
     '<div class="help"><span>Restez bref : quelques phrases suffisent, et chaque mot est envoyé à chaque classement.</span></div>' +
     '<div class="actions"><button type="submit" class="btn primary">Enregistrer la description</button></div></form>' +
     '<p class="sub">Chaque carnet a aussi sa propre description (« Ce qu\'il doit contenir ») : touchez un carnet pour la compléter. Une note n\'appartient qu\'à un seul carnet.</p>' +
     '<div style="margin-top:12px"><label class="l" for="defcat">Carnet par défaut des nouvelles notes</label><select id="defcat" class="field" data-set="defaultNotebook">' + def + '</select><div class="help"><span>Modifiable note par note à la création. Un carnet choisi à la création n\'est jamais changé par l\'IA.</span></div></div>' +
-    '<div class="list">' + rows + '</div>' +
     '<div class="sec"><h2>Tags</h2></div>' +
     '<div class="chips tags" style="flex-wrap:wrap;overflow:visible">' + tags + '</div>' +
     '<form class="tagform" id="tagform" autocomplete="off"><label for="newtag" class="l" style="width:100%;margin:0">Nouveau tag</label><input id="newtag" placeholder="ex. voyage" maxlength="30"><button type="submit" class="btn primary">Ajouter</button></form>' +
     '<div class="sec"><h2>Fusion et re-tri</h2></div>' +
-    '<div class="actions" style="margin-top:12px"><button class="btn" data-a="merge-open" data-id="notebook">Fusionner des carnets</button><button class="btn" data-a="merge-open" data-id="tag">Fusionner des tags</button><button class="btn" data-a="retri-open">' + I(IC.spark, 16) + 'Relancer le tri</button></div>' +
+    '<div class="actions" style="margin-top:12px"><button class="btn" data-a="merge-open" data-id="notebook">Fusionner des carnets</button><button class="btn" data-a="merge-open" data-id="tag">Fusionner des tags</button></div>' +
     (retriInfo ? '<p class="help"><span>' + esc(retriInfo) + '</span>' + (r && r.items.length ? ' <button class="linkbtn" data-a="retri-recap">Voir le récapitulatif</button>' : '') + '</p>' : '') +
     '<p class="help"><span>Renommer, supprimer et fusionner n\'appellent jamais l\'IA. Seul le re-tri, lancé par vous, le fait.</span></p>';
 }
 
+var TAB_TITLE = { home: 'Mes notes', cats: 'Carnets', toread: 'À lire', me: 'Moi' };
 function setTab(t) {
+  // Réglages et Compte sont regroupés dans l'onglet « Moi ».
+  if (t === 'set' || t === 'account') t = 'me';
+  if (!TAB_TITLE[t]) t = 'home';
   tab = t;
-  $('#fab').hidden = t !== 'home';
-  $('#menubtn').hidden = t !== 'home';
-  closeMenu();
-  ['home', 'cats', 'set', 'account'].forEach(function (k) {
+  document.body.dataset.tab = t;
+  $('#vtitle').textContent = TAB_TITLE[t];
+  ['home', 'cats', 'toread', 'me'].forEach(function (k) {
     $('#view-' + k).hidden = k !== t;
     $('#tab-' + k).setAttribute('aria-selected', String(k === t));
   });
-  if (t === 'cats') renderCats();
-  if (t === 'set') { setDirty = false; renderSet(); }
-  if (t === 'account') { accountLoaded = false; renderAccount(); }
+  if (t === 'me') { setDirty = false; accountLoaded = false; }
+  if (S.user && S.settings) render();
 }

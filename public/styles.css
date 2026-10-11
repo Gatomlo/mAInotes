@@ -1,7 +1,7 @@
 :root{
-  --bg:#F4F5F7; --surface:#FFFFFF; --ink:#17202E; --muted:#5B6678; --line:#E2E6EC; --line-strong:#B5BDCA;
+  --bg:#EEF2F1; --surface:#FFFFFF; --ink:#12201F; --muted:#55625F; --line:#DCE3E1; --line-strong:#AEBBB8;
   --accent:#0B6E6E; --accent-ink:#FFFFFF; --accent-soft:#E1F1F0; --danger:#B3261E;
-  --chip:#F0F2F5; --chip-ink:#3C4658; --mark:#FFE9A8; --overlay:rgba(23,32,46,.5); --skeleton:#E8EBF0; --warn-soft:#FFF4E0; --warn-ink:#8A5A0F;
+  --chip:#EEF2F1; --chip-ink:#3E4B49; --mark:#FFE9A8; --overlay:rgba(18,32,31,.5); --skeleton:#E3EAE8; --warn-soft:#FFF4E0; --warn-ink:#8A5A0F;
   --blue-dot:#2F5FD0; --blue-soft:#E6ECFB; --blue-ink:#2447A0;
   --amber-dot:#B7791F; --amber-soft:#FBF0DA; --amber-ink:#8A5A0F;
   --purple-dot:#7C4DCC; --purple-soft:#EEE8FA; --purple-ink:#5B34A0;
@@ -290,17 +290,9 @@ body{padding-top:env(safe-area-inset-top,0px);padding-left:max(16px,env(safe-are
 .acc-b{display:flex;flex-direction:column;gap:14px;padding:4px 16px 16px}
 @media (prefers-reduced-motion:reduce){.acc-d>summary::after{transition:none}}
 
-/* ---------- Accueil compact : recherche + Filtres, menu ⋯, navigation en bas sur téléphone ---------- */
+/* ---------- Accueil compact : recherche + Filtres, navigation en bas sur téléphone ---------- */
 .top{align-items:center}
 .tab{display:inline-flex;align-items:center;gap:8px}
-.menuwrap{position:relative;order:3}
-.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:15;min-width:260px;background:var(--surface);border:1px solid var(--line-strong);border-radius:16px;padding:8px;box-shadow:0 12px 32px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:4px}
-.menu-l{font-size:13px;color:var(--muted);padding:4px 8px 0}
-.menu .modes{margin:0 4px 6px;display:flex}
-.menu .modes button{flex:1}
-.menu-i{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:0 10px;border:0;border-radius:10px;background:transparent;text-align:left;font-weight:500}
-.menu-i:hover{background:var(--bg)}
-.menu-i svg{color:var(--muted)}
 .searchrow{display:flex;gap:8px;margin-top:12px}
 .searchrow .search{flex:1;min-width:0;margin-top:0}
 .fbtn{height:52px;padding:0 16px;border-color:var(--line-strong);background:var(--surface);position:relative}
@@ -337,7 +329,7 @@ body{padding-top:env(safe-area-inset-top,0px);padding-left:max(16px,env(safe-are
 .fp-sec .period .field{flex:1 1 130px}
 .modes.small button{height:36px;font-size:13px;padding:0 10px}
 .fp-foot{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));margin:4px -20px calc(-24px - env(safe-area-inset-bottom,0px));padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line);display:flex;gap:10px}
-.fp-foot .btn{flex:1}
+.fp-foot .btn{flex:1;height:56px;border-radius:28px}
 .fp-foot .btn.primary{flex:2}
 @media (min-width:760px){.fp-foot{bottom:-24px;margin-bottom:-24px;padding-bottom:12px}}
 .fside{display:none}
@@ -379,8 +371,175 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
 .toast[hidden]{display:none}
 .toast-undo{border:0;background:none;color:inherit;font-weight:700;text-decoration:underline;min-height:36px;padding:0 4px}
 
-/* Bascule Cartes / Liste : visible sur la ligne des résultats dès 760 px, dans le menu ⋯ en dessous */
+/* Bascule Cartes / Liste sur la ligne des résultats */
 .resact{display:inline-flex;align-items:center;gap:12px;margin-left:auto}
 .vtoggle{display:none}
 .vtoggle button{display:inline-flex;align-items:center;gap:6px}
-@media (min-width:760px){.vtoggle{display:inline-flex}.menu .menu-view{display:none}}
+
+
+/* ==========================================================================
+   Refonte « tout sous le pouce » : sur téléphone, ce qu'on touche souvent
+   (carnets rapides, recherche, filtres, synthèse, +, navigation) vit dans le
+   tiers bas de l'écran ; le haut sert à lire.
+   ========================================================================== */
+:root{--nav-h:72px;--safe-b:env(safe-area-inset-bottom,0px)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.vtoggle{display:inline-flex}
+.brand h1{letter-spacing:-.8px}
+
+/* Pastille d'état de synchronisation */
+.syncpill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:14px;background:var(--surface);font-size:12px;font-weight:600;color:var(--green-ink);white-space:nowrap;flex:none}
+.syncpill i{width:7px;height:7px;border-radius:50%;background:var(--green-dot)}
+.syncpill.off{color:var(--warn-ink)}.syncpill.off i{background:var(--amber-dot)}
+.syncpill.wait{color:var(--accent)}.syncpill.wait i{background:var(--accent);animation:pulse 1.2s ease-in-out infinite}
+
+/* Onglets : badge « À lire », emplacement du + au centre (téléphone) */
+.tab{position:relative}
+.tab-gap{display:none}
+.tab-badge{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-size:11px;font-style:normal;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+
+/* Accueil : les carnets rapides et la recherche passent avant la grille sur grand écran */
+.homecol{display:flex;flex-direction:column}
+.homecol>*{min-width:0}
+.dock{order:-1;display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.searchrow{margin-top:0}
+.search{border:0;border-radius:26px;box-shadow:0 1px 2px rgba(18,32,31,.06)}
+.fbtn{border:0;border-radius:26px;box-shadow:0 1px 2px rgba(18,32,31,.06)}
+.qchips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-block:2px}
+.qchips::-webkit-scrollbar{display:none}
+.qchip{flex:none;height:44px;padding:0 16px;border-radius:22px;border:0;background:var(--surface);color:var(--ink);font-size:14px;font-weight:600;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.qchip .dot{width:8px;height:8px;border-radius:50%;background:var(--dot)}
+.qchip small{font-weight:500;opacity:.75}
+.qchip.chk{color:var(--warn-ink)}
+.qchip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.qchip.ai[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+@media (min-width:1024px){.qchips#qchips{display:none}}
+
+/* Cartes : plus douces, sans bordure ; gestes de glissement */
+.card{position:relative;border:0;border-radius:22px;box-shadow:0 1px 2px rgba(18,32,31,.06);transition:transform .22s cubic-bezier(.2,.8,.2,1),box-shadow .15s}
+.card:hover{border-color:transparent;box-shadow:0 4px 14px rgba(18,32,31,.10)}
+.card.busy{border:1.5px dashed var(--line-strong)}
+.lrow{position:relative;border:0;border-radius:16px;transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.card.swiping,.lrow.swiping{transition:none;z-index:2}
+.card[data-sw="todo"],.lrow[data-sw="todo"]{box-shadow:0 0 0 3px var(--amber-dot)}
+.card[data-sw="done"],.lrow[data-sw="done"]{box-shadow:0 0 0 3px var(--accent)}
+.card[data-sw="trash"],.lrow[data-sw="trash"]{box-shadow:0 0 0 3px var(--danger)}
+.card[data-sw="todo"]::after,.card[data-sw="done"]::after,.card[data-sw="trash"]::after,
+.lrow[data-sw="todo"]::after,.lrow[data-sw="done"]::after,.lrow[data-sw="trash"]::after{position:absolute;top:8px;right:8px;padding:4px 10px;border-radius:12px;font-size:13px;font-weight:700;color:#fff}
+.card[data-sw="todo"]::after,.lrow[data-sw="todo"]::after{content:"À lire";background:var(--amber-ink)}
+.card[data-sw="done"]::after,.lrow[data-sw="done"]::after{content:"Lu";background:#0B6E6E}
+.card[data-sw="trash"]::after,.lrow[data-sw="trash"]::after{content:"Corbeille";background:#B3261E;left:8px;right:auto}
+.panel{border:0;border-radius:22px}
+.row{border:0;border-radius:18px}
+.list .row{min-height:68px}
+.empty{border-radius:22px}
+
+/* Fenêtres du bas : animation d'ouverture, dernière ligne d'actions collée en bas */
+.sheet{border-radius:28px 28px 0 0}
+#ov:not([hidden]) .sheet{animation:sheetup .24s cubic-bezier(.2,.8,.2,1)}
+@keyframes sheetup{from{transform:translateY(32px);opacity:.4}}
+.sheet>.actions:last-child,.sfoot{position:sticky;bottom:calc(-24px - var(--safe-b));margin:4px -20px calc(-24px - var(--safe-b));padding:12px 20px calc(12px + var(--safe-b));background:var(--surface);border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:nowrap;z-index:2}
+.sheet>.actions:last-child .btn,.sfoot .btn{flex:1 1 auto;min-width:0;height:56px;border-radius:28px}
+@media (min-width:760px){.sheet{border-radius:24px}.sheet>.actions:last-child,.sfoot{bottom:-24px;margin-bottom:-24px;padding-bottom:12px}}
+.rbtn{flex:none;width:56px;height:56px;border-radius:50%;border:0;background:var(--chip);color:var(--ink);display:inline-flex;align-items:center;justify-content:center}
+.rbtn.danger{color:var(--danger)}
+.rbtn:hover{filter:brightness(.96)}
+
+/* Nouvelle note : texte d'abord, puis carnet et options, actions en bas */
+.addtext{display:flex;flex-direction:column}
+.field.big{border:0;padding:4px 2px;font-size:19px;line-height:1.45;min-height:160px;resize:none;background:transparent}
+.field.big:focus-visible{outline:none}
+.addopts{display:flex;flex-direction:column;gap:10px;padding-top:12px;border-top:1px solid var(--line)}
+.addopts .l{margin:0;font-size:12px;letter-spacing:.4px;text-transform:uppercase;color:var(--muted)}
+.qchips.inline{margin:0 -20px;padding-inline:20px}
+.qchips.inline .qchip{background:var(--chip)}
+.qchips.inline .qchip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.qchips.inline .qchip.ai[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{flex:1 1 140px;min-height:44px;border-radius:14px;border:1.5px solid var(--line);display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:14px;font-weight:600;cursor:pointer;position:relative;padding:0 10px}
+.pill input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
+.pill:focus-within{outline:3px solid var(--accent);outline-offset:2px}
+.pill:has(input:checked){border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+
+/* Actions rapides (appui long) */
+.qgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-bottom:4px}
+.qact{min-height:84px;border-radius:18px;border:0;background:var(--chip);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-weight:600}
+.qact.danger{color:var(--danger)}
+
+/* Onglet À lire */
+.tr-sub{margin:4px 0 0}
+.tlist{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.trow{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:20px;padding:6px 8px 6px 0}
+.trow-open{flex:1;min-width:0;border:0;background:none;text-align:left;padding:8px 8px 8px 16px;display:flex;flex-direction:column;gap:3px;color:var(--ink)}
+.trow-open small{color:var(--muted);font-size:12px}
+.trow-open b{font-size:15px;line-height:1.3;overflow-wrap:anywhere}
+.trow-chk{flex:none;width:48px;height:48px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--accent);display:inline-flex;align-items:center;justify-content:center}
+.trow-chk.on{color:var(--muted)}
+.tabdock{display:flex;gap:8px;margin-top:16px}
+.tabdock .btn{flex:1}
+.seg2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;max-width:420px;border-radius:26px;padding:4px;background:var(--line)}
+.seg2 button{height:44px;border-radius:22px}
+.seg2 button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(18,32,31,.12)}
+@media (min-width:760px){
+  #view-toread:not([hidden]),#view-cats:not([hidden]){display:flex;flex-direction:column}
+  .tabdock{order:-1;margin:12px 0 4px}
+  .tabdock .btn{flex:0 1 auto}
+}
+
+/* Onglet Moi : consommation IA et raccourcis */
+.mecard{background:var(--surface);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.mecard .kv span.mebig{font-family:var(--font-display);font-size:22px;font-weight:700;color:var(--ink)}
+.metiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px;max-width:640px}
+.metile{min-height:88px;border:0;border-radius:20px;background:var(--surface);color:var(--ink);display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;padding:12px;font-size:13px;font-weight:700;text-align:left}
+.metile svg{color:var(--accent)}
+
+/* ---------- Téléphone ---------- */
+@media (max-width:759px){
+  body{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));padding-bottom:calc(var(--nav-h) + 24px + var(--safe-b))}
+  body[data-tab="home"]{padding-bottom:calc(var(--nav-h) + 180px + var(--safe-b))}
+  body[data-tab="cats"],body[data-tab="toread"]{padding-bottom:calc(var(--nav-h) + 120px + var(--safe-b))}
+  .top{padding-block:18px 6px;align-items:flex-end}
+  .brand h1{font-size:32px;line-height:1.05}
+  .brand .sub{display:block}
+  .vt-l{display:none}
+  .resinfo{margin-block:8px 6px}
+
+  /* Grille en deux colonnes */
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .card{padding:12px;gap:6px}
+  .card .ttl{font-size:15px}
+  .card .exc{font-size:13px}
+  .card .head{font-size:12px}
+  .card .chip{height:26px;font-size:12px;padding:0 8px}
+  .card .foot .btn{margin-left:0!important;width:100%}
+  .card,.lrow{touch-action:pan-y;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+  .card:active{transform:scale(.985)}
+
+  /* Barre du bas : carnets rapides et recherche au-dessus de la navigation */
+  .dock{position:fixed;left:0;right:0;bottom:calc(var(--nav-h) + var(--safe-b));z-index:9;margin:0;padding:10px max(12px,env(safe-area-inset-right,0px)) 34px max(12px,env(safe-area-inset-left,0px));background:color-mix(in srgb,var(--bg) 92%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+  .fbtn{width:52px;padding:0;border-radius:50%;flex:none}
+  .fbtn .fbtn-l{display:none}
+  .fbtn .badge{position:absolute;top:0;right:0}
+  .qchips#qchips{margin-inline:-12px;padding-inline:12px}
+
+  .tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));align-items:start;height:calc(var(--nav-h) + var(--safe-b));padding:6px max(4px,env(safe-area-inset-right,0px)) var(--safe-b) max(4px,env(safe-area-inset-left,0px));border:0;border-radius:24px 24px 0 0;box-shadow:0 -6px 20px rgba(18,32,31,.07)}
+  .tab-gap{display:block}
+  .tab-badge{position:absolute;top:2px;left:calc(50% + 8px)}
+  .fab{left:50%;right:auto;bottom:calc(var(--safe-b) + 30px);transform:translateX(-50%);width:64px;height:64px;z-index:11;touch-action:none;box-shadow:0 10px 24px rgba(11,110,110,.35),0 0 0 6px var(--bg)}
+  .fab:active{transform:translateX(-50%) scale(.94)}
+
+  .tabdock{position:fixed;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(var(--nav-h) + var(--safe-b) + 36px);z-index:9;margin:0}
+  .tabdock .btn{height:52px;padding:0 12px;white-space:nowrap;border-radius:26px;background:var(--surface);box-shadow:0 2px 10px rgba(18,32,31,.10)}
+  .tabdock .btn.primary{background:var(--accent)}
+  .tabdock .seg2{max-width:none;box-shadow:0 2px 10px rgba(18,32,31,.10)}
+
+  .toast{bottom:calc(var(--nav-h) + var(--safe-b) + 40px)}
+  body[data-tab="home"] .toast{bottom:calc(var(--nav-h) + var(--safe-b) + 164px)}
+  body[data-tab="cats"] .toast,body[data-tab="toread"] .toast{bottom:calc(var(--nav-h) + var(--safe-b) + 100px)}
+  .savebar{bottom:calc(var(--nav-h) + var(--safe-b) + 36px)}
+  .sheet{max-height:94%}
+}
+@media (prefers-reduced-motion:reduce){#ov:not([hidden]) .sheet{animation:none}.card,.lrow{transition:none}.syncpill.wait i{animation:none}}
+
+/* En-tête des cartes : icône du format seule sur téléphone (la date tient sur une ligne) */
+@media (max-width:759px){.card .head .hl{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}}

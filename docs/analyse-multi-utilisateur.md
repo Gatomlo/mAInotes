@@ -1,12 +1,12 @@
 # Analyse : mAInotes multi-utilisateur, SQLite et partage
 
-Version 2, 13 octobre 2026. Remplace la première analyse, qui proposait un dossier de données par
+Version 2, 13 octobre 2026, mise à jour avec les propositions retenues. Remplace la première analyse, qui proposait un dossier de données par
 utilisateur. Le partage de notes et les carnets communs changent la donne : les données de plusieurs
 personnes doivent pouvoir se croiser. Une base unique avec des droits d'accès est donc plus simple
 qu'un espace séparé par personne.
 
-Le code n'est pas encore modifié. Ce document fixe les décisions prises, propose le modèle de données
-et les règles de partage, puis découpe le travail en étapes.
+Le code n'est pas encore modifié. Ce document fixe les décisions prises, le modèle de données et les
+règles de partage, puis découpe le travail en étapes.
 
 ## 1. Décisions prises
 
@@ -19,6 +19,12 @@ et les règles de partage, puis découpe le travail en étapes.
 | Taille | 4 à 5 utilisateurs. |
 | Stockage | Passage à SQLite. |
 | Partage | Partage de notes entre utilisateurs, et carnets communs. |
+| Tags | Personnels seulement : chacun pose les siens, y compris sur une note partagée ou commune. Pas de tags communs. |
+| Rôles | Lecteur et éditeur dans un carnet commun ; lecture ou modification pour une note partagée. Pas de repartage d'une note reçue. |
+| IA et carnets communs | L'IA ne range jamais une note dans un carnet commun. Elle peut seulement le suggérer, si l'option est activée sur ce carnet (désactivée par défaut), et la suggestion ne s'applique qu'au clic. |
+| Note reçue | Reste dans « Partagées avec moi » ; le destinataire ne la range pas dans ses carnets. |
+| Départ d'un carnet commun, suppression d'un compte | La personne choisit au moment de partir : ses notes du carnet commun sont effacées (choix par défaut, RGPD) ou laissées au carnet et transférées à son propriétaire, avec « ancien membre » comme auteur. |
+| Analyse relancée par un autre membre | Payée par la personne qui clique. |
 
 ## 2. SQLite sans dépendance native
 
@@ -95,7 +101,7 @@ Un utilisateur voit une note si au moins une de ces conditions est vraie :
 `canEdit(user, note)` suit le même schéma. Peuvent modifier : l'auteur, un éditeur ou le propriétaire
 du carnet commun, et le destinataire d'un partage « modification ».
 
-## 4. Règles de partage proposées
+## 4. Règles de partage
 
 ### Carnets communs
 
@@ -114,8 +120,10 @@ du carnet commun, et le destinataire d'un partage « modification ».
 - Nom, description et couleur du carnet commun sont partagés et modifiables par le propriétaire.
   L'ordre des carnets reste propre à chacun.
 - Le propriétaire supprime le carnet : chaque note revient dans les notes de son auteur, « à
-  vérifier ». Un membre qui quitte le carnet voit les notes qu'il y a écrites rester dans le carnet
-  (voir la décision 2 en section 9).
+  vérifier ». Un membre qui quitte le carnet choisit le sort des notes qu'il y a
+  écrites : effacées (par défaut) ou laissées au carnet, transférées au propriétaire avec « ancien
+  membre » comme auteur. Le propriétaire ne peut quitter son carnet qu'après l'avoir transmis à un
+  autre membre ou supprimé.
 
 ### Partage d'une note
 
@@ -181,8 +189,9 @@ personne a modifié la note entre-temps, le serveur répond 409 avec la note à 
   consommation du mois et plafond, espace des médias), invitations en cours, suspension, suppression,
   transmission du rôle d'administrateur, réglages de l'IA, journal des appels sans contenu.
 - **Suppression d'un compte** : ses notes personnelles, ses médias, ses tags, ses synthèses, ses
-  partages et ses sessions sont effacés. Le sort de ses notes dans les carnets communs est la
-  décision 2. Le dernier administrateur ne peut pas supprimer son compte.
+  partages et ses sessions sont effacés. Pour ses notes dans les carnets communs, la personne choisit
+  comme pour un départ : effacées (par défaut) ou laissées au carnet. Ses carnets communs sont
+  transmis à un autre membre ou supprimés. Le dernier administrateur ne peut pas supprimer son compte.
 - **Limitation des essais de connexion** : par identifiant et par adresse IP, et non plus par adresse
   IP seule, pour ne pas bloquer toute une famille derrière la même box.
 
@@ -235,19 +244,7 @@ Chaque étape laisse `npm test` vert et l'application utilisable.
    `CLAUDE.md` (décisions, SQLite intégré), guide de déploiement (base, sauvegardes, Node 24,
    invitations).
 
-## 10. Décisions encore ouvertes (propositions entre parenthèses)
+## 10. Point encore ouvert
 
-1. **Tags** : personnels seulement (proposé), ou aussi des tags communs par carnet commun ?
-2. **Départ d'un membre ou suppression de son compte** : ses notes dans un carnet commun restent,
-   transférées au propriétaire du carnet avec « ancien membre » comme auteur, ou sont effacées avec
-   lui ? (Proposé : choix proposé à la personne au moment de partir, effacement par défaut pour le
-   RGPD.)
-3. **Rôles** : lecteur et éditeur suffisent-ils ? Un destinataire peut-il repartager une note ?
-   (Proposé : oui pour les deux rôles ; non pour le repartage.)
-4. **IA et carnets communs** : autoriser la suggestion, jamais appliquée sans clic, carnet par carnet
-   (proposé) ou l'exclure totalement ?
-5. **Note partagée** : le destinataire peut-il la ranger dans un de ses carnets ? (Proposé : non, elle
-   reste dans « Partagées avec moi ».)
-6. **Analyse d'une note commune relancée par un autre membre** : payée par celui qui clique (proposé)
-   ou par l'auteur ?
-7. **Version de Node** proposée par Infomaniak pour le site (à relever dans le manager).
+**Version de Node** proposée par Infomaniak pour le site, à relever dans le manager (Node 24.16 ou plus
+récent souhaité, Node 22.13 au minimum). Elle conditionne l'étape 1.

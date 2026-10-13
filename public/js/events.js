@@ -316,6 +316,12 @@ document.addEventListener('contextmenu', function (e) {
 document.addEventListener('click', function (e) {
   if (swallowClick && Date.now() - swallowClick < 700) { swallowClick = 0; e.preventDefault(); return; }
   swallowClick = 0;
+  var ytb = e.target.closest('[data-yt]');
+  if (ytb) { // la vignette devient le lecteur
+    e.preventDefault(); e.stopPropagation();
+    ytb.outerHTML = '<iframe class="lk-frame" src="https://www.youtube-nocookie.com/embed/' + ytb.getAttribute('data-yt') + '?autoplay=1&rel=0&playsinline=1" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+    return;
+  }
   if (e.target.closest('a[href]')) return; // un vrai lien s'ouvre, sans ouvrir la carte
   if (e.target.closest('#lb')) { closeZoom(); return; }
   var el = e.target.closest('[data-a]');

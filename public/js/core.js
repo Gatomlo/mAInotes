@@ -85,7 +85,16 @@ function linkify(text) {
 }
 function linkCard(l, compact) {
   var desc = l.description || l.summary || (l.error ? 'Aperçu indisponible (' + l.error + ').' : '');
+  var yt = (String(l.image || '').match(/^https:\/\/i\.ytimg\.com\/vi\/([\w-]{11})\//) || [])[1];
+  if (yt) {
+    return '<div class="linkcard yt"><button type="button" class="lk-thumb" data-yt="' + yt + '" aria-label="Lire la vidéo">' +
+      '<img class="lk-img" src="' + esc(l.image) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' +
+      '<span class="lk-play"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></button>' +
+      '<a href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer" class="lk-meta"><span class="lk-site">' + esc(l.site || 'YouTube') + '</span><b>' + esc(l.title || l.url) + '</b>' +
+      (desc ? '<span class="lk-desc">' + (l.aiDescription ? I(IC.spark, 12) + ' ' : '') + esc(compact && desc.length > 140 ? desc.slice(0, 137) + '…' : desc) + '</span>' : '') + '</a></div>';
+  }
   return '<a class="linkcard" href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">' +
+    (l.image ? '<img class="lk-img" src="' + esc(l.image) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">' : '') +
     '<span class="lk-site">' + I('<path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>', 14) + esc(l.site || '') + '</span>' +
     '<b>' + esc(l.title || l.url) + '</b>' +
     (desc ? '<span class="lk-desc">' + (l.aiDescription ? I(IC.spark, 12) + ' ' : '') + esc(compact && desc.length > 140 ? desc.slice(0, 137) + '…' : desc) + '</span>' : '') +

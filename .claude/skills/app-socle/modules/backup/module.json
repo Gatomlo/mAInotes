@@ -1,0 +1,3 @@
+{ "description": "Sauvegarde quotidienne de la base (VACUUM INTO, 30 copies gardées) : npm run backup",
+  "scripts": { "backup": "node scripts/backup.js" },
+  "notes": ["Planifier `npm run backup` chaque jour (tâche planifiée de l'hébergement).", "Sauvegarder aussi data/secret.key si présent."] }

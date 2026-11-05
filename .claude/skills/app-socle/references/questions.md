@@ -20,6 +20,7 @@ Outil : `AskUserQuestion` (2 à 4 options, « Autre » ajouté automatiquement).
 - **IA cochée** : fournisseur (Infomaniak par défaut, Claude, Gemini, Mistral) ; déclenchement automatique ou manuel ; texte seul / voix / images ; plafond mensuel.
 - **Identité** : nom, couleur d'accent, courte description (déduire de la demande, ne demander que s'il manque).
 - **Démarrage** : maquette HTML interactive d'abord *(défaut si l'écran est complexe)* / cahier des charges puis code / squelette direct.
+- **GitHub** : nouveau dépôt `Gatomlo/<slug>` privé *(défaut)* / public / pas de dépôt pour l'instant ; CI de tests oui/non.
 - **Public visé** : âge, appareil principal (smartphone/tablette/PC), accessibilité (texte agrandi, mode simplifié).
 
 ## Après les réponses

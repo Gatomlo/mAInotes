@@ -41,6 +41,7 @@ function router() {
 
   // Tout ce qui suit exige une session.
   r.use(auth.requireAuth);
+  /* @module-routes */
 
   r.post('/account/password', asyncHandler(async (req, res) => {
     const b = req.body || {};

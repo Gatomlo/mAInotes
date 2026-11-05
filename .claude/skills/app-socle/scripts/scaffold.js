@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Genere un nouveau projet depuis templates/ (aucune dependance).
-// Usage : node scaffold.js <dossier-cible> --name "Mon App" [--slug mon-app] [--desc "..."] [--color "#c4492a"]
+// Usage : node scaffold.js <dossier-cible> --name "Mon App" [--slug mon-app] [--desc "..."] [--color "#c4492a"] [--git]
 const fs = require('fs');
 const path = require('path');
 
@@ -8,7 +8,7 @@ const args = process.argv.slice(2);
 const target = args.find((a) => !a.startsWith('--'));
 const opt = (k) => { const i = args.indexOf(`--${k}`); return i >= 0 ? args[i + 1] : null; };
 const name = opt('name');
-if (!target || !name) { console.error('Usage : node scaffold.js <dossier> --name "Nom" [--slug s] [--desc d] [--color #hex]'); process.exit(1); }
+if (!target || !name) { console.error('Usage : node scaffold.js <dossier> --name "Nom" [--slug s] [--desc d] [--color #hex] [--git]'); process.exit(1); }
 
 const slug = (opt('slug') || name).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const vars = {
@@ -35,4 +35,9 @@ function copy(dir, rel = '') {
   }
 }
 copy(SRC);
+if (args.includes('--git')) { // depot local pret a pousser (premier commit a faire apres npm install, pour inclure package-lock.json)
+  const { spawnSync } = require('child_process');
+  spawnSync('git', ['init', '-q', '-b', 'main'], { cwd: target });
+  console.log('Dépôt git initialisé (branche main). Après npm install : git add -A && git commit -m "Squelette".');
+}
 console.log(`Projet « ${name} » créé dans ${target} (slug : ${slug}).\nSuite : cd ${target} && npm install && npm test && npm start`);

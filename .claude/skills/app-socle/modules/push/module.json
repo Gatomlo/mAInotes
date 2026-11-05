@@ -1,0 +1,6 @@
+{ "description": "Notifications Web Push (VAPID, clés gardées en base) : abonnement depuis l'app, envoi serveur",
+  "deps": { "web-push": "^3.6.7" },
+  "migration": "CREATE TABLE push_subs (id INTEGER PRIMARY KEY, endpoint TEXT NOT NULL UNIQUE, p256dh TEXT NOT NULL, auth TEXT NOT NULL, created_at INTEGER NOT NULL);",
+  "routes": "require('./push').routes(r);",
+  "sw": "public/sw.push.txt",
+  "notes": ["Côté interface : `import { enablePush } from './push.js'` puis appeler enablePush() depuis un bouton (iPhone : app installée, iOS 16.4+).", "Côté serveur : `await require('./lib/push').sendAll({ title, body, url: '#/' })`.", "Tests : __ENV___PUSH=log garde les messages dans `outbox`.", "Ajouter 'app/push.js' dans FILES de public/sw.js et incrémenter VERSION."] }

@@ -1,0 +1,3 @@
+{ "description": "E-mails sortants (SMTP ou sendmail) ; mode test __ENV___MAIL=log (messages gardés en mémoire)",
+  "deps": { "nodemailer": "^6.9.16" },
+  "notes": ["Variables : __ENV___SMTP_HOST, __ENV___SMTP_PORT, __ENV___SMTP_USER, __ENV___SMTP_PASS, __ENV___MAIL_FROM ; sans SMTP_HOST : sendmail.", "Usage : await require('./lib/mailer').send({ to, subject, text })."] }

@@ -8,7 +8,7 @@ description: Socle commun des apps web de Gatomlo (Node + Express + SQLite natif
 Toutes les apps (Cabas, Kdo, Fée Lezcomptes, Watch-It, Fretly, Lexiquest, Répétito, MyLittleLibraryV2, defifous, CahierMalin, Phoenix-Quest-V2, mAInotes…) partagent le même socle. **Ne pas le redécouvrir : l'appliquer.**
 
 ## Créer une app (≈ 1 commande)
-1. Si le besoin est flou : poser au plus 3 questions (qui utilise ? données ? hors ligne/IA/push ?), puis rédiger `docs/cahier-des-charges.md` court (objectif, écrans, modèle de données, étapes numérotées). Ne pas coder avant validation.
+1. **Questions initiales** (obligatoires pour un nouveau projet, voir `references/questions.md`) : avec l'outil `AskUserQuestion`, en une ou deux séries de 4 questions max, **sauter toute question dont la réponse figure déjà dans la demande**. Première option = défaut recommandé. Puis résumer les choix en 5 lignes et attendre le « ok » avant de générer ou de rédiger `docs/cahier-des-charges.md` (objectif, écrans, modèle de données, étapes numérotées).
 2. Générer le squelette :
    ```bash
    node <ce-skill>/scripts/scaffold.js <dossier> --name "Nom" --desc "..." --color "#hex"
@@ -35,4 +35,4 @@ Lire d'abord son `CLAUDE.md` (et le cahier des charges s'il existe), jamais tout
 - Une seule vérification de bout en bout (test + un `curl`) plutôt que des captures.
 - Itérer par petites étapes numérotées du cahier des charges ; un commit par étape.
 
-Détails : `references/conventions.md` (architecture, décisions, pièges) · `references/modules-reutilisables.md` (où trouver chaque brique) · `references/deploiement.md` (node-gateway / Infomaniak).
+Détails : `references/conventions.md` (architecture, décisions, pièges) · `references/questions.md` (questionnaire initial) · `references/modules-reutilisables.md` (où trouver chaque brique) · `references/deploiement.md` (node-gateway / Infomaniak).

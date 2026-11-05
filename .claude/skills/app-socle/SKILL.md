@@ -1,0 +1,38 @@
+---
+name: app-socle
+description: Socle commun des apps web de Gatomlo (Node + Express + SQLite natif, PWA vanilla sans build, compte unique, montage node-gateway/Infomaniak, tout en français). À utiliser pour créer un nouveau projet d'app, ajouter une fonction classique (compte, push, IA, e-mail, import, sauvegarde, PWA hors ligne) ou améliorer/déboguer une app existante de cette famille, afin de réutiliser le code et les décisions déjà éprouvés au lieu de tout ré-explorer.
+---
+
+# Socle des apps Gatomlo
+
+Toutes les apps (Cabas, Kdo, Fée Lezcomptes, Watch-It, Fretly, Lexiquest, Répétito, MyLittleLibraryV2, defifous, CahierMalin, Phoenix-Quest-V2, mAInotes…) partagent le même socle. **Ne pas le redécouvrir : l'appliquer.**
+
+## Créer une app (≈ 1 commande)
+1. Si le besoin est flou : poser au plus 3 questions (qui utilise ? données ? hors ligne/IA/push ?), puis rédiger `docs/cahier-des-charges.md` court (objectif, écrans, modèle de données, étapes numérotées). Ne pas coder avant validation.
+2. Générer le squelette :
+   ```bash
+   node <ce-skill>/scripts/scaffold.js <dossier> --name "Nom" --desc "..." --color "#hex"
+   cd <dossier> && npm install && npm test
+   ```
+   Fournit : `server.js` exportable, compte unique (scrypt, session 90 j), SQLite + migrations, CSP, PWA + service worker, front en modules ES, test de bout en bout, `CLAUDE.md`, `.claude/launch.json`.
+3. Remplacer la ressource d'exemple (`items` dans `lib/api.js`, migration 1 dans `lib/db.js`, vue dans `public/app/main.js`) puis ajouter les domaines un par un (`lib/<domaine>.js`).
+4. Adapter `CLAUDE.md` (objectif, fichiers clés, règles non évidentes) et le garder à jour.
+
+## Améliorer une app existante
+Lire d'abord son `CLAUDE.md` (et le cahier des charges s'il existe), jamais tout le code. Pour une fonction classique, **copier le module de référence** indiqué dans `references/modules-reutilisables.md` (dépôt + fichier précis) au lieu de le réécrire : `git clone --depth 1 https://github.com/Gatomlo/<dépôt>` puis lire seulement le fichier visé.
+
+## Règles non négociables
+- `server.js` : `module.exports = app` ; `listen`/handlers globaux seulement si `require.main === module`.
+- Chemins navigateur **relatifs** (`api/...`, `app/...`, `<base href="{{ROOT}}/">`), cookie `Path=<montage>/`.
+- Aucune dépendance native ni étape de build. Express 4 (aligné sur node-gateway). `node:sqlite` si Node ≥ 22.5, sinon JSON dans `data/`.
+- Migrations additives (`PRAGMA user_version`), ne jamais modifier une entrée déployée. `data/` jamais déployé ni versionné.
+- Secrets/clés API : seulement côté serveur, chiffrés (AES-256-GCM, `references/modules-reutilisables.md`), jamais dans une variable d'env en clair côté client.
+- Interface en français (Belgique), mobile d'abord, thème clair/sombre par jetons CSS ; commentaires de code sans accents ; réponses à l'utilisateur concises.
+- `npm test` vert avant tout commit ; test de bout en bout sur base temporaire.
+
+## Économie de tokens
+- Ne pas relire des fichiers qu'on vient d'écrire ; ne lire que la partie utile (`offset/limit`).
+- Une seule vérification de bout en bout (test + un `curl`) plutôt que des captures.
+- Itérer par petites étapes numérotées du cahier des charges ; un commit par étape.
+
+Détails : `references/conventions.md` (architecture, décisions, pièges) · `references/modules-reutilisables.md` (où trouver chaque brique) · `references/deploiement.md` (node-gateway / Infomaniak).

@@ -1,0 +1,19 @@
+{
+  "name": "__SLUG__",
+  "version": "0.1.0",
+  "private": true,
+  "description": "__DESC__",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test tests/app.test.js",
+    "set-password": "node scripts/set-password.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}

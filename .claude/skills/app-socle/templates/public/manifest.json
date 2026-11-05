@@ -1,0 +1,14 @@
+{
+  "name": "__NAME__",
+  "short_name": "__NAME__",
+  "description": "__DESC__",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f1ea",
+  "theme_color": "__COLOR__",
+  "lang": "fr",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

@@ -22,7 +22,12 @@ function client() {
     if (set) cookie = set.split(';')[0];
     return { status: res.status, data: await res.json().catch(() => null) };
   };
-  return { get: (u) => call('GET', u), post: (u, b) => call('POST', u, b || {}), patch: (u, b) => call('PATCH', u, b || {}), del: (u) => call('DELETE', u) };
+  // Corps binaire (photos...) : raw(methode, url, Buffer, type-mime).
+  const raw = async (method, url, buf, type) => {
+    const res = await fetch(base + url, { method, headers: { 'content-type': type, cookie }, body: buf });
+    return { status: res.status, data: await res.json().catch(() => null) };
+  };
+  return { raw, cookie: () => cookie, get: (u) => call('GET', u), post: (u, b) => call('POST', u, b || {}), put: (u, b) => call('PUT', u, b || {}), patch: (u, b) => call('PATCH', u, b || {}), del: (u) => call('DELETE', u) };
 }
 
-module.exports = { start, client, PASSWORD: 'motdepasse1' };
+module.exports = { start, client, base: () => base, PASSWORD: 'motdepasse1' };

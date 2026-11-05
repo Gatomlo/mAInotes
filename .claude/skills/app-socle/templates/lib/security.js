@@ -19,6 +19,8 @@ function pagePolicy(res) {
 // POST/PUT/PATCH/DELETE en JSON seulement (avec SameSite=Lax : protection CSRF).
 function jsonOnly(req, res, next) {
   if (!['POST', 'PUT', 'PATCH'].includes(req.method) || req.is('application/json')) return next();
+  // Depot de photo (module photos) : corps image/* (un formulaire d'un autre site ne peut pas l'envoyer sans CORS).
+  if (req.method === 'POST' && req.path === '/photos' && req.is(['image/jpeg', 'image/png', 'image/webp'])) return next();
   res.status(415).json({ error: 'Requête JSON attendue.' });
 }
 

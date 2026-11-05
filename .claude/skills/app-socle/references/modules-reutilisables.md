@@ -1,5 +1,7 @@
 # Où trouver chaque brique (dépôts `github.com/Gatomlo/<dépôt>`)
 
+**D'abord les briques déjà dans le skill** : `templates/` (compte unique), `variants/multi/` (comptes + invitations, `scaffold --multi`), `modules/` via `add-module.js` : `backup`, `push`, `mail`, `ia`, `photos`, `qr`, `maquette`. Le tableau ci-dessous sert pour le reste ou pour des variantes plus riches.
+
 Cloner à la demande : `git clone --depth 1 https://github.com/Gatomlo/<dépôt> /tmp/x` puis lire **uniquement** le fichier cité.
 
 | Besoin | Dépôt : fichier | Remarques |

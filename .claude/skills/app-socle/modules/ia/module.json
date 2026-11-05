@@ -1,0 +1,11 @@
+{ "description": "IA multi-fournisseurs (Infomaniak, Claude, Gemini, Mistral) sans SDK : clés chiffrées, plafond mensuel (alerte 80 %), cache, test de connexion",
+  "migration": "CREATE TABLE ai_keys (provider TEXT PRIMARY KEY, blob TEXT NOT NULL); CREATE TABLE ai_usage (month TEXT NOT NULL, provider TEXT NOT NULL, calls INTEGER NOT NULL DEFAULT 0, tokens_in INTEGER NOT NULL DEFAULT 0, tokens_out INTEGER NOT NULL DEFAULT 0, cost REAL NOT NULL DEFAULT 0, PRIMARY KEY (month, provider)); CREATE TABLE ai_cache (hash TEXT PRIMARY KEY, text TEXT NOT NULL, created_at INTEGER NOT NULL);",
+  "routes": "require('./ai').routes(r);",
+  "notes": [
+    "Usage serveur : `const { text } = await require('./lib/ai').complete({ system, prompt, json: false, maxTokens: 600 })` (erreurs : e.budget, e.config).",
+    "Réglages : GET/PUT /api/ai/settings, PUT /api/ai/key {provider,key}, POST /api/ai/test {provider}, GET /api/ai/usage. Les clés ne ressortent jamais du serveur.",
+    "Infomaniak : renseigner productId (manager Infomaniak > IA) ; adresse modifiable (baseUrl). Tarifs RATES indicatifs à ajuster.",
+    "Sobriété : classer sur le texte seul, mettre en cache, plafond mensuel > 0, suggestions jamais appliquées sans clic.",
+    "Tests : __ENV___AI=fake remplace les appels réseau.",
+    "Clé maître : __ENV___SECRET ou data/secret.key (à sauvegarder avec data/)."
+  ] }

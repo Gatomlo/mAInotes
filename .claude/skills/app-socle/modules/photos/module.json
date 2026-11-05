@@ -1,0 +1,7 @@
+{ "description": "Dépôt de photos (JPEG/PNG/WebP, type vérifié, 3 Mo max, nom aléatoire) servies derrière la session ; réduction côté navigateur",
+  "routes": "require('./photos').routes(r);",
+  "notes": [
+    "Côté interface : `import { uploadPhoto } from './photos.js'; const url = await uploadPhoto(file);` ; afficher avec <img src=\"api/photos/<nom>\">.",
+    "Stocker en base le chemin renvoyé (`photos/<32 hex>.<ext>`) ; supprimer le fichier avec require('./lib/photos').remove(path) quand l'enregistrement disparaît.",
+    "Ajouter 'app/photos.js' dans FILES de public/sw.js. Sauvegarder data/photos avec data/."
+  ] }

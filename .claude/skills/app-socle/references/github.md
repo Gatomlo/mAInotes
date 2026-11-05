@@ -32,4 +32,4 @@ Compte : `Gatomlo` (`github.com/Gatomlo/<slug>`). Un dépôt par app ; `node-gat
 - Avant de déployer : `node scripts/audit.js . --test`.
 
 ## 6. Garder le skill lui-même à jour
-Le skill vit dans `.claude/skills/app-socle/`. Pour l'avoir partout : le placer dans un dépôt dédié (ex. `Gatomlo/app-socle`) et le cloner dans `~/.claude/skills/app-socle` (ou le copier) ; `git pull` pour le mettre à jour. Après chaque projet : consigner les nouveaux pièges dans `references/conventions.md` et les nouveaux modules réutilisables dans `modules-reutilisables.md`.
+Le skill vit dans `.claude/skills/app-socle/`. Pour l'avoir partout : le placer dans un dépôt dédié (ex. `Gatomlo/app-socle`) et le cloner dans `~/.claude/skills/app-socle` (ou le copier) ; `git pull` pour le mettre à jour. Avant de pousser le skill : `node scripts/selftest.js`. Après chaque projet : consigner les nouveaux pièges dans `references/conventions.md` et les nouveaux modules réutilisables dans `modules-reutilisables.md`.

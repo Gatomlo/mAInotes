@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Audit statique d'une app de la famille (mode « améliorer »). Aucune dependance.
-// Usage : node audit.js [dossier-projet] [--test]   (--test lance aussi npm test)
+// Usage : node audit.js [dossier-projet] [--test] [--fix]
+//   --test lance aussi npm test ; --fix corrige le simple (.gitignore, CI, .gitattributes, script test, manifest, CLAUDE.md)
 const fs = require('fs');
 const path = require('path');
 const { execSync, spawnSync } = require('child_process');
@@ -8,6 +9,11 @@ const { execSync, spawnSync } = require('child_process');
 const args = process.argv.slice(2);
 const dir = path.resolve(args.find((a) => !a.startsWith('--')) || '.');
 const out = [];
+const FIX = args.includes('--fix');
+const TPL = path.join(__dirname, '..', 'templates');
+const fixed = [];
+const write = (rel, text) => { fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true }); fs.writeFileSync(path.join(dir, rel), text); };
+const tpl = (rel) => fs.readFileSync(path.join(TPL, rel), 'utf8');
 const add = (level, msg) => out.push({ level, msg });
 const exists = (...p) => fs.existsSync(path.join(dir, ...p));
 const read = (...p) => (exists(...p) ? fs.readFileSync(path.join(dir, ...p), 'utf8') : '');
@@ -28,16 +34,22 @@ else {
   /require\.main\s*===\s*module/.test(s) ? add('ok', 'listen protégé par require.main === module') : add('ko', 'listen non protégé par require.main === module');
   /app\.listen\(/.test(s) && !/require\.main/.test(s) && add('ko', 'app.listen() appelé sans condition');
 }
-pkg.scripts && pkg.scripts.test ? add('ok', 'script npm test présent') : add('ko', 'script npm test manquant');
+const hasTests = ['tests', 'test'].find((d) => exists(d) && fs.readdirSync(path.join(dir, d)).some((f) => /\.test\.js$/.test(f)));
+if (pkg.scripts && pkg.scripts.test) add('ok', 'script npm test présent');
+else if (FIX && hasTests) { pkg.scripts = { ...(pkg.scripts || {}), test: `node --test "${hasTests}/*.test.js"` }; write('package.json', JSON.stringify(pkg, null, 2) + '\n'); fixed.push('package.json : script test'); }
+else add('ko', 'script npm test manquant' + (hasTests ? ' (--fix)' : ''));
 const uses = (re) => walk(dir, (f) => /\.js$/.test(f)).some((f) => re.test(fs.readFileSync(f, 'utf8')));
 if (uses(/node:sqlite/) && !(pkg.engines && /22\.[5-9]|2[3-9]|[3-9]\d/.test(pkg.engines.node || ''))) add('wa', 'node:sqlite utilisé : engines.node devrait être >=22.5');
 if (pkg.dependencies && pkg.dependencies.express && !/^[\^~]?4\./.test(pkg.dependencies.express)) add('wa', `Express ${pkg.dependencies.express} : la famille est alignée sur Express 4 (node-gateway)`);
 
 // --- git / donnees
 const gi = read('.gitignore');
-/(^|\n)data\/?(\n|$)/.test(gi) ? add('ok', 'data/ ignoré par git') : add('ko', 'data/ absent de .gitignore');
-/node_modules/.test(gi) ? add('ok', 'node_modules ignoré') : add('ko', 'node_modules absent de .gitignore');
-if (exists('.env') && !/\.env/.test(gi)) add('ko', '.env présent et non ignoré');
+let giNew = gi;
+const need = (re, line, label) => { if (re.test(gi)) return add('ok', `${label} ignoré par git`); if (FIX) { giNew += (giNew && !giNew.endsWith('\n') ? '\n' : '') + line + '\n'; fixed.push(`.gitignore : ${line}`); } else add('ko', `${label} absent de .gitignore (--fix)`); };
+need(/(^|\n)data\/?(\n|$)/, 'data/', 'data/');
+need(/node_modules/, 'node_modules/', 'node_modules');
+if (exists('.env') && !/\.env/.test(gi)) { if (FIX) { giNew += '.env\n'; fixed.push('.gitignore : .env'); } else add('ko', '.env présent et non ignoré (--fix)'); }
+if (giNew !== gi) write('.gitignore', giNew);
 
 // --- front : chemins absolus, scripts en ligne
 const front = walk(path.join(dir, 'public'), (f) => /\.(html|js|css|json)$/.test(f) && !/sw\.js$|vendor/.test(f));
@@ -52,7 +64,9 @@ const pub = ['public', '.'].find((d) => exists(d, 'manifest.json'));
 if (pub) {
   try {
     const m = JSON.parse(read(pub, 'manifest.json'));
-    /^\.?\/?$|^\.\//.test(m.start_url || '') && !String(m.start_url).startsWith('/') ? add('ok', 'manifest : start_url relatif') : add('ko', `manifest : start_url "${m.start_url}" doit être relatif ("./")`);
+    if (/^\.\//.test(m.start_url || '')) add('ok', 'manifest : start_url relatif');
+    else if (FIX) { m.start_url = './'; m.scope = './'; write(path.join(pub, 'manifest.json'), JSON.stringify(m, null, 2) + '\n'); fixed.push('manifest : start_url et scope "./"'); }
+    else add('ko', `manifest : start_url "${m.start_url}" doit être relatif ("./") (--fix)`);
     (m.icons || []).some((i) => i.purpose === 'maskable') || add('wa', 'manifest : pas d\'icône maskable (node scripts/make-icons.js)');
   } catch { add('ko', 'manifest.json invalide'); }
   const sw = read(pub, 'sw.js');
@@ -82,15 +96,21 @@ const leaks = srcs.filter((f) => /(sk-[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{30,}|gh
 leaks.length ? add('ko', `secret probable dans : ${leaks.map((f) => path.relative(dir, f)).join(', ')}`) : add('ok', 'aucun secret évident dans le code');
 
 // --- documentation / tests
-exists('CLAUDE.md') ? add('ok', 'CLAUDE.md présent') : add('ko', 'CLAUDE.md manquant');
+if (exists('CLAUDE.md')) add('ok', 'CLAUDE.md présent');
+else if (FIX) { write('CLAUDE.md', `# ${pkg.name || path.basename(dir)}\n\n## Objectif\n${pkg.description || '(à compléter)'}\n\n## Stack\n(à compléter : Node, Express, stockage, front)\n\n## Fichiers clés\n(à compléter)\n\n## Règles\n- Chemins navigateur relatifs ; \`server.js\` exporte l'app.\n- \`data/\` jamais déployé ni versionné.\n`); fixed.push('CLAUDE.md : squelette à compléter'); }
+else add('ko', 'CLAUDE.md manquant (--fix)');
 const tdir = ['tests', 'test'].find((d) => exists(d));
 tdir && fs.readdirSync(path.join(dir, tdir)).some((f) => /\.test\.js$/.test(f)) ? add('ok', `tests dans ${tdir}/`) : add('ko', 'aucun fichier *.test.js');
-exists('.github', 'workflows') || add('wa', 'pas d\'intégration continue (.github/workflows/test.yml)');
+if (exists('.github', 'workflows')) add('ok', 'intégration continue présente');
+else if (FIX && hasTests) { write('.github/workflows/test.yml', tpl('.github/workflows/test.yml')); fixed.push('.github/workflows/test.yml'); }
+else add('wa', 'pas d\'intégration continue (.github/workflows/test.yml) (--fix)');
+if (FIX && !exists('.gitattributes')) { write('.gitattributes', tpl('.gitattributes')); fixed.push('.gitattributes'); }
 if (args.includes('--test')) {
   const r = spawnSync('npm', ['test', '--silent'], { cwd: dir, encoding: 'utf8', shell: true });
   r.status === 0 ? add('ok', 'npm test vert') : add('ko', 'npm test en échec :\n' + (r.stdout + r.stderr).split('\n').slice(-12).join('\n'));
 }
 
+if (fixed.length) console.log('Corrigé :\n' + fixed.map((f) => `  ~ ${f}`).join('\n') + '\n');
 const icon = { ok: '✓', ko: '✗', wa: '⚠' };
 console.log(out.map((o) => `${icon[o.level]} ${o.msg}`).join('\n'));
 const ko = out.filter((o) => o.level === 'ko').length;

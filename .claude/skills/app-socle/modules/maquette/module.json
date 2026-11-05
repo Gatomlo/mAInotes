@@ -1,0 +1,2 @@
+{ "description": "Maquette HTML interactive autonome (mobile d'abord, clair/sombre, données simulées) à faire valider AVANT de coder",
+  "notes": ["Servir : `npx http-server maquette -p 5180`, ou publier le fichier comme artefact Claude pour la valider depuis le téléphone.", "Une fois l'app codée, la maquette est figée : le comportement de référence devient celui de l'app (ne plus la modifier)."] }

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>__NAME__ — maquette</title>
+<style>
+:root{--bg:#f7f1ea;--surface:#fff;--line:#d6c9bb;--fg:#241d22;--muted:#6a5d65;--accent:__COLOR__;--ink:#fff;color-scheme:light}
+:root[data-theme=dark]{--bg:#17141a;--surface:#211b1f;--line:#3a333b;--fg:#f3ece4;--muted:#b7aaa2;--ink:#17141a;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.4 system-ui,sans-serif}
+#app{max-width:430px;margin:0 auto;min-height:100dvh;padding:16px 16px 90px}
+h1{margin:0 0 12px;font-size:26px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+.muted{color:var(--muted)}
+.btn{min-height:44px;padding:0 16px;border:0;border-radius:12px;background:var(--accent);color:var(--ink);font-weight:700;cursor:pointer}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:4px;padding:8px;background:var(--surface);border-top:1px solid var(--line)}
+nav button{flex:1;max-width:120px;min-height:44px;border:0;border-radius:10px;background:transparent;color:var(--muted);cursor:pointer}
+nav button[aria-current=page]{background:var(--bg);color:var(--accent);font-weight:700}
+.tools{position:fixed;top:8px;right:8px;display:flex;gap:6px}
+.tools button{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:4px 8px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="tools"><button id="theme" title="Thème">◐</button><button id="reset" title="Réinitialiser les données simulées">↺</button></div>
+<div id="app"></div>
+<nav id="nav"></nav>
+<script>
+// Donnees simulees (a remplacer par celles du projet). Etat gardé dans localStorage pour que la maquette « vive ».
+const KEY = '__SLUG__-maquette';
+const seed = () => ({ items: [{ id: 1, title: 'Premier élément', done: false }, { id: 2, title: 'Deuxième élément', done: true }] });
+let S = JSON.parse(localStorage.getItem(KEY) || 'null') || seed();
+const save = () => localStorage.setItem(KEY, JSON.stringify(S));
+let view = 'accueil';
+
+// Une vue = une fonction qui renvoie du HTML. Ajouter les ecrans du cahier des charges ici.
+const VIEWS = {
+  accueil: () => `<h1>__NAME__</h1><p class="muted">Écran d'accueil.</p>` + S.items.map((i) =>
+    `<div class="card"><label><input type="checkbox" data-toggle="${i.id}" ${i.done ? 'checked' : ''}> ${i.title}</label></div>`).join('') +
+    `<button class="btn" data-add>Ajouter</button>`,
+  reglages: () => `<h1>Réglages</h1><div class="card">Compte, thème, notifications…</div>`,
+};
+const NAV = { accueil: 'Accueil', reglages: 'Réglages' };
+
+function render() {
+  document.getElementById('app').innerHTML = VIEWS[view]();
+  document.getElementById('nav').innerHTML = Object.entries(NAV).map(([k, v]) => `<button data-view="${k}" ${k === view ? 'aria-current="page"' : ''}>${v}</button>`).join('');
+}
+document.addEventListener('click', (e) => {
+  const t = e.target;
+  if (t.dataset.view) { view = t.dataset.view; render(); }
+  if (t.dataset.add !== undefined) { S.items.push({ id: Date.now(), title: 'Nouvel élément', done: false }); save(); render(); }
+  if (t.id === 'reset') { S = seed(); save(); render(); }
+  if (t.id === 'theme') { const r = document.documentElement; r.dataset.theme = r.dataset.theme === 'dark' ? '' : 'dark'; }
+});
+document.addEventListener('change', (e) => {
+  if (e.target.dataset.toggle) { const i = S.items.find((x) => x.id == e.target.dataset.toggle); i.done = e.target.checked; save(); }
+});
+render();
+</script>
+</body>
+</html>

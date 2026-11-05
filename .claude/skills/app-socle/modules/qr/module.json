@@ -1,0 +1,4 @@
+{ "description": "QR code SVG d'un lien de l'app (invitation, partage)",
+  "deps": { "qrcode-generator": "^1.4.4" },
+  "routes": "require('./qr').routes(r);",
+  "notes": ["Interface : <img src=\"api/qr?text=<lien encodé>\"> ; côté serveur : require('./lib/qr').svg(url).", "Seuls les liens http(s) de 500 caractères au plus sont acceptés."] }

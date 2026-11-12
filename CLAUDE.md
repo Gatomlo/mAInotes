@@ -9,6 +9,7 @@ Lire d'abord `docs/cahier-des-charges.md`. Le comportement de référence est ce
 - PWA, notes stockées sur le serveur, compte utilisateur, file d'attente hors connexion.
 - Premier compte (administrateur) créé à la première ouverture après déploiement, modifiable dans l'onglet Compte (F64–F71). Autres comptes créés par l'administrateur, données privées par défaut, partage de carnets/notes/tâches en lecture ou modification, IA et budget communs gérés par l'administrateur (F113–F120).
 - Déploiement Infomaniak via `node-gateway` : `server.js` exporte l'app Express, chemins navigateur toujours relatifs, aucune dépendance native (stockage JSON + fichiers dans `data/`). Voir `docs/deploiement-infomaniak.md`.
+- Notifications à la date d'une note ou tâche : Web Push (`lib/push.js`, `web-push`), un résumé par jour et par personne à l'heure choisie (F121–F123).
 - Fournisseurs d'IA derrière une interface commune. Infomaniak par défaut (API compatible OpenAI), Gemini et Claude optionnels, inactifs par défaut. Clés API uniquement côté serveur, chiffrées.
 - Sobriété IA : classement sur le texte seul, transcription une seule fois, vocal 2 minutes maximum, photo réduite avant envoi, plafond mensuel avec alerte à 80 %.
 - Déclenchement de l'analyse automatique ou manuel, réglable.

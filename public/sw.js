@@ -1,6 +1,6 @@
 // Service worker : l'interface s'ouvre sans réseau. L'API n'est jamais mise en cache,
 // sauf les médias déjà consultés (lecture hors connexion).
-const VERSION = 'mainotes-v22';
+const VERSION = 'mainotes-v23';
 // Réseau lent ou muet (signal faible) : passé ce délai, on ouvre la copie locale.
 const NET_TIMEOUT = 3000;
 // Après un délai dépassé, les fichiers suivants partent aussitôt de la copie locale pendant 30 s.
@@ -54,5 +54,19 @@ self.addEventListener('fetch', (e) => {
       clearTimeout(timer);
       fallback(null).then(() => { if (!done) { done = true; resolve(Response.error()); } });
     });
+  }));
+});
+
+// Notifications à la date d'une note ou d'une tâche (envoyées par le serveur, appli fermée comprise).
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) { d = { body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'mAInotes', { body: d.body || '', tag: d.tag || 'mainotes', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png' }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) if ('focus' in c) return c.focus();
+    return self.clients.openWindow(self.registration.scope);
   }));
 });

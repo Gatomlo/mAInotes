@@ -262,6 +262,7 @@ function renderAccount() {
     $('#view-account').innerHTML =
       '<div class="sec" style="margin-top:8px"><p class="sub" style="margin:0;flex:1 1 200px">' + esc(u.name || u.login) + ' · ' + (u.role === 'admin' ? 'administrateur' : 'compte') + ', créé le ' + fmtFull(u.createdAt) + '.</p><button class="btn" data-a="logout">Se déconnecter</button></div>' +
       (u.mustChangePassword ? '<div class="banner warn">Votre mot de passe a été défini par l\'administrateur : choisissez-en un nouveau ci-dessous.</div>' : '') +
+      '<div id="notifybox"></div>' +
       '<div id="usersbox"></div>' +
       '<form class="panel" id="f-profile"><h3>Profil</h3>' +
       '<div><label class="l" for="acc-name">Nom affiché</label><input id="acc-name" class="field" maxlength="80" value="' + esc(u.name) + '" autocomplete="name"></div>' +
@@ -290,6 +291,7 @@ function renderAccount() {
       '<div class="err" id="del-err" role="alert" hidden></div>' +
       '<div class="actions"><button type="submit" class="btn danger">Supprimer définitivement</button></div></form>';
     bindAccountForms(u);
+    renderNotify();
     if (u.role === 'admin') renderUsers();
     accordionize($('#view-account'));
   }, function (e) { $('#view-account').innerHTML = '<p class="err">' + esc(e.message) + '</p>'; });
@@ -359,4 +361,51 @@ function renderUsers() {
         .then(function () { toast('Compte créé : transmettez l\'identifiant et le mot de passe provisoire'); return sync(); }).then(renderUsers, function (er) { var el = $('#nu-err'); el.textContent = er.message; el.hidden = false; });
     });
   }, function (e) { $('#usersbox').innerHTML = '<p class="err">' + esc(e.message) + '</p>'; });
+}
+
+/* ---------- Notifications à la date d'une note ou d'une tâche ---------- */
+function b64ToBytes(b64) {
+  var pad = '='.repeat((4 - b64.length % 4) % 4), raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  var out = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+function pushSupported() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+function thisSub() {
+  if (!pushSupported()) return Promise.resolve(null);
+  return navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.getSubscription(); }).catch(function () { return null; });
+}
+function renderNotify() {
+  var box = $('#notifybox');
+  if (!box) return;
+  Promise.all([api('GET', 'notify'), thisSub()]).then(function (r) {
+    var n = r[0], sub = r[1], here = !!sub, denied = pushSupported() && Notification.permission === 'denied';
+    var hours = ''; for (var h = 5; h <= 22; h++) hours += opt(h, n.hour, (h < 10 ? '0' : '') + h + ' h');
+    box.innerHTML = '<div class="panel"><h3>Notifications</h3>' +
+      '<p class="sub" style="margin:0">Une notification par jour, à l\'heure choisie : les tâches à faire et les notes dont la date limite tombe ce jour-là (vos tâches, et celles non assignées des notes que vous voyez). Aucun appel IA.</p>' +
+      '<div class="switch" style="border:0;padding:0"><div><b>Recevoir les notifications</b><span>' + plural(n.devices, 'appareil abonné', 'appareils abonnés') + '.</span></div><button type="button" class="sw" role="switch" aria-checked="' + n.enabled + '" aria-label="Recevoir les notifications" data-a="notify-toggle"><i></i></button></div>' +
+      '<div><label class="l" for="notify-hour">Heure d\'envoi (heure belge)</label><select id="notify-hour" class="field">' + hours + '</select></div>' +
+      (!pushSupported() ? '<div class="help"><span>Ce navigateur ne gère pas les notifications. Sur iPhone et iPad, installez d\'abord l\'appli sur l\'écran d\'accueil (Partager › Sur l\'écran d\'accueil).</span></div>' :
+        denied ? '<div class="help"><span>Les notifications sont bloquées pour ce site : autorisez-les dans les réglages du navigateur, puis revenez ici.</span></div>' :
+        '<div class="actions">' + (here ? '<button type="button" class="btn" data-a="notify-test">Envoyer un test</button><button type="button" class="btn" data-a="notify-disable">Désactiver sur cet appareil</button>' : '<button type="button" class="btn primary" data-a="notify-enable">Activer sur cet appareil</button>') + '</div>' +
+        '<div class="help"><span>' + (here ? 'Cet appareil est abonné.' : 'Cet appareil n\'est pas encore abonné : chaque appareil s\'active séparément.') + '</span></div>') + '</div>';
+  }, function () { box.innerHTML = ''; });
+}
+function notifyEnable() {
+  if (!pushSupported()) return toast('Notifications non prises en charge ici.');
+  Notification.requestPermission().then(function (perm) {
+    if (perm !== 'granted') { toast('Notifications refusées.'); return renderNotify(); }
+    return api('GET', 'notify').then(function (n) {
+      return navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(n.publicKey) }); });
+    }).then(function (sub) {
+      return api('POST', 'notify/subscribe', { subscription: sub.toJSON(), device: (navigator.userAgent.match(/(Edg|Firefox|Chrome|Safari)\//) || [, 'navigateur'])[1] });
+    }).then(function () { toast('Notifications activées sur cet appareil'); renderNotify(); });
+  }).catch(function (e) { toast('Activation impossible : ' + (e && e.message || e)); renderNotify(); });
+}
+function notifyDisable() {
+  thisSub().then(function (sub) {
+    if (!sub) return;
+    var ep = sub.endpoint;
+    return sub.unsubscribe().then(function () { return api('POST', 'notify/unsubscribe', { endpoint: ep }); });
+  }).then(function () { toast('Notifications désactivées sur cet appareil'); renderNotify(); }, fail);
 }

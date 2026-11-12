@@ -13,6 +13,7 @@ const createAuth = require('./lib/auth');
 const createAI = require('./lib/ai');
 const createPipeline = require('./lib/pipeline');
 const createApi = require('./lib/api');
+const createPush = require('./lib/push');
 
 // Données hors du dossier de l'app conseillées en production (voir
 // docs/deploiement-infomaniak.md) : un redéploiement qui remplace apps/mainotes ne
@@ -25,6 +26,7 @@ const masterKey = loadMasterKey(DATA_DIR);
 const ai = createAI(store, masterKey);
 const pipeline = createPipeline(store, ai);
 const auth = createAuth(store);
+const push = createPush(store);
 
 const app = express();
 app.set('trust proxy', 1);
@@ -60,7 +62,7 @@ api.use((req, res, next) => {
 });
 api.use(auth.router);
 api.use(auth.accountRouter);
-api.use(createApi(store, ai, pipeline, auth));
+api.use(createApi(store, ai, pipeline, auth, push));
 api.use((req, res) => res.status(404).json({ error: 'Route inconnue.' }));
 // eslint-disable-next-line no-unused-vars
 api.use((err, req, res, next) => {
@@ -78,6 +80,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 }));
 
 pipeline.resume();
+push.start();
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;

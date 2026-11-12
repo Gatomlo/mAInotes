@@ -574,3 +574,13 @@ Le principal risque est un classement IA qui déçoit au début ; la parade est 
 | F120 | **Suppression de son compte** par un non-administrateur : retire ses données seulement. L'administrateur unique ne peut pas se supprimer tant qu'il reste d'autres comptes. Mot de passe oublié : `npm run reset-password -- identifiant`. | Should | Codé |
 
 Hors périmètre pour l'instant : mises à jour en temps réel (un partage apparaît à la prochaine synchronisation), commentaires, notifications, groupes.
+
+## Notifications (F121 à F123)
+
+| N° | Fonction | Priorité | État |
+|---|---|---|---|
+| F121 | **Notification à la date** d'une note ou d'une tâche : une par jour et par personne, à l'heure choisie (8 h par défaut, heure belge), résumant les tâches à faire ce jour-là (les siennes et les non assignées des notes qu'on voit) et les notes dont la date limite tombe ce jour-là. Web Push (serveur, bibliothèque `web-push` en JavaScript pur), appli fermée comprise ; aucun appel IA. | Should | Codé |
+| F122 | **Réglage par personne** dans l'onglet Compte : interrupteur, heure d'envoi, activation par appareil, envoi d'un test. Un abonnement expiré est retiré automatiquement. | Should | Codé |
+| F123 | **Prérequis** : site en HTTPS ; sur iPhone et iPad (iOS 16.4 ou plus), l'appli doit d'abord être installée sur l'écran d'accueil. Clés VAPID créées par le serveur à la première utilisation et gardées dans `data/db.json`. | Should | Codé |
+
+Hors périmètre : rappel avant l'échéance (la veille, une heure avant), notification en cas de retard, heure propre à chaque tâche.

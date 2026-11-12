@@ -64,6 +64,10 @@ var ACTIONS = {
     if (!confirm('Supprimer le compte de ' + el.dataset.name + ' et toutes ses notes, carnets et tags ? Les partages vers lui disparaissent.')) return;
     api('DELETE', 'users/' + el.dataset.id).then(function () { toast('Compte supprimé'); return sync(); }).then(renderUsers, fail);
   },
+  'notify-enable': function () { notifyEnable(); },
+  'notify-disable': function () { notifyDisable(); },
+  'notify-test': function () { api('POST', 'notify/test', {}).then(function () { toast('Notification de test envoyée'); }, fail); },
+  'notify-toggle': function (el) { api('PATCH', 'notify', { enabled: el.getAttribute('aria-checked') !== 'true' }).then(function () { renderNotify(); }, fail); },
   'share-note': function (el) { openShare('note', el.dataset.id); },
   'share-nb': function (el) { openShare('nb', el.dataset.id); },
   'share-save': function () { saveShare(); },
@@ -518,6 +522,7 @@ document.addEventListener('change', function (e) {
   if (t.classList && t.classList.contains('tdue-in')) { todoCall(t.dataset.id, 'PATCH', '/' + t.dataset.tid, { due: t.value || null }); }
   if (t.classList && t.classList.contains('tassign')) { todoCall(t.dataset.id, 'PATCH', '/' + t.dataset.tid, { assignee: t.value || null }); }
   if (t.id === 'notedue') { queueOp({ kind: 'note-due', noteId: t.dataset.id, due: t.value || null }); }
+  if (t.id === 'notify-hour') { api('PATCH', 'notify', { hour: +t.value }).then(function () { toast('Heure enregistrée'); }, fail); }
   if (t.id === 'tkwho') { TK.who = t.value; renderTasks(); }
   if (t.id === 'tkcat') { TK.nb = t.value; renderTasks(); }
   if (t.classList && t.classList.contains('pe-type')) { peSync(); peRender(); }

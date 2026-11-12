@@ -413,7 +413,7 @@ var syncTimer = null;
 function sync() {
   if (!S.user) return Promise.resolve();
   return flushOps().then(function () { return api('GET', 'state', undefined, { timeout: 15000 }); }).then(function (d) {
-    S.notebooks = d.notebooks; S.tags = d.tags; S.notes = d.notes; S.settings = d.settings; S.users = d.users || [];
+    S.notebooks = d.notebooks; S.tags = d.tags; S.notes = d.notes; S.settings = d.settings; S.users = d.users || []; S.notify = d.notify || null;
     opsApplyAll();
     S.providers = d.providers; S.retri = d.retri; S.synthesesCount = d.synthesesCount;
     saveCache();

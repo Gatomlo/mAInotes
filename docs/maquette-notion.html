@@ -659,6 +659,15 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
 .bub.ai .src{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .m-phone{display:grid;gap:18px}
 @media(min-width:900px){.m-phone.two{grid-template-columns:1fr 1fr}}
+body[data-off~=tasks] [data-feat=tasks],body[data-off~=views] [data-feat=views],body[data-off~=props] [data-feat=props],body[data-off~=links] [data-feat=links],body[data-off~=templates] [data-feat=templates],body[data-off~=ai] [data-feat=ai]{display:none!important}
+.m-sw{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.m-sw:last-child{border-bottom:0}
+.m-sw .tx{flex:1;min-width:0}.m-sw .tx b{display:block}.m-sw .tx small{color:var(--muted);font-size:13px}
+.m-sw input{appearance:none;-webkit-appearance:none;width:52px;height:32px;border-radius:16px;background:var(--line-strong);position:relative;cursor:pointer;flex:none;margin:0;transition:background .15s}
+.m-sw input::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:transform .15s}
+.m-sw input:checked{background:var(--accent)}.m-sw input:checked::after{transform:translateX(20px)}
+.tab-badge2{display:inline-block;min-width:20px;height:20px;line-height:20px;margin-left:6px;padding:0 6px;border-radius:10px;background:var(--danger);color:#fff;font-size:12px;font-style:normal;text-align:center}
+@media (prefers-reduced-motion:reduce){.m-sw input,.m-sw input::after{transition:none}}
 .m-foot{margin:28px 0 10px;color:var(--muted);font-size:13px}
 </style>
 </head>
@@ -667,10 +676,11 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
   <header class="top">
     <div class="brand"><h1>Mes notes</h1><p class="sub">Maquette d'évolution « façon Notion » – données fictives, non reliée au serveur</p></div>
     <nav class="tabs" aria-label="Sections">
-      <button class="tab" aria-selected="true"><span>Notes</span></button>
-      <button class="tab" aria-selected="false"><span>Carnets</span></button>
-      <button class="tab" aria-selected="false"><span>À lire</span></button>
-      <button class="tab" aria-selected="false"><span>Réglages</span></button>
+      <button class="tab" aria-selected="true" data-go="s1"><span>Notes</span></button>
+      <button class="tab" aria-selected="false" data-go="s3"><span>Carnets</span></button>
+      <button class="tab" aria-selected="false" data-go="s7" data-feat="tasks"><span>Tâches</span><i class="tab-badge2" title="1 en retard">4</i><span class="m-new">NEW</span></button>
+      <button class="tab" aria-selected="false" data-go="s1"><span>À lire</span></button>
+      <button class="tab" aria-selected="false" data-go="s8"><span>Réglages</span></button>
     </nav>
   </header>
   <p class="m-note">Les éléments <span class="m-new">NOUVEAU</span> sont les ajouts. Le reste est l'app actuelle (cartes, chips, filtres, couleurs, barre du bas sur téléphone). Choisissez un écran ci-dessous ; la vue, les cases à cocher et le menu « / » sont cliquables.</p>
@@ -678,11 +688,12 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
   <nav class="m-nav" id="nav" aria-label="Écrans de la maquette">
     <button class="fchip" data-s="s1" aria-pressed="true">1 · Carnet-base (vues)</button>
     <button class="fchip" data-s="s2" aria-pressed="false">2 · Note en blocs</button>
-    <button class="fchip" data-s="s3" aria-pressed="false">3 · Propriétés &amp; vues</button>
+    <button class="fchip" data-s="s3" data-feat="props" aria-pressed="false">3 · Propriétés &amp; vues</button>
     <button class="fchip" data-s="s4" aria-pressed="false">4 · Modèles &amp; liens</button>
-    <button class="fchip" data-s="s5" aria-pressed="false">5 · IA sur les notes</button>
+    <button class="fchip" data-s="s5" data-feat="ai" aria-pressed="false">5 · IA sur les notes</button>
     <button class="fchip" data-s="s6" aria-pressed="false">6 · Téléphone</button>
-    <button class="fchip" data-s="s7" aria-pressed="false">7 · To-dos</button>
+    <button class="fchip" data-s="s7" data-feat="tasks" aria-pressed="false">7 · To-dos</button>
+    <button class="fchip" data-s="s8" aria-pressed="false">8 · Réglages</button>
   </nav>
 
   <!-- ===== 1. CARNET-BASE ===== -->
@@ -702,9 +713,9 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
       <span class="sp"></span>
       <span class="modes small vtoggle" role="group" aria-label="Affichage" id="vsw">
         <button data-v="v-cards" aria-pressed="true">Cartes</button>
-        <button data-v="v-table" aria-pressed="false">Tableau <span class="m-new">NEW</span></button>
-        <button data-v="v-kanban" aria-pressed="false">Kanban <span class="m-new">NEW</span></button>
-        <button data-v="v-cal" aria-pressed="false">Calendrier <span class="m-new">NEW</span></button>
+        <button data-feat="views" data-v="v-table" aria-pressed="false">Tableau <span class="m-new">NEW</span></button>
+        <button data-feat="views" data-v="v-kanban" aria-pressed="false">Kanban <span class="m-new">NEW</span></button>
+        <button data-feat="views" data-v="v-cal" aria-pressed="false">Calendrier <span class="m-new">NEW</span></button>
       </span>
     </div>
     <div class="chips tags" style="padding-top:0">
@@ -772,9 +783,9 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
         <div class="m-props">
           <span class="k">Carnet</span><span><span class="chip" style="--soft:var(--rose-soft);--cink:var(--rose-ink)"><i class="dot" style="background:var(--rose-dot)"></i>Travail</span></span>
           <span class="k">Tags</span><span style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip">réunion</span><span class="chip">voisins</span></span>
-          <span class="k">Statut <span class="m-new">NEW</span></span><span><span class="chip st-doing"><i class="dot"></i>En cours</span></span>
-          <span class="k">Échéance <span class="m-new">NEW</span></span><span>Jeudi 19 nov. · 19 h 30 <span class="ai" style="color:var(--accent)" title="Détectée par l'IA">✦</span></span>
-          <span class="k">Lieu <span class="m-new">NEW</span></span><span>Salle communale</span>
+          <span class="k" data-feat="props">Statut <span class="m-new">NEW</span></span><span data-feat="props"><span class="chip st-doing"><i class="dot"></i>En cours</span></span>
+          <span class="k" data-feat="props">Échéance <span class="m-new">NEW</span></span><span data-feat="props">Jeudi 19 nov. · 19 h 30 <span class="ai" style="color:var(--accent)" title="Détectée par l'IA">✦</span></span>
+          <span class="k" data-feat="props">Lieu <span class="m-new">NEW</span></span><span data-feat="props">Salle communale</span>
         </div>
 
         <div class="blk h2"><span class="grip">⋮⋮</span><div class="b">À faire</div></div>
@@ -784,7 +795,7 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
         <div class="blk h2"><span class="grip">⋮⋮</span><div class="b">Notes de la dernière réunion</div></div>
         <div class="blk"><span class="grip">⋮⋮</span><div class="media"><span class="play">▶</span><div style="flex:1"><div style="font-weight:600">Vocal · 0:48</div><div class="wavebar"></div></div><span class="chip">Transcription ▾</span></div></div>
         <div class="blk quote"><span class="grip">⋮⋮</span><div class="b">« On devrait fixer la date du nettoyage de printemps. »</div></div>
-        <div class="blk li"><span class="grip">⋮⋮</span><div class="b">Voir aussi <a class="mention" href="#">@Budget fête des voisins</a> et <a class="mention" href="#">@Contacts commune</a></div></div>
+        <div class="blk li" data-feat="links"><span class="grip">⋮⋮</span><div class="b">Voir aussi <a class="mention" href="#">@Budget fête des voisins</a> et <a class="mention" href="#">@Contacts commune</a></div></div>
         <div class="blk"><span class="grip" id="plus" style="opacity:1;cursor:pointer;color:var(--accent);font-weight:700" title="Insérer un bloc">+</span><div class="b" style="color:var(--muted)">Tapez « / » pour insérer un bloc…</div></div>
         <div class="slash on" id="slash" role="menu" aria-label="Insérer un bloc">
           <div class="s">Blocs de base</div>
@@ -792,7 +803,7 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
           <div class="s" style="padding-top:6px">Média</div>
           <button><i>🎙</i>Vocal</button><button><i>🖼</i>Image</button><button><i>🔗</i>Lien avec aperçu</button>
           <div class="s" style="padding-top:6px">Avancé</div>
-          <button><i>@</i>Mention d'une note</button><button><i>✦</i>Demander à l'IA…</button>
+          <button><i>@</i>Mention d'une note</button><button data-feat="ai"><i>✦</i>Demander à l'IA…</button>
         </div>
 
         <div class="m-tools">
@@ -802,12 +813,12 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
       </article>
 
       <aside class="m-side">
-        <div class="m-box"><h3>↩ Rétroliens <span class="m-new">NEW</span></h3>
+        <div class="m-box" data-feat="links"><h3>↩ Rétroliens <span class="m-new">NEW</span></h3>
           <ul><li><a class="mention" href="#">Ordre du jour – février</a><small>« …voir @Préparer la réunion de quartier »</small></li>
           <li><a class="mention" href="#">Idées de quartier</a><small>mentionnée il y a 3 jours</small></li></ul></div>
-        <div class="m-box"><h3>✦ Notes liées suggérées <span class="m-new">NEW</span></h3>
+        <div class="m-box" data-feat="links"><h3>✦ Notes liées suggérées <span class="m-new">NEW</span></h3>
           <ul><li>Budget fête des voisins <button class="btn ghost" style="height:36px;padding:0 8px">Lier</button></li><li>Contacts commune <button class="btn ghost" style="height:36px;padding:0 8px">Lier</button></li></ul></div>
-        <div class="m-box"><h3>Sous-pages <span class="m-new">NEW</span></h3>
+        <div class="m-box" data-feat="links"><h3>Sous-pages <span class="m-new">NEW</span></h3>
           <ul><li>📄 Liste des invités</li><li>📄 Ordre du jour</li><li><button class="btn ghost" style="height:36px;padding:0">+ Ajouter une sous-page</button></li></ul></div>
         <div class="m-box"><h3>Pour aller plus loin</h3><div style="font-size:14px;color:var(--muted)">Bloc d'enrichissement existant : conservé, généré par l'IA et à vérifier.</div></div>
       </aside>
@@ -841,16 +852,16 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
     <div class="m-sheet" style="max-width:760px">
       <h3>Nouvelle note</h3>
       <div class="m-bar"><button class="btn primary">✎ Note libre</button><button class="btn">🎙 Vocal</button><button class="btn">🖼 Image</button></div>
-      <p style="font-size:14px;margin:6px 0 10px"><b>Ou partir d'un modèle</b> <span class="m-new">NEW</span></p>
-      <div class="m-tpl">
+      <p data-feat="templates" style="font-size:14px;margin:6px 0 10px"><b>Ou partir d'un modèle</b> <span class="m-new">NEW</span></p>
+      <div class="m-tpl" data-feat="templates">
         <div class="card"><div class="ic">📋</div><div class="ttl">Compte rendu</div><div class="exc">Participants, décisions, actions (cases à cocher).</div></div>
         <div class="card"><div class="ic">🛒</div><div class="ttl">Liste de courses</div><div class="exc">Cases à cocher, tri par rayon.</div></div>
         <div class="card"><div class="ic">📚</div><div class="ttl">Fiche livre</div><div class="exc">Auteur, statut, note, citations.</div></div>
         <div class="card"><div class="ic">✅</div><div class="ttl">Projet</div><div class="exc">Objectif, étapes, échéance, statut.</div></div>
       </div>
     </div>
-    <div class="m-bar" style="margin-top:22px"><b>Vue graphe des liens</b> <span class="m-new">FACULTATIF</span></div>
-    <div class="m-box" style="padding:0;overflow:hidden">
+    <div class="m-bar" data-feat="links" style="margin-top:22px"><b>Vue graphe des liens</b> <span class="m-new">FACULTATIF</span></div>
+    <div class="m-box" data-feat="links" style="padding:0;overflow:hidden">
       <svg viewBox="0 0 640 240" width="100%" role="img" aria-label="Graphe de notes liées entre elles" style="display:block">
         <g stroke="var(--line-strong)" stroke-width="1.5"><line x1="320" y1="120" x2="150" y2="60"/><line x1="320" y1="120" x2="170" y2="190"/><line x1="320" y1="120" x2="500" y2="70"/><line x1="320" y1="120" x2="520" y2="180"/><line x1="500" y1="70" x2="580" y2="120"/></g>
         <g font-size="12" text-anchor="middle" fill="var(--ink)">
@@ -902,7 +913,7 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
           </div>
         </div>
         <div style="position:absolute;left:0;right:0;bottom:0;padding:10px 12px 14px;background:var(--bg);box-shadow:0 -6px 16px rgba(18,32,31,.08)">
-          <div class="qchips"><span class="fchip" style="height:40px">Idées</span><span class="fchip" aria-pressed="true" style="height:40px;background:var(--ink);color:var(--bg)">Livres</span><span class="fchip" style="height:40px">Maison</span></div>
+          <div class="qchips"><span class="fchip" style="height:40px">Idées</span><span class="fchip" aria-pressed="true" style="height:40px;background:var(--ink);color:var(--bg)">Livres</span><span class="fchip" style="height:40px">Maison</span><span class="fchip" data-feat="tasks" style="height:40px">☑ Tâches <small>4</small></span></div>
           <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
             <div class="search" style="flex:1;margin:0;height:48px"><span>🔍</span><input placeholder="Rechercher" aria-label="Rechercher"></div>
             <span class="modes small" style="display:inline-flex"><button style="height:48px;width:48px" aria-label="Cartes">▦</button><button style="height:48px;width:48px;background:var(--accent);color:var(--accent-ink)" aria-label="Kanban">▥</button></span>
@@ -963,6 +974,25 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
     <div class="demo" style="margin-top:14px">Rappels : une échéance peut envoyer une notification si l'app est installée (à étudier). Une to-do répétée (« chaque lundi ») est possible plus tard.</div>
   </section>
 
+
+  <!-- ===== 8. REGLAGES ===== -->
+  <section class="m-screen" id="s8">
+    <span class="m-lbl">Écran 8 · Réglages</span>
+    <p class="m-ann">Nouvelle section <b>Espace de travail</b> dans l'onglet Réglages. Chaque fonction s'active ou se désactive. <b>Essayez : les interrupteurs agissent sur les autres écrans de cette maquette.</b> Désactiver ne supprime aucune donnée : tout réapparaît à la réactivation.</p>
+    <div class="m-sheet" style="max-width:640px" id="feats">
+      <h3>Espace de travail <span class="m-new">NEW</span></h3>
+      <p class="sub" style="margin:0 0 6px">Chaque fonction est indépendante des autres.</p>
+      <label class="m-sw"><span class="tx"><b>Onglet Tâches</b><small>Vue qui rassemble toutes les cases non cochées, avec badge.</small></span><input type="checkbox" data-f="tasks" checked></label>
+      <label class="m-sw"><span class="tx"><b>Propriétés et bases de données</b><small>Statut, échéance, lieu… et panneau « Propriétés » des carnets.</small></span><input type="checkbox" data-f="props" checked></label>
+      <label class="m-sw"><span class="tx"><b>Vues supplémentaires</b><small>Tableau, kanban, calendrier (la vue Cartes reste toujours disponible).</small></span><input type="checkbox" data-f="views" checked></label>
+      <label class="m-sw"><span class="tx"><b>Liens entre notes</b><small>Mentions @note, rétroliens, sous-pages, notes liées, graphe.</small></span><input type="checkbox" data-f="links" checked></label>
+      <label class="m-sw"><span class="tx"><b>Modèles de notes</b><small>Compte rendu, courses, fiche livre, projet.</small></span><input type="checkbox" data-f="templates" checked></label>
+      <label class="m-sw"><span class="tx"><b>Fonctions IA sur les notes</b><small>Transformer, reformuler, questions sur mes notes. Toujours manuelles, avec confirmation.</small></span><input type="checkbox" data-f="ai" checked></label>
+      <div class="demo" style="margin-top:14px">Les blocs et les cases à cocher restent toujours actifs : une note libre reste une simple saisie. Les réglages IA existants (fournisseur, plafond mensuel) gardent leur section.</div>
+      <div class="actions" style="display:flex;gap:10px;margin-top:14px"><button class="btn" style="flex:1" id="alloff">Tout désactiver (app d'origine)</button><button class="btn" style="flex:1" id="allon">Tout activer</button></div>
+    </div>
+  </section>
+
   <p class="m-foot">Maquette statique : aucun code de l'app n'est modifié. Fichier : <code>docs/maquette-notion.html</code>.</p>
 </div>
 
@@ -977,6 +1007,28 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
       $$('.m-screen').forEach(function (s) { s.classList.toggle('on', s.id === b.dataset.s); });
     });
   });
+  function goto(id) {
+    $$('#nav .fchip').forEach(function (x) { x.setAttribute('aria-pressed', x.dataset.s === id ? 'true' : 'false'); });
+    $$('.m-screen').forEach(function (v) { v.classList.toggle('on', v.id === id); });
+  }
+  $$('.tabs .tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      $$('.tabs .tab').forEach(function (x) { x.setAttribute('aria-selected', x === t ? 'true' : 'false'); });
+      goto(t.dataset.go);
+    });
+  });
+  function apply() {
+    var off = $$('#feats input[data-f]').filter(function (i) { return !i.checked; }).map(function (i) { return i.dataset.f; });
+    document.body.setAttribute('data-off', off.join(' '));
+    var cur = $('.m-screen.on'), btn = $('#nav [data-s=' + cur.id + ']');
+    if (btn && getComputedStyle(btn).display === 'none') goto('s1');
+    var vb = $('#vsw [aria-pressed=true]');
+    if (vb && getComputedStyle(vb).display === 'none') $('#vsw [data-v=v-cards]').click();
+  }
+  $$('#feats input[data-f]').forEach(function (i) { i.addEventListener('change', apply); });
+  function all(v) { $$('#feats input[data-f]').forEach(function (i) { i.checked = v; }); apply(); }
+  $('#alloff').addEventListener('click', function () { all(false); });
+  $('#allon').addEventListener('click', function () { all(true); });
   // Vues du carnet-base
   $$('#vsw button').forEach(function (b) {
     b.addEventListener('click', function () {

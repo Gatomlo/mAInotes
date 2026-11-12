@@ -460,6 +460,53 @@ L'application vit sur un hébergement Infomaniak qui n'accepte qu'une seule appl
 - Clés d'API chiffrées (AES-256-GCM) avec une clé gardée sur le serveur, jamais renvoyées à l'écran.
 - Les notes, médias et réglages restent dans un dossier de données sur l'hébergement Infomaniak, à sauvegarder.
 
+## Espace de travail façon Notion
+
+Maquette de référence : `docs/maquette-notion.html` (non reliée au serveur). Trois étapes, chacune utile seule. Principe : la capture rapide reste une saisie libre en un geste ; blocs, propriétés et liens sont un enrichissement facultatif après coup. L'IA ne modifie jamais le carnet choisi à la création ni un classement verrouillé, et ses suggestions restent des suggestions (mode strict).
+
+### Étape 1 : notes en blocs
+
+| Réf. | Fonction | Priorité |
+|---|---|---|
+| F94 | La note devient une page de blocs : paragraphe, titre, liste, case à cocher, citation, code, séparateur, lien avec aperçu. Les notes existantes sont converties en un paragraphe, sans perte. | Must |
+| F95 | Menu « / » pour insérer un bloc, réordonnancement par glisser-déposer, bloc vocal et bloc image dans la page (audio d'origine et transcription conservés). | Must |
+| F96 | Les cases à cocher se cochent depuis la page et depuis la carte (progression « 2/3 »). | Should |
+| F97 | Le texte des blocs est aplati en texte seul pour le classement, la recherche et les synthèses : aucun surcoût IA. | Must |
+
+### Étape 2 : carnets-bases de données
+
+| Réf. | Fonction | Priorité |
+|---|---|---|
+| F98 | Propriétés par carnet : texte, nombre, date, sélection, sélection multiple, case à cocher, URL. Une propriété peut être marquée « remplie par l'IA ». | Must |
+| F99 | L'IA propose les valeurs des propriétés marquées dans l'appel de classement (aucun appel en plus), sans jamais écraser une valeur saisie à la main. | Should |
+| F100 | Vues d'un carnet : cartes (actuelle), tableau, kanban par propriété de sélection (glisser pour changer de valeur), calendrier par propriété date. | Must |
+| F101 | Filtres et tris enregistrés par vue. L'onglet « À lire / Lu » devient un carnet-base avec vue kanban. | Should |
+
+### Étape 3 : liens et structure
+
+| Réf. | Fonction | Priorité |
+|---|---|---|
+| F102 | Mentions `@note` dans un bloc, et rétroliens affichés sur la note citée. | Should |
+| F103 | Sous-pages d'une note. | Could |
+| F104 | Notes liées suggérées par l'IA (à valider d'un clic). | Could |
+| F105 | Modèles de notes (compte rendu, courses, fiche livre, projet) proposés à la création, en plus de la note libre. | Should |
+| F106 | Vue graphe des liens. | Could |
+
+### Fonctions IA
+
+| Réf. | Fonction | Priorité |
+|---|---|---|
+| F107 | Transformer une note (en liste de tâches, en tableau), reformuler, continuer, résumer : manuel, un appel, confirmation avec coût estimé, annulable. | Should |
+| F108 | Questions sur l'ensemble des notes, réponse sourcée (notes citées), en un appel, comptée dans le plafond mensuel. | Could |
+
+### Choix technique : stockage
+
+- Étape 1 : le JSON de `data/` suffit (`note.blocks[]` remplace `note.content`, migration automatique au démarrage).
+- Étape 2 : passage à **SQLite** si les vues filtrées, les propriétés typées et la recherche plein texte (FTS5) l'exigent. Migration automatique JSON vers SQLite au premier démarrage, fichiers média inchangés.
+- Contrainte : `node:sqlite` est intégré à Node 22 et plus, sans compilation ; le guide Infomaniak annonce Node 18.17 au minimum. Il faut vérifier que le manager propose Node 22 ; sinon `better-sqlite3` (compilation native) romprait la règle « aucune dépendance native ».
+- Éditeur de blocs : à écrire sans bibliothèque pour 8 types de blocs, sauf décision contraire ; point délicat sur mobile (clavier, sélection).
+- Hors connexion : au départ, dernier modificateur gagnant par note.
+
 ## Plan de réalisation
 
 Quatre phases, avec un feu vert à franchir entre chacune ; les durées seront fixées après le prototype.
@@ -499,3 +546,4 @@ Le principal risque est un classement IA qui déçoit au début ; la parade est 
 - [ ] Les catégories de départ : à lister ensemble avant la première version.
 - [ ] Langues des vocaux : français seul, ou mélange avec d'autres langues ?
 - [ ] Budget mensuel acceptable pour l'IA et l'hébergement.
+- [ ] Espace façon Notion : Node 22 disponible chez Infomaniak (pour SQLite sans compilation) ? Éditeur de blocs écrit à la main ou petite bibliothèque embarquée ? Usages prioritaires : tâches, bases, wiki ?

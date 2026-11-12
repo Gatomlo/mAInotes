@@ -55,7 +55,7 @@ function renderAdd() {
   var body = '', go = '';
   if (add.tab === 'text') {
     var tpl = templatesOn() ? '<div class="tpls" role="group" aria-label="Modèles"><span class="l" style="margin:0">Modèle</span>' + TEMPLATES.map(function (t) { return '<button type="button" class="fchip tag" data-a="tpl" data-id="' + t.id + '" aria-pressed="' + (add.tpl === t.id) + '">' + esc(t.name) + '</button>'; }).join('') + '</div>' + (add.todos && add.todos.length ? '<div class="help"><span>' + plural(add.todos.length, 'tâche sera ajoutée', 'tâches seront ajoutées') + ' avec la note (modifiables ensuite).</span></div>' : '') : '';
-    body = tpl + '<div class="addtext"><label class="sr" for="ntext">Votre note</label><textarea id="ntext" class="field big" rows="6" placeholder="Écrivez librement…" autofocus>' + esc(add.text) + '</textarea></div>';
+    body = tpl + '<div class="addtext"><label class="sr" for="ntext">Votre note</label>' + blocksBar('ntext') + '<textarea id="ntext" class="field big" rows="6" placeholder="Écrivez librement…" autofocus>' + esc(add.text) + '</textarea>' + slashMenu('ntext') + '</div>';
     go = '<button class="btn primary" data-a="add-text">' + I(IC.check, 20) + 'Enregistrer</button>';
   } else if (add.tab === 'voice') {
     var on = add.rec && add.rec.on;
@@ -234,7 +234,7 @@ function openDetail(id, edit) {
   if (n.type === 'image' && n.media.length) media = '<div class="gallery' + (n.media.length > 1 ? ' multi' : '') + '">' + n.media.map(function (m, i) { return '<button type="button" class="gimg" data-a="zoom" data-src="api/media/' + n.id + '/' + m.id + '" aria-label="Agrandir l\'image' + (n.media.length > 1 ? ' ' + (i + 1) : '') + '"><img alt="" src="api/media/' + n.id + '/' + m.id + '?ai=1"></button>'; }).join('') + '</div>';
   var busy = n.status === 'queued' || n.status === 'analyzing' || n.status === 'uploading';
   var fields = '';
-  if (n.type === 'text' || n.type === 'synthesis') fields += '<div><label class="l" for="d-content">Texte</label><textarea id="d-content" class="field" rows="7">' + esc(n.content) + '</textarea></div>';
+  if (n.type === 'text' || n.type === 'synthesis') fields += '<div><label class="l" for="d-content">Texte</label>' + (n.type === 'text' ? blocksBar('d-content') : '') + '<textarea id="d-content" class="field" rows="7">' + esc(n.content) + '</textarea>' + (n.type === 'text' ? slashMenu('d-content') : '') + '</div>';
   if (n.type === 'voice') fields += '<div><label class="l" for="d-transcript">Transcription</label><textarea id="d-transcript" class="field" rows="6" placeholder="Pas encore transcrite">' + esc(n.transcript) + '</textarea>' + (n.transcript ? '<div class="help">' + I(IC.spark, 14) + '<span>Générée par l\'IA' + (n.provider && n.provider.transcr ? ' (' + PROV[n.provider.transcr] + ')' : '') + (n.lang ? ', langue : ' + esc(n.lang) : '') + '. Modifiable ; l\'audio d\'origine est conservé.</span></div>' : '') + '</div>';
   if (n.type === 'image') {
     fields += '<div><label class="l" for="d-content">Légende</label><textarea id="d-content" class="field" rows="2">' + esc(n.content) + '</textarea></div>';
@@ -343,7 +343,7 @@ function readPick(n) {
 }
 function readView(n, x) {
   var block = function (label, text, empty) {
-    return '<div>' + (label ? '<div class="l">' + label + '</div>' : '') + (text ? '<div class="readtext">' + mentionify(linkify(text), n.id) + '</div>' : '<p class="muted" style="margin:0">' + empty + '</p>') + '</div>';
+    return '<div>' + (label ? '<div class="l">' + label + '</div>' : '') + (text ? (richText(text, n.id) !== null ? '<div class="readtext rich">' + richText(text, n.id) + '</div>' : '<div class="readtext">' + mentionify(linkify(text), n.id) + '</div>') : '<p class="muted" style="margin:0">' + empty + '</p>') + '</div>';
   };
   var body = '';
   if (n.type === 'text') body = block('', n.content, 'Note vide.');
@@ -358,6 +358,7 @@ function readView(n, x) {
     '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + propsHtml(n) + readPick(n) + x.media + body + todosHtml(n) + aiNote + backlinksHtml(n) + x.links +
     (x.busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
     (x.analyzeBtns ? '<div class="actions">' + x.analyzeBtns + '</div>' : '') +
+    (aiOn() && !n.trashedAt && !x.busy && n.type !== 'synthesis' && (n.status === 'ready' || n.type === 'text') && noteText(n).trim() ? '<div class="actions"><button type="button" class="btn" data-a="xf-open" data-id="' + n.id + '">' + I(IC.spark, 18) + 'Transformer avec l\'IA</button></div>' : '') +
     '<div class="actions sfoot"><button type="button" class="rbtn" data-a="close" aria-label="Fermer" title="Fermer">' + I('<path d="m15 6-6 6 6 6"/>', 24) + '</button>' +
     (n.trashedAt ? '<button type="button" class="rbtn danger" data-a="purge" data-id="' + n.id + '" aria-label="Supprimer définitivement" title="Supprimer définitivement">' + I(TRASH, 22) + '</button>' : '<button type="button" class="rbtn" data-a="del" aria-label="Mettre à la corbeille" title="Mettre à la corbeille">' + I(TRASH, 22) + '</button>') +
     '<button class="btn primary" data-a="dedit" autofocus>' + I(IC.text, 18) + 'Modifier</button></div>';
@@ -385,6 +386,113 @@ function saveDetail(close) {
 }
 function patchNote(p) {
   return api('PATCH', 'notes/' + curId, p).then(function (r) { upsertNote(r.note); render(); return r.note; }, fail);
+}
+
+/* ---------- Éditeur simplifié : barre de mise en forme et menu « / » ---------- */
+var BLOCKS = [['h', '##', 'Titre', 'H'], ['ul', '-', 'Liste', '•'], ['q', '>', 'Citation', '❝'], ['hr', '---', 'Séparateur', '—']];
+function blocksBar(target) {
+  return '<div class="btools" role="toolbar" aria-label="Mise en forme" data-target="' + target + '">' + BLOCKS.map(function (b) { return '<button type="button" data-a="blk" data-id="' + b[0] + '" data-target="' + target + '" aria-label="' + b[2] + '" title="' + b[2] + '">' + b[3] + '</button>'; }).join('') + '</div>';
+}
+function slashMenu(target) {
+  return '<div class="slashm" id="slashm-' + target + '" hidden role="menu" aria-label="Insérer un bloc">' + BLOCKS.map(function (b) { return '<button type="button" role="menuitem" data-a="blk" data-slash="1" data-id="' + b[0] + '" data-target="' + target + '"><i>' + b[3] + '</i>' + b[2] + '</button>'; }).join('') + (linksOn() && target !== 'ntext' ? '<button type="button" role="menuitem" data-a="mention-open" data-slash="1" data-target="' + target + '"><i>@</i>Lier une note</button>' : '') + '</div>';
+}
+// Applique un bloc sur la ligne du curseur (ou le retire s'il y est déjà).
+function applyBlock(ta, kind, fromSlash) {
+  var v = ta.value, pos = ta.selectionStart == null ? v.length : ta.selectionStart;
+  var s = v.lastIndexOf('\n', pos - 1) + 1, e = v.indexOf('\n', pos);
+  if (e < 0) e = v.length;
+  var line = v.slice(s, e);
+  if (fromSlash && line.trim() === '/') line = '';
+  var mk = BLOCKS.filter(function (b) { return b[0] === kind; })[0][1];
+  var repl, caret;
+  if (kind === 'hr') { repl = (line ? line + '\n' : '') + '---\n'; caret = s + repl.length; }
+  else {
+    var stripped = line.replace(/^(#{1,3} |[-*] |> )/, '');
+    var has = line.indexOf(mk + ' ') === 0;
+    repl = has ? stripped : mk + ' ' + stripped;
+    caret = s + repl.length;
+  }
+  ta.value = v.slice(0, s) + repl + v.slice(e);
+  ta.focus();
+  ta.setSelectionRange(caret, caret);
+  ta.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/* ---------- Fonctions IA sur les notes : transformer une note, interroger ses notes ---------- */
+var XF = [
+  ['todos', 'En liste de tâches', 'Extrait les tâches du texte et les ajoute à la note.'],
+  ['summary', 'Résumer en 3 points', 'Ajoute un court résumé à la fin du texte.', true],
+  ['rewrite', 'Reformuler', 'Propose une version plus claire du texte.', true],
+  ['continue', 'Continuer le texte', 'Propose une suite de quelques phrases.', true]
+];
+var xf = null;
+function openTransform(id) {
+  var n = noteById(id);
+  if (!n) return;
+  xf = { id: id, busy: false };
+  modal = 'xf';
+  var prov = S.settings.providers.synth;
+  openSheet(shead('Transformer avec l\'IA') + '<div class="sub">' + esc(n.title) + '</div>' +
+    '<div class="help">' + I(IC.spark, 14) + '<span>Un seul appel IA par action (' + esc(PROV[prov] || prov) + '), à votre confirmation. Rien n\'est modifié avant que vous validiez le résultat.</span></div>' +
+    '<div class="xfl">' + XF.filter(function (a) { return !a[3] || n.type === 'text'; }).map(function (a) { return '<button type="button" class="btn xfb" data-a="xf-run" data-id="' + a[0] + '"><b>' + a[1] + '</b><small>' + a[2] + '</small></button>'; }).join('') + '</div>' +
+    '<div class="actions"><button class="btn ghost" data-a="xf-back">Retour à la note</button></div>', 'Transformer');
+}
+function xfRun(action) {
+  if (!xf || xf.busy) return;
+  if (!online) { toast('Les fonctions IA demandent une connexion.'); return; }
+  xf.busy = true;
+  var box = $('.xfl'); if (box) box.innerHTML = '<div class="status">' + I(IC.spark) + 'L\'IA travaille…</div>';
+  api('POST', 'notes/' + xf.id + '/transform', { action: action }).then(function (r) {
+    xf.result = r.result; xf.busy = false; xfShow();
+    sync();
+  }, function (e) { xf.busy = false; fail(e); openTransform(xf.id); });
+}
+function xfShow() {
+  var r = xf.result, n = noteById(xf.id);
+  var body, acts;
+  if (r.kind === 'todos') {
+    body = r.todos.length ? '<ul class="todos">' + r.todos.map(function (t) { return '<li class="todo"><span class="ttx">☐ ' + esc(t) + '</span></li>'; }).join('') + '</ul>' : '<p class="muted">Aucune tâche trouvée dans cette note.</p>';
+    acts = r.todos.length ? '<button class="btn primary" data-a="xf-apply" data-id="todos">Ajouter ' + plural(r.todos.length, 'tâche', 'tâches') + '</button>' : '';
+  } else {
+    body = '<div class="readtext" style="background:var(--bg);border-radius:12px;padding:12px 14px">' + esc(r.text) + '</div>';
+    acts = (r.action === 'rewrite' ? '<button class="btn primary" data-a="xf-apply" data-id="replace">Remplacer le texte</button>' : '<button class="btn primary" data-a="xf-apply" data-id="append">Ajouter à la fin</button>') +
+      (r.action === 'rewrite' ? '<button class="btn" data-a="xf-apply" data-id="append">Ajouter à la fin</button>' : '');
+  }
+  openSheet(shead('Résultat') + '<div class="sub">' + esc(n.title) + ' · généré par l\'IA (' + esc(PROV[r.provider] || r.provider || '') + '), à relire</div>' + body +
+    '<div class="actions">' + acts + '<button class="btn ghost" data-a="xf-back">Annuler</button></div>', 'Résultat');
+  modal = 'xf';
+}
+function xfApply(how) {
+  var r = xf && xf.result, n = xf && noteById(xf.id);
+  if (!r || !n) return;
+  var p;
+  if (how === 'todos') p = api('POST', 'notes/' + n.id + '/todos', { texts: r.todos });
+  else p = api('PATCH', 'notes/' + n.id, { content: how === 'replace' ? r.text : (n.content ? n.content + '\n\n' : '') + r.text });
+  p.then(function (x) { upsertNote(x.note); saveCache(); toast('Note mise à jour'); openDetail(n.id, false); render(); }, fail);
+}
+var ask = null;
+function openAsk() {
+  ask = { q: '', res: null, busy: false };
+  modal = 'ask';
+  renderAsk();
+}
+function renderAsk() {
+  var prov = S.settings.providers.synth, r = ask.res;
+  openSheet(shead('Question à mes notes') +
+    '<div class="help">' + I(IC.spark, 14) + '<span>Les notes les plus proches sont choisies sur votre appareil, sans IA ; un seul appel (' + esc(PROV[prov] || prov) + ') rédige la réponse, avec ses sources.</span></div>' +
+    '<div><label class="l" for="askq">Votre question</label><textarea id="askq" class="field" rows="2" maxlength="300" placeholder="ex. Qu\'ai-je noté sur le plombier ?">' + esc(ask.q) + '</textarea></div>' +
+    (ask.busy ? '<div class="status">' + I(IC.spark) + 'L\'IA cherche dans vos notes…</div>' : '') +
+    (r ? '<div class="readtext" style="background:var(--bg);border-radius:12px;padding:12px 14px">' + esc(r.answer) + '</div>' +
+      (r.sources.length ? '<div><div class="l">Sources</div><div class="bl">' + r.sources.map(function (s) { return '<button type="button" class="mention" data-a="open" data-id="' + s.id + '">' + esc(s.title) + '</button>'; }).join('') + '</div></div>' : '<div class="help"><span>Réponse rédigée sans note citée : à prendre avec prudence.</span></div>') : '') +
+    '<div class="actions"><button class="btn primary" data-a="ask-go"' + (ask.busy ? ' disabled' : '') + '>' + I(IC.spark, 18) + (r ? 'Poser une autre question' : 'Demander (1 appel IA)') + '</button><button class="btn ghost" data-a="close">Fermer</button></div>', 'Question à mes notes');
+  modal = 'ask';
+}
+function askGo() {
+  var q = $('#askq').value.trim();
+  if (!q) { toast('Écrivez une question.'); return; }
+  if (!online) { toast('Les fonctions IA demandent une connexion.'); return; }
+  ask.q = q; ask.busy = true; ask.res = null; renderAsk();
+  api('POST', 'ask', { question: q }).then(function (r) { ask.busy = false; ask.res = r; renderAsk(); sync(); }, function (e) { ask.busy = false; renderAsk(); fail(e); });
 }
 
 /* Liste déroulante filtrable des tags (F43, F44). */

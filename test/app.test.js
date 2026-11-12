@@ -41,6 +41,8 @@ before(async () => {
       if (prompt.includes('enrichissement')) out.enrichissement = ENRICH(mockUrl);
       if (prompt.includes('L1 ')) out.liens = { L1: 'Fiche d\'un robinet thermostatique vendu par un magasin de bricolage.' };
       content = JSON.stringify(out);
+    } else if (prompt.includes('liste des tâches à faire')) {
+      content = JSON.stringify({ taches: ['Appeler le plombier', 'Payer la facture', 'Appeler le plombier'] });
     } else if (prompt.includes('Propose un complément')) {
       content = JSON.stringify({ enrichissement: ENRICH(mockUrl) });
     } else {
@@ -580,7 +582,7 @@ test('propriétés de carnet : définition, valeurs typées, nettoyage et régla
   assert.strictEqual(after.props[st.id], undefined, 'option supprimée : valeur retirée');
   assert.strictEqual(after.props[due.id], '2026-12-20');
   const s = await call('PATCH', 'settings', { features: { props: false, views: false } });
-  assert.deepStrictEqual(s.data.settings.features, { tasks: true, props: false, views: false, links: true, templates: true });
+  assert.deepStrictEqual(s.data.settings.features, { tasks: true, props: false, views: false, links: true, templates: true, ai: true });
   const kept = (await call('GET', 'state')).data.notes.find((x) => x.id === n.id);
   assert.strictEqual(kept.props[due.id], '2026-12-20', 'désactiver ne supprime aucune donnée');
   await call('PATCH', 'settings', { features: { props: true, views: true } });
@@ -596,4 +598,31 @@ test('modèle de note : tâches de départ à la création, réglages liens et m
   assert.strictEqual(s.data.settings.features.links, false);
   assert.strictEqual(s.data.settings.features.templates, false);
   await call('PATCH', 'settings', { features: { links: true, templates: true } });
+});
+
+test('fonctions IA sur les notes : extraire des tâches, reformuler, interroger, réglage', async () => {
+  const n = (await call('POST', 'notes', { type: 'text', content: 'Penser à appeler le plombier et à payer la facture de gaz.' })).data.note;
+  await until(async () => (await call('GET', 'state')).data.notes.find((x) => x.id === n.id).status === 'ready');
+  const before = calls.length;
+  let r = await call('POST', 'notes/' + n.id + '/transform', { action: 'todos' });
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(r.data.result.kind, 'todos');
+  assert.deepStrictEqual(r.data.result.todos, ['Appeler le plombier', 'Payer la facture']);
+  assert.strictEqual(calls.length, before + 1, 'un seul appel IA');
+  r = await call('POST', 'notes/' + n.id + '/transform', { action: 'summary' });
+  assert.strictEqual(r.data.result.kind, 'text');
+  assert.ok(r.data.result.text.length > 0);
+  assert.strictEqual((await call('POST', 'notes/' + n.id + '/transform', { action: 'inconnue' })).status, 400);
+  const c0 = calls.length;
+  r = await call('POST', 'ask', { question: 'Que dois-je faire pour la facture de gaz ?' });
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(calls.length, c0 + 1);
+  assert.ok(r.data.answer && r.data.sources.length >= 1 && r.data.sources[0].id);
+  r = await call('POST', 'ask', { question: 'zébrures astronomiques quantiques' });
+  assert.strictEqual(r.status, 400);
+  assert.strictEqual(calls.length, c0 + 1, 'aucune note proche : aucun appel IA');
+  await call('PATCH', 'settings', { features: { ai: false } });
+  assert.strictEqual((await call('POST', 'ask', { question: 'facture' })).status, 400);
+  assert.strictEqual((await call('POST', 'notes/' + n.id + '/transform', { action: 'todos' })).status, 400);
+  await call('PATCH', 'settings', { features: { ai: true } });
 });

@@ -649,3 +649,26 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
 .mlist button:hover{background:var(--accent-soft)}
 .mlist .none{padding:12px 14px}
 .tpls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+
+/* Éditeur simplifié */
+.btools{display:flex;gap:6px;overflow-x:auto;margin-bottom:6px;scrollbar-width:none}
+.btools::-webkit-scrollbar{display:none}
+.btools button{flex:none;min-width:44px;height:44px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-weight:700;font-size:16px}
+.btools button:active{background:var(--accent-soft)}
+.slashm{margin-top:6px;width:min(100%,280px);background:var(--surface);border:1px solid var(--line-strong);border-radius:14px;box-shadow:0 8px 24px rgba(18,32,31,.18);padding:6px}
+.slashm button{display:flex;width:100%;align-items:center;gap:10px;height:44px;padding:0 10px;border:0;border-radius:10px;background:transparent;text-align:left}
+.slashm button:hover{background:var(--accent-soft)}
+.slashm i{font-style:normal;width:26px;height:26px;border-radius:7px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}
+.readtext.rich{white-space:normal}
+.readtext.rich p{margin:0 0 .7em;white-space:pre-wrap}
+.readtext.rich .bh{margin:.9em 0 .4em;font-size:1.15em}
+.readtext.rich .bh1{font-size:1.35em}.readtext.rich .bh3{font-size:1em}
+.bul{margin:0 0 .7em;padding-left:1.3em}
+.bul li{margin:.2em 0}
+.bq{margin:0 0 .7em;padding-left:12px;border-left:3px solid var(--accent);color:var(--muted);font-style:italic}
+.bhr{border:0;border-top:1px solid var(--line-strong);margin:1em 0}
+
+/* Fonctions IA sur les notes */
+.xfl{display:flex;flex-direction:column;gap:8px}
+.xfb{height:auto;min-height:60px;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 16px;text-align:left}
+.xfb small{color:var(--muted);font-weight:400;font-size:13px}

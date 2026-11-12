@@ -122,7 +122,20 @@ var ACTIONS = {
     renderAdd();
     var ta = $('#ntext'); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
   },
-  'mention-open': function () { var b = $('#mbox'); b.hidden = !b.hidden; if (!b.hidden) { mentionList(); $('#mq').focus(); } },
+  'xf-open': function (el) { openTransform(el.dataset.id); },
+  'xf-run': function (el) { xfRun(el.dataset.id); },
+  'xf-apply': function (el) { xfApply(el.dataset.id); },
+  'xf-back': function () { var id = xf && xf.id; if (id) openDetail(id, false); else closeModal(); },
+  ask: openAsk,
+  'ask-go': askGo,
+  blk: function (el) {
+    var ta = $('#' + el.dataset.target);
+    if (!ta) return;
+    var m = $('#slashm-' + el.dataset.target); if (m) m.hidden = true;
+    applyBlock(ta, el.dataset.id, !!el.dataset.slash);
+  },
+  'mention-open': function (el) {
+    if (el && el.dataset && el.dataset.slash) { var ta = $('#' + el.dataset.target), sm = $('#slashm-' + el.dataset.target); if (sm) sm.hidden = true; if (ta) { var v = ta.value, p = ta.selectionStart, s0 = v.lastIndexOf('\n', p - 1) + 1; if (v.slice(s0, p) === '/') { ta.value = v.slice(0, s0) + v.slice(p); ta.setSelectionRange(s0, s0); } } } var b = $('#mbox'); b.hidden = !b.hidden; if (!b.hidden) { mentionList(); $('#mq').focus(); } },
   'mention-ins': function (el) {
     var n = noteById(el.dataset.id), ta = $('#d-content') || $('#d-transcript');
     if (!n || !ta) return;
@@ -442,6 +455,18 @@ function todoCall(noteId, method, suffix, body) {
     upsertNote(r.note); saveCache(); refreshTodos(r.note); render(); return true;
   }, function (e) { fail(e); return false; });
 }
+// Menu « / » : taper « / » seul sur une ligne propose les blocs.
+document.addEventListener('input', function (e) {
+  var t = e.target;
+  if (t.tagName !== 'TEXTAREA' || (t.id !== 'd-content' && t.id !== 'ntext')) return;
+  var m = $('#slashm-' + t.id);
+  if (!m) return;
+  var v = t.value, p = t.selectionStart, s0 = v.lastIndexOf('\n', p - 1) + 1;
+  m.hidden = v.slice(s0, p) !== '/';
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') { var open = $('.slashm:not([hidden])'); if (open) { open.hidden = true; e.stopPropagation(); } }
+}, true);
 document.addEventListener('keydown', function (e) {
   if (e.target.id === 'todoin' && e.key === 'Enter') { e.preventDefault(); var b = $('[data-a="todo-add"]'); if (b) ACTIONS['todo-add'](b); }
 });

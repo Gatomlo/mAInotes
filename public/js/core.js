@@ -70,6 +70,26 @@ function todosText(n) { return (n.todos || []).map(function (t) { return t.text;
 function noteText(n) { return [n.content, n.transcript, n.description, todosText(n), linksText(n), n.enrichment ? n.enrichment.explanation : ''].filter(Boolean).join('\n\n'); }
 // Fonction « Tâches » activable dans les réglages ; les données restent même désactivée.
 function tasksOn() { return !S.settings || !S.settings.features || S.settings.features.tasks !== false; }
+function aiOn() { return !S.settings || !S.settings.features || S.settings.features.ai !== false; }
+// Mise en forme simple dans le texte d'une note : « # » titre, « - » liste, « > » citation, « --- » séparateur.
+var BLOCK_RE = /^(#{1,3} |[-*] |> |---$)/m;
+function richText(text, selfId) {
+  if (!BLOCK_RE.test(text)) return null;
+  var out = '', list = false, para = [];
+  var flush = function () { if (para.length) { out += '<p>' + mentionify(linkify(para.join('\n')), selfId) + '</p>'; para = []; } };
+  var closeList = function () { if (list) { out += '</ul>'; list = false; } };
+  text.split('\n').forEach(function (line) {
+    var m;
+    if ((m = /^(#{1,3}) (.*)$/.exec(line))) { flush(); closeList(); out += '<h3 class="bh bh' + m[1].length + '">' + mentionify(linkify(m[2]), selfId) + '</h3>'; }
+    else if ((m = /^[-*] (.*)$/.exec(line))) { flush(); if (!list) { out += '<ul class="bul">'; list = true; } out += '<li>' + mentionify(linkify(m[1]), selfId) + '</li>'; }
+    else if ((m = /^> ?(.*)$/.exec(line))) { flush(); closeList(); out += '<blockquote class="bq">' + mentionify(linkify(m[1]), selfId) + '</blockquote>'; }
+    else if (/^---$/.test(line)) { flush(); closeList(); out += '<hr class="bhr">'; }
+    else if (!line.trim()) { flush(); closeList(); }
+    else { closeList(); para.push(line); }
+  });
+  flush(); closeList();
+  return out;
+}
 function linksOn() { return !S.settings || !S.settings.features || S.settings.features.links !== false; }
 function templatesOn() { return !S.settings || !S.settings.features || S.settings.features.templates !== false; }
 // Mentions : [[Titre d'une note]] devient un lien vers cette note (résolu à l'affichage, donc toujours à jour).

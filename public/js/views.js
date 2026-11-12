@@ -12,7 +12,7 @@ function hl(text, q) {
   return out + esc(text.slice(i));
 }
 function snippet(c, q) {
-  c = String(c || '');
+  c = String(c || '').replace(/^(#{1,3} |[-*] |> )/gm, '').replace(/^---$/gm, '');
   var nq = norm(q).trim(), nt = norm(c), k = nq && nt.length === c.length ? nt.indexOf(nq) : -1;
   var st = k > 110 ? k - 50 : 0, s = c.slice(st, st + 170);
   return (st ? '…' : '') + s + (st + 170 < c.length ? '…' : '');
@@ -300,6 +300,7 @@ function renderHome() {
   $('#tab-toread').setAttribute('aria-label', 'À lire' + (toread ? ' (' + toread + ')' : ''));
   var nready = list.filter(function (n) { return n.status === 'ready' && n.type !== 'synthesis'; }).length;
   $('#synth').hidden = !nready;
+  $('#askbtn').hidden = !aiOn() || !live().some(function (n) { return n.status === 'ready' && n.type !== 'synthesis'; });
   $('#synth').setAttribute('aria-label', 'Synthèse des ' + plural(nready, 'note affichée', 'notes affichées'));
   $('#synth').title = 'Synthèse des ' + plural(nready, 'note', 'notes');
   renderQuickCats();

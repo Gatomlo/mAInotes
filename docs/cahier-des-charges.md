@@ -466,12 +466,12 @@ Maquette de référence : `docs/maquette-notion.html` (non reliée au serveur). 
 
 ### Étape 1 : notes en blocs
 
-| Réf. | Fonction | Priorité |
-|---|---|---|
-| F94 | La note devient une page de blocs : paragraphe, titre, liste, case à cocher, citation, code, séparateur, lien avec aperçu. Les notes existantes sont converties en un paragraphe, sans perte. | Must |
-| F95 | Menu « / » pour insérer un bloc, réordonnancement par glisser-déposer, bloc vocal et bloc image dans la page (audio d'origine et transcription conservés). | Must |
-| F96 | Les cases à cocher se cochent depuis la page et depuis la carte (progression « 2/3 »). | Should |
-| F97 | Le texte des blocs est aplati en texte seul pour le classement, la recherche et les synthèses : aucun surcoût IA. | Must |
+| Réf. | Fonction | Priorité | État |
+|---|---|---|---|
+| F94 | La note devient une page de blocs : paragraphe, titre, liste, case à cocher, citation, code, séparateur, lien avec aperçu. Les notes existantes sont converties en un paragraphe, sans perte. | Must | Codé en version simplifiée : mise en forme dans le texte (`#` titre, `-` liste, `>` citation, `---` séparateur), rendue dans la fiche ; blocs complets non codés |
+| F95 | Menu « / » pour insérer un bloc, réordonnancement par glisser-déposer, bloc vocal et bloc image dans la page (audio d'origine et transcription conservés). | Must | Codé en version simplifiée : barre de mise en forme tactile (boutons de 44 px) et menu « / » ; pas de glisser-déposer ni de blocs média dans la page |
+| F96 | Les cases à cocher se cochent depuis la page et depuis la carte (progression « 2/3 »). | Should | Codé (tâches de la note, F109) |
+| F97 | Le texte des blocs est aplati en texte seul pour le classement, la recherche et les synthèses : aucun surcoût IA. | Must | Codé : le texte reste du texte simple, aucun surcoût IA |
 
 ### Étape 2 : carnets-bases de données
 
@@ -494,10 +494,10 @@ Maquette de référence : `docs/maquette-notion.html` (non reliée au serveur). 
 
 ### Fonctions IA
 
-| Réf. | Fonction | Priorité |
-|---|---|---|
-| F107 | Transformer une note (en liste de tâches, en tableau), reformuler, continuer, résumer : manuel, un appel, confirmation avec coût estimé, annulable. | Should |
-| F108 | Questions sur l'ensemble des notes, réponse sourcée (notes citées), en un appel, comptée dans le plafond mensuel. | Could |
+| Réf. | Fonction | Priorité | État |
+|---|---|---|---|
+| F107 | Transformer une note (en liste de tâches, en tableau), reformuler, continuer, résumer : manuel, un appel, confirmation avec coût estimé, annulable. | Should | Codé : tâches, résumé, reformulation, suite ; un appel, résultat à valider avant application |
+| F108 | Questions sur l'ensemble des notes, réponse sourcée (notes citées), en un appel, comptée dans le plafond mensuel. | Could | Codé : notes proches choisies sans IA, un appel, sources citées |
 
 ### Tâches et réglages d'activation
 
@@ -506,7 +506,7 @@ Maquette de référence : `docs/maquette-notion.html` (non reliée au serveur). 
 | F109 | **Tâches d'une note** : cases à cocher avec échéance facultative, ajout, coche et suppression depuis la fiche. Stockées dans la note (`todos`), incluses dans la recherche et le texte envoyé au classement. | Must | Codé |
 | F110 | **Progression sur la carte** (« 2/3 », rouge si une tâche est en retard). | Should | Codé |
 | F111 | **Onglet Tâches** : toutes les tâches des notes hors corbeille, regroupées En retard / Aujourd'hui / Cette semaine / Plus tard / Sans date, filtre par carnet, onglet Terminées, badge avec pastille rouge si retard. | Must | Codé |
-| F112 | **Réglage « Espace de travail »** : chaque fonction se désactive sans supprimer de données. Interrupteurs codés : Tâches, Propriétés, Vues supplémentaires, Liens entre notes, Modèles. Celui des fonctions IA s'ajoutera avec elles. | Must | Codé |
+| F112 | **Réglage « Espace de travail »** : chaque fonction se désactive sans supprimer de données. Interrupteurs codés : Tâches, Propriétés, Vues supplémentaires, Liens entre notes, Modèles. Fonctions IA sur les notes : interrupteur « ai ». Tous les interrupteurs de l'espace de travail sont codés. | Must | Codé |
 
 Les tâches se modifient en ligne uniquement pour l'instant (pas de file d'attente hors connexion pour elles).
 

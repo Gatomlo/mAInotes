@@ -433,6 +433,7 @@ function renderCats() {
 var TAB_TITLE = { home: 'Mes notes', cats: 'Carnets', tasks: 'Tâches', toread: 'À lire', set: 'Réglages', account: 'Mon compte' };
 var TAB_VIEW = { home: 'view-home', cats: 'view-cats', tasks: 'view-tasks', toread: 'view-toread', set: 'view-settings', account: 'view-account' };
 function setTab(t) {
+  if (carMode && t !== tab) { carMode = false; document.body.classList.remove('carmode'); }
   if (!TAB_TITLE[t]) t = 'home';
   tab = t;
   document.body.dataset.tab = t;

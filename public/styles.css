@@ -731,3 +731,12 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
 .tmore.on{background:var(--chip)}
 .sfoot .btn{height:52px!important;min-height:52px!important;border-radius:26px}
 .sfoot .rbtn{width:52px!important;height:52px!important}
+
+/* Mode voiture : un seul geste, très gros bouton, chrono lisible de loin */
+body.carmode .recbox .bigbtn{width:150px;height:150px}
+body.carmode .recbox .bigbtn svg{width:64px;height:64px}
+body.carmode .recbox .time{font-size:64px}
+body.carmode .recbox .recdot{font-size:20px}
+body.carmode .sheet>:not(.shead):not(.recbox):not(.sfoot){display:none}
+body.carmode .sfoot .rbtn{display:none}
+body.carmode .sfoot .btn{height:64px!important;min-height:64px!important;font-size:18px}

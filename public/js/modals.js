@@ -136,6 +136,8 @@ function startRecording() {
       add.rec = null;
       add.audio = { blob: blob, dur: Math.max(1, dur), url: URL.createObjectURL(blob) };
       if (modal === 'add') renderAdd();
+      // Mode voiture : la note est enregistrée dès l'arrêt, puis l'écran se remet prêt pour un nouvel enregistrement.
+      if (carMode && modal === 'add') { addVoice(); setTimeout(function () { if (carMode && !modal) openAdd('voice'); }, 400); }
     };
     recorder.start(1000);
     add.rec = { on: true, sec: 0, t0: Date.now() };

@@ -418,7 +418,7 @@ function sync() {
     S.providers = d.providers; S.retri = d.retri; S.synthesesCount = d.synthesesCount;
     saveCache();
     render();
-    if (startAction && S.user) { var t = startAction; startAction = null; openAdd(t); }
+    if (startAction && S.user) { var t = startAction; startAction = null; launchStart(t); }
     if (typeof onSynced === 'function') onSynced();
   }).catch(function () { render(); }).then(scheduleSync);
 }
@@ -462,12 +462,21 @@ function onLoggedOut(data) {
 }
 
 // Lancement par l'icône « Nouvelle note » ou un raccourci : ?action=new[&type=voice|image]
+// Mode voiture : ?action=new&type=voice&car=1 démarre l'enregistrement tout de suite, très gros bouton,
+// et enregistre la note dès l'arrêt (rien d'autre à toucher au volant).
+var carMode = false;
 var startAction = (function () {
   var q = new URLSearchParams(location.search);
   if (q.get('action') !== 'new') return null;
   var t = q.get('type');
+  if (t === 'voice' && q.get('car') === '1') carMode = true;
   return t === 'voice' || t === 'image' ? t : 'text';
 })();
+function launchStart(t) {
+  document.body.classList.toggle('carmode', carMode && t === 'voice');
+  openAdd(t);
+  if (carMode && t === 'voice') startRecording();
+}
 
 function showApp() {
   $('#auth').hidden = true;
@@ -475,7 +484,7 @@ function showApp() {
   $('#fab').hidden = false;
   if (startAction) tab = 'home';
   setTab(tab);
-  if (startAction && S.settings) { var t = startAction; startAction = null; openAdd(t); }
+  if (startAction && S.settings) { var t = startAction; startAction = null; launchStart(t); }
 }
 
 /* Bouton flottant sur grand écran : visible dès que « Nouvelle note » de l'en-tête sort de l'écran. */

@@ -16,7 +16,7 @@ Lire d'abord `docs/cahier-des-charges.md`. Le comportement de référence est ce
 - La création de carnets/tags par l'IA est une suggestion, jamais appliquée sans clic (mode strict par défaut).
 - Synthèse : toujours manuelle, un seul appel, avec confirmation ; trois formats ; enregistrée dans un historique réouvrable sans appel IA.
 
-- Espace de travail façon Notion (cahier, F94 à F112, maquette `docs/maquette-notion.html`) : fonctions activables dans Réglages (`settings.features`), données conservées si désactivées. Codé : tâches (F109 à F112). À faire ensuite : éditeur de blocs, propriétés et vues, liens, modèles, IA ; SQLite seulement si Node 22 est disponible chez Infomaniak.
+- Espace de travail façon Notion (cahier, F94 à F112, maquette `docs/maquette-notion.html`) : fonctions activables dans Réglages (`settings.features`), données conservées si désactivées. Codé : tâches (F109 à F112), propriétés de carnet et vues tableau/kanban/calendrier (F98, F100), liens `[[Titre]]` et rétroliens (F102), modèles (F105). À faire ensuite : éditeur de blocs, fonctions IA (F107, F108), remplissage des propriétés par l'IA (F99), sous-pages, notes liées suggérées, graphe ; SQLite seulement si Node 22 est disponible chez Infomaniak.
 
 ## Langue
 Interface et textes en français (Belgique).

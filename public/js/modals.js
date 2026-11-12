@@ -318,7 +318,7 @@ function backlinksHtml(n) {
 // Sélecteur de note à citer (édition) : insère [[Titre]] à l'emplacement du curseur.
 function mentionPicker() {
   if (!linksOn()) return '';
-  return '<div><button type="button" class="btn" data-a="mention-open">@ Lier une note</button><div id="mbox" hidden><input id="mq" class="field" autocomplete="off" placeholder="Rechercher la note à citer…" aria-label="Rechercher la note à citer"><div id="mlist" class="mlist"></div></div></div>';
+  return '<div><div id="mbox" hidden><input id="mq" class="field" autocomplete="off" placeholder="Rechercher la note à citer…" aria-label="Rechercher la note à citer"><div id="mlist" class="mlist"></div></div></div>';
 }
 function mentionList() {
   var q = norm($('#mq').value).trim(), self = curId;
@@ -401,7 +401,7 @@ function patchNote(p) {
 
 /* ---------- Éditeur simplifié : barre de mise en forme et menu « / » ---------- */
 var BLOCKS = [['h1', '#', 'Titre 1', 'H1'], ['h2', '##', 'Titre 2', 'H2'], ['h3', '###', 'Titre 3', 'H3'], ['ul', '-', 'Liste à puces', '•'], ['ol', '1.', 'Liste numérotée', '1.'], ['q', '>', 'Citation', '❝'], ['hr', '---', 'Séparateur', '—']];
-var INLINES = [['b', 'Gras', 'B', 'Ctrl+B'], ['i', 'Italique', 'I', 'Ctrl+I'], ['s', 'Barré', 'S', ''], ['c', 'Code', '</>', ''], ['l', 'Lien', '🔗', 'Ctrl+K']];
+var INLINES = [['b', 'Gras', 'B', 'Ctrl+B'], ['i', 'Italique', 'I', 'Ctrl+I'], ['s', 'Barré', 'S', ''], ['c', 'Code', '&lt;/&gt;', ''], ['l', 'Lien', '🔗', 'Ctrl+K']];
 function blocksBar(target) {
   var btn = function (kind, label, ico, key, extra) { return '<button type="button" data-a="' + (extra || 'blk') + '" data-id="' + kind + '" data-target="' + target + '" aria-label="' + label + '" title="' + label + (key ? ' (' + key + ')' : '') + '"><span class="bi">' + ico + '</span><span class="bt">' + label + '</span></button>'; };
   var inl = INLINES.map(function (b) { return btn(b[0], b[1], b[2], b[3], 'fmt'); }).join('');

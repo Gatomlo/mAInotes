@@ -692,9 +692,9 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
 .readtext.rich code,.bprev code{font-family:ui-monospace,Menlo,monospace;font-size:.9em;background:var(--chip);padding:1px 5px;border-radius:5px}
 .readtext.rich ol.bul{list-style:decimal}
 @media (min-width:760px){
-  .btools .bgrp{flex-wrap:wrap;flex:0 1 auto}
-  .btools .bt{display:inline}
-  .btools button{height:40px;font-size:13px}
+  .btools{flex-wrap:nowrap;gap:0 8px}
+  .btools .bgrp{flex-wrap:nowrap;gap:2px;padding-right:8px}
+  .btools button{height:32px;min-width:32px;padding:0 6px;font-size:13px;border-radius:8px}
   #d-content{min-height:240px;font-size:16px;line-height:1.55}
   #ntext{min-height:200px}
 }

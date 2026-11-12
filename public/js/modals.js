@@ -332,7 +332,7 @@ function todosHtml(n) {
   var list = (n.todos || []).map(function (t) {
     var late = !t.done && t.due && t.due < today;
     return '<li class="todo' + (t.done ? ' done' : '') + '"><button type="button" class="tchk" role="checkbox" aria-checked="' + t.done + '" data-a="todo-toggle" data-id="' + n.id + '" data-tid="' + t.id + '" aria-label="' + (t.done ? 'Rouvrir' : 'Terminer') + ' : ' + esc(t.text) + '">' + (t.done ? I(IC.check, 18) : '') + '</button>' +
-      '<span class="ttx">' + esc(t.text) + '</span>' + (t.due ? '<span class="tdue' + (late ? ' late' : t.due === today ? ' today' : '') + '">' + esc(t.due === today ? 'Aujourd\'hui' : fmtDay(t.due)) + '</span>' : '') +
+      '<span class="ttx">' + esc(t.text) + '</span>' + '<input type="date" class="field tdue-in' + (late ? ' late' : '') + '" data-id="' + n.id + '" data-tid="' + t.id + '" value="' + esc(t.due || '') + '" aria-label="Échéance : ' + esc(t.text) + '" style="width:auto;min-height:36px;padding:2px 6px">' +
       '<button type="button" class="iconbtn" data-a="todo-del" data-id="' + n.id + '" data-tid="' + t.id + '" aria-label="Supprimer la tâche : ' + esc(t.text) + '">' + I(IC.x, 18) + '</button></li>';
   }).join('');
   var s = todoStats(n);

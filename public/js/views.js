@@ -467,6 +467,21 @@ function renderTasksTab() {
   $('#tab-tasks').setAttribute('aria-label', 'Tâches' + (open.length ? ' (' + open.length + ' à faire' + (late ? ', ' + late + ' en retard' : '') + ')' : ''));
 }
 var TK = { mode: 'todo', nb: '' };
+// Calendrier mensuel des échéances de tâches : un clic ouvre la note.
+function tasksCalendar(all) {
+  var first = new Date(PV.y, PV.m, 1), lead = (first.getDay() + 6) % 7, days = new Date(PV.y, PV.m + 1, 0).getDate();
+  var by = {}, undated = 0, today = todayStr(), cells = '';
+  all.forEach(function (x) { if (x.t.done) return; if (!x.t.due) { undated++; return; } (by[x.t.due] = by[x.t.due] || []).push(x); });
+  ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'].forEach(function (d) { cells += '<div class="ch">' + d + '</div>'; });
+  for (var i = 0; i < lead; i++) cells += '<div class="cd out"></div>';
+  for (var d = 1; d <= days; d++) {
+    var key = PV.y + '-' + String(PV.m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0'), its = by[key] || [];
+    cells += '<div class="cd' + (key === today ? ' today' : '') + '"><span class="cn">' + d + '</span>' + its.slice(0, 3).map(function (x) { var c = nb(x.n.notebookId); return '<button type="button" class="cev' + (c ? ' cat-' + c.color : '') + '" data-a="open" data-id="' + x.n.id + '" title="' + esc(x.n.title + ' : ' + x.t.text) + '">' + esc(x.t.text) + '</button>'; }).join('') + (its.length > 3 ? '<small class="muted">+ ' + (its.length - 3) + '</small>' : '') + '</div>';
+  }
+  var label = first.toLocaleDateString('fr-BE', { month: 'long', year: 'numeric' });
+  return '<div class="cal-top"><button type="button" class="iconbtn" data-a="calnav" data-id="-1" aria-label="Mois précédent">‹</button><b>' + esc(label) + '</b><button type="button" class="iconbtn" data-a="calnav" data-id="1" aria-label="Mois suivant">›</button><button type="button" class="btn" style="height:40px" data-a="calnav" data-id="0">Aujourd\'hui</button></div>' +
+    '<div class="cal">' + cells + '</div>' + (undated ? '<p class="sub">' + plural(undated, 'tâche sans date n\'apparaît pas', 'tâches sans date n\'apparaissent pas') + ' dans le calendrier.</p>' : '');
+}
 function renderTasks() {
   var today = todayStr();
   var week = new Date(); week.setDate(week.getDate() + 7);
@@ -490,7 +505,9 @@ function renderTasks() {
     ['Sans date', open.filter(function (x) { return !x.t.due; })]
   ];
   var body;
-  if (TK.mode === 'done') {
+  if (TK.mode === 'cal') {
+    body = tasksCalendar(all);
+  } else if (TK.mode === 'done') {
     body = done.length ? '<ul class="tlist">' + done.map(row).join('') + '</ul>' : '<div class="empty"><h3>Aucune tâche terminée</h3><p>Les tâches cochées apparaîtront ici.</p></div>';
   } else {
     body = groups.filter(function (g) { return g[1].length; }).map(function (g) {
@@ -498,7 +515,7 @@ function renderTasks() {
     }).join('') || '<div class="empty"><h3>Rien à faire</h3><p>Ouvrez une note et ajoutez-y des tâches : elles seront rassemblées ici, avec leur échéance.</p></div>';
   }
   var sel = '<select id="tkcat" class="field tkcat" aria-label="Carnet"><option value="">Tous les carnets</option>' + S.notebooks.map(function (c) { return '<option value="' + c.id + '"' + (TK.nb === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '<option value="__none"' + (TK.nb === '__none' ? ' selected' : '') + '>Sans carnet</option></select>';
-  $('#view-tasks').innerHTML = '<div class="tk-top"><p class="sub tr-sub">' + (TK.mode === 'todo' ? (open.length ? plural(open.length, 'tâche à faire', 'tâches à faire') : '') : plural(done.length, 'tâche terminée', 'tâches terminées')) + '</p>' + sel + '</div>' + body +
+  $('#view-tasks').innerHTML = '<div class="tk-top"><p class="sub tr-sub">' + (TK.mode === 'todo' || TK.mode === 'cal' ? (open.length ? plural(open.length, 'tâche à faire', 'tâches à faire') : '') : plural(done.length, 'tâche terminée', 'tâches terminées')) + '</p>' + sel + '</div>' + body +
     '<div class="tabdock"><div class="modes seg2" role="group" aria-label="Tâches"><button type="button" data-a="tkmode" data-id="todo" aria-pressed="' + (TK.mode === 'todo') + '">À faire · ' + open.length + '</button><button type="button" data-a="tkmode" data-id="done" aria-pressed="' + (TK.mode === 'done') + '">Terminées · ' + all.filter(function (x) { return x.t.done; }).length + '</button></div></div>';
 }
 

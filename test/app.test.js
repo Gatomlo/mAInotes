@@ -41,6 +41,7 @@ before(async () => {
       if (prompt.includes('enrichissement')) out.enrichissement = ENRICH(mockUrl);
       if (prompt.includes('Propriétés à remplir')) out.proprietes = { P1: 'En cours', P2: '2026-12-20', P3: 'pas utilisé' };
       if (prompt.includes('Notes existantes proches')) out.liees = ['N1'];
+      if (prompt.includes('liste de courses')) out.taches = { liste: ['500 g de patates', 'Une douzaine d\'œufs', '500 g de patates', 'Un pain'], echeance: '2026-11-17' };
       if (prompt.includes('L1 ')) out.liens = { L1: 'Fiche d\'un robinet thermostatique vendu par un magasin de bricolage.' };
       content = JSON.stringify(out);
     } else if (prompt.includes('liste des tâches à faire')) {
@@ -188,6 +189,20 @@ test('note texte : classement par le fournisseur Infomaniak', async () => {
   assert.strictEqual(note.tagIds.length, 1);
   assert.strictEqual(note.provider.classif, 'infomaniak');
   assert.ok(st.data.providers[0].usage.calls >= 1);
+});
+
+test('liste détectée : cases à cocher et échéance créées automatiquement, sans appel en plus', async () => {
+  const before = calls.length;
+  const r = await call('POST', 'notes', { type: 'text', content: 'Prévoir une liste de courses pour mardi prochain : 500 g de patates, une douzaine d\'œufs, un pain.' });
+  const n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r.data.note.id); return x.status === 'ready' && x; });
+  assert.deepStrictEqual(n.todos.map((t) => t.text), ['500 g de patates', 'Une douzaine d\'œufs', 'Un pain']);
+  assert.ok(n.todos.every((t) => t.due === '2026-11-17' && !t.done));
+  assert.strictEqual(calls.length - before, 1, 'un seul appel IA');
+  await call('PATCH', 'settings', { trigger: { todos: 'off' } });
+  const r2 = await call('POST', 'notes', { type: 'text', content: 'Une autre liste de courses.' });
+  const n2 = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r2.data.note.id); return x.status === 'ready' && x; });
+  assert.strictEqual((n2.todos || []).length, 0, 'désactivé : aucune tâche créée');
+  await call('PATCH', 'settings', { trigger: { todos: 'auto' } });
 });
 
 test('carnet choisi à la création jamais modifié par l\'IA', async () => {

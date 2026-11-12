@@ -82,7 +82,7 @@ var ACTIONS = {
   calnav: function (el) {
     var d = +el.dataset.id;
     if (!d) { PV.y = new Date().getFullYear(); PV.m = new Date().getMonth(); } else { var t = new Date(PV.y, PV.m + d, 1); PV.y = t.getFullYear(); PV.m = t.getMonth(); }
-    renderHome();
+    if (typeof TK !== 'undefined' && TK.mode === 'cal' && tab === 'tasks') renderTasks(); else renderHome();
   },
   'pe-add': function () { peSync(); ce.props.push({ name: '', type: 'text' }); peRender(); var r = $$('#peditor .pe-name'); if (r.length) r[r.length - 1].focus(); },
   'pe-del': function (el) { peSync(); ce.props.splice(+el.dataset.id, 1); peRender(); },
@@ -498,6 +498,7 @@ document.addEventListener('keydown', function (e) {
 });
 document.addEventListener('change', function (e) {
   var t = e.target;
+  if (t.classList && t.classList.contains('tdue-in')) { todoCall(t.dataset.id, 'PATCH', '/' + t.dataset.tid, { due: t.value || null }); }
   if (t.id === 'tkcat') { TK.nb = t.value; renderTasks(); }
   if (t.classList && t.classList.contains('pe-type')) { peSync(); peRender(); }
   if (t.hasAttribute && t.hasAttribute('data-pvprop')) { PV[t.getAttribute('data-pvprop')] = t.value; renderHome(); }

@@ -148,7 +148,9 @@ function renderSet() {
     trig('transcr', 'Transcription', [['auto', 'Automatique'], ['manual', 'Manuel']]) +
     trig('classif', 'Classement', [['auto', 'Automatique'], ['manual', 'Manuel']]) +
     trig('vision', 'Description des images', [['off', 'Désactivée'], ['demand', 'À la demande'], ['auto', 'Automatique']]) +
+    trig('todos', 'Listes à cocher et échéances', [['off', 'Désactivées'], ['auto', 'Automatiques']]) +
     trig('enrich', 'Enrichissement des notes', [['off', 'Désactivé'], ['demand', 'À la demande'], ['auto', 'Automatique']]) +
+    '<div class="help">' + I(IC.spark, 14) + '<span>Listes à cocher : si la note est une liste (courses, choses à faire), les éléments deviennent des cases à cocher, avec la date limite citée (« mardi prochain »). Demandé dans l\'appel de classement, aucun appel en plus ; une seule fois par note, jamais si elle a déjà des tâches.</span></div>' +
     '<div class="help">' + I(IC.spark, 14) + '<span>Enrichissement : explication du sujet, pistes, recherches et liens vérifiés. Automatique : demandé dans l\'appel de classement (aucun appel en plus, réponse plus longue, fournisseur du classement), seulement pour les notes qui s\'y prêtent. À la demande : bouton « Enrichir » sur la note, un appel par clic.</span></div>' +
     '<div class="help"><span>En manuel, la note est enregistrée sans appel IA, avec le statut « À analyser ». Le re-tri et la synthèse restent toujours lancés par vous.</span></div></div>' +
     '<div class="panel"><h3>Création par l\'IA</h3>' +

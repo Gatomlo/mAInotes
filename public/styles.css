@@ -557,3 +557,38 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
 .acctbtn[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
 @media (max-width:759px){.top{align-items:center}.brand{min-width:0}}
 @media (max-width:380px){.syncpill{font-size:0;gap:0;width:28px;justify-content:center;padding:0}}
+
+/* Tâches */
+.tab[hidden]{display:none}
+.tab-badge.late{background:var(--danger);color:#fff}
+.tprog{display:flex;align-items:center;gap:10px}
+.tprog>span{flex:1;height:8px;border-radius:4px;background:var(--skeleton);overflow:hidden}
+.tprog i{display:block;height:100%;background:var(--accent)}
+.tprog.late i{background:var(--danger)}
+.tprog small{color:var(--muted);font-size:13px}
+.tk-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px}
+.tk-top .tr-sub{flex:1;margin:0}
+.tkcat{width:auto;max-width:100%;min-height:44px}
+.tgrp{font-size:15px;margin:18px 2px 0}
+.tgrp.late{color:var(--danger)}
+.tdue{display:inline-block;padding:1px 8px;border-radius:10px;background:var(--chip);color:var(--chip-ink);font-size:12px;white-space:nowrap}
+.tdue.late{background:var(--rose-soft);color:var(--danger);font-weight:600}
+.tdue.today{background:var(--amber-soft);color:var(--amber-ink);font-weight:600}
+.trow.isdone .trow-open b{text-decoration:line-through;color:var(--muted)}
+.trow .trow-chk[role=checkbox]:not(.on){color:transparent}
+.todos{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column}
+.todo{display:flex;align-items:center;gap:10px;padding:2px 0;border-bottom:1px solid var(--line)}
+.todo .ttx{flex:1;min-width:0;overflow-wrap:anywhere}
+.todo.done .ttx{text-decoration:line-through;color:var(--muted)}
+.tchk{flex:none;width:44px;height:44px;border:0;background:none;display:inline-flex;align-items:center;justify-content:center;position:relative;color:var(--accent-ink)}
+.tchk::before{content:"";position:absolute;width:24px;height:24px;border-radius:7px;border:2px solid var(--line-strong);background:var(--surface)}
+.todo.done .tchk::before{background:var(--accent);border-color:var(--accent)}
+.tchk svg{position:relative}
+.todo-add{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.todo-add #todoin{flex:1 1 180px;min-width:0}
+.todo-add #todoin-due{flex:0 1 150px}
+@media (max-width:759px){
+  body.has-tasks .tabs{grid-template-columns:repeat(7,minmax(0,1fr))}
+  body.has-tasks #tab-set{grid-column:span 2}
+  #tasksbadge{left:calc(50% - 2px)}
+}

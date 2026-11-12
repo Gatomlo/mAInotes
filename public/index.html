@@ -42,6 +42,7 @@
     <nav class="tabs" role="tablist" aria-label="Sections">
       <button class="tab" role="tab" id="tab-home" aria-selected="true" data-a="tab" data-id="home"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6zM14 3v5h5M9 13h6M9 17h4"/></svg><span>Notes</span></button>
       <button class="tab" role="tab" id="tab-cats" aria-selected="false" data-a="tab" data-id="cats"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11M9 8h6"/></svg><span>Carnets</span></button>
+      <button class="tab" role="tab" id="tab-tasks" aria-selected="false" data-a="tab" data-id="tasks" hidden><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10M4 6l1.5 1.5L8 5M4 12l1.5 1.5L8 11M4 18l1.5 1.5L8 17"/></svg><span>Tâches</span><i class="tab-badge" id="tasksbadge" hidden></i></button>
       <span class="tab-gap" aria-hidden="true"></span>
       <button class="tab" role="tab" id="tab-toread" aria-selected="false" data-a="tab" data-id="toread"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10v18l-5-4-5 4z"/></svg><span>À lire</span><i class="tab-badge" id="toreadbadge" hidden></i></button>
       <button class="tab" role="tab" id="tab-set" aria-selected="false" data-a="tab" data-id="set"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Réglages</span></button>
@@ -75,6 +76,7 @@
   </main>
 
   <main id="view-cats" hidden></main>
+  <main id="view-tasks" hidden></main>
   <main id="view-toread" hidden></main>
   <main id="view-settings" hidden>
     <div id="me-head"></div>

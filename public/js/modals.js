@@ -274,6 +274,27 @@ function openDetail(id, edit) {
 }
 
 // Lecture : texte mis en forme, liens cliquables, classement en pastilles.
+// Section « Tâches » de la fiche : cases à cocher, échéance, ajout.
+function todosHtml(n) {
+  if (!tasksOn() || n.type === 'synthesis') return '';
+  var today = todayStr();
+  var list = (n.todos || []).map(function (t) {
+    var late = !t.done && t.due && t.due < today;
+    return '<li class="todo' + (t.done ? ' done' : '') + '"><button type="button" class="tchk" role="checkbox" aria-checked="' + t.done + '" data-a="todo-toggle" data-id="' + n.id + '" data-tid="' + t.id + '" aria-label="' + (t.done ? 'Rouvrir' : 'Terminer') + ' : ' + esc(t.text) + '">' + (t.done ? I(IC.check, 18) : '') + '</button>' +
+      '<span class="ttx">' + esc(t.text) + '</span>' + (t.due ? '<span class="tdue' + (late ? ' late' : t.due === today ? ' today' : '') + '">' + esc(t.due === today ? 'Aujourd\'hui' : fmtDay(t.due)) + '</span>' : '') +
+      '<button type="button" class="iconbtn" data-a="todo-del" data-id="' + n.id + '" data-tid="' + t.id + '" aria-label="Supprimer la tâche : ' + esc(t.text) + '">' + I(IC.x, 18) + '</button></li>';
+  }).join('');
+  var s = todoStats(n);
+  return '<div id="todobox"><div class="l">Tâches' + (s.total ? ' · ' + s.done + '/' + s.total : '') + '</div>' + (list ? '<ul class="todos">' + list + '</ul>' : '') +
+    (n.trashedAt ? '' : '<div class="todo-add"><input id="todoin" class="field" maxlength="300" placeholder="Ajouter une tâche…" aria-label="Nouvelle tâche" enterkeyhint="done"><input id="todoin-due" class="field" type="date" aria-label="Échéance (facultative)"><button type="button" class="btn" data-a="todo-add" data-id="' + n.id + '">Ajouter</button></div>') + '</div>';
+}
+function refreshTodos(n) {
+  var box = $('#todobox');
+  if (!box || modal !== 'detail' || curId !== n.id || detailEdit) return;
+  var tmp = document.createElement('div');
+  tmp.innerHTML = todosHtml(n);
+  box.parentNode.replaceChild(tmp.firstChild, box);
+}
 function readPick(n) {
   if (n.trashedAt) return '';
   var b = function (id, label) { return '<button type="button" data-a="dread" data-id="' + id + '" aria-pressed="' + ((n.read || '') === id) + '">' + label + '</button>'; };
@@ -294,7 +315,7 @@ function readView(n, x) {
   var classif = n.type === 'synthesis' ? '' : '<div class="foot" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">' + catChip(n) + tags +
     (n.locked ? '<span class="chip">' + I(IC.lock, 13) + 'Verrouillé</span>' : n.ai && n.notebookId ? '<span class="chip">' + I(IC.spark, 13) + 'Classé par l\'IA</span>' : '') + '</div>';
   return '<div class="shead"><h2 style="overflow-wrap:anywhere">' + esc(n.title) + '</h2>' + xbtn() + '</div>' +
-    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + readPick(n) + x.media + body + aiNote + x.links +
+    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + readPick(n) + x.media + body + todosHtml(n) + aiNote + x.links +
     (x.busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
     (x.analyzeBtns ? '<div class="actions">' + x.analyzeBtns + '</div>' : '') +
     '<div class="actions sfoot"><button type="button" class="rbtn" data-a="close" aria-label="Fermer" title="Fermer">' + I('<path d="m15 6-6 6 6 6"/>', 24) + '</button>' +

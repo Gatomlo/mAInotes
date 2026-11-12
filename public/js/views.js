@@ -76,7 +76,7 @@ function card(n, q) {
     foot = readChip(n) + (n.type === 'synthesis' ? '<span class="chip">Synthèse</span>' : catChip(n, true)) + tags + (n.enrichment ? '<span class="chip wait" title="Pistes complémentaires">' + I(IC.spark, 12) + 'Pistes</span>' : '') + (end ? '<span class="end">' + end + '</span>' : '');
   }
   return '<div class="card" role="button" tabindex="0" data-a="open" data-id="' + n.id + '" aria-label="Ouvrir : ' + esc(n.title) + '">' + thumbHtml(n) + headLine(n) +
-    '<div class="ttl">' + hl(n.title, q) + '</div><div class="exc">' + ex + '</div>' + (n.links && n.links.length ? linkCard(n.links[0], true) + (n.links.length > 1 ? '<div class="muted" style="font-size:13px">+ ' + plural(n.links.length - 1, 'autre lien', 'autres liens') + '</div>' : '') : '') + matchLabel(n, q) + '<div class="foot">' + foot + '</div></div>';
+    '<div class="ttl">' + hl(n.title, q) + '</div>' + todoBar(n) + '<div class="exc">' + ex + '</div>' + (n.links && n.links.length ? linkCard(n.links[0], true) + (n.links.length > 1 ? '<div class="muted" style="font-size:13px">+ ' + plural(n.links.length - 1, 'autre lien', 'autres liens') + '</div>' : '') : '') + matchLabel(n, q) + '<div class="foot">' + foot + '</div></div>';
 }
 
 function outboxCard(item) {
@@ -233,14 +233,17 @@ function renderActive() {
 
 function render() {
   if (!S.user || !S.settings) return;
+  if (!tasksOn() && tab === 'tasks') { setTab('home'); return; }
   var all = live();
   var check = all.filter(function (n) { return n.type !== 'synthesis' && n.status === 'ready' && (!n.notebookId || n.needsReview); }).length;
   $('#count').textContent = tab === 'home' ? plural(all.length, 'note', 'notes') + (check ? ' · ' + check + ' à vérifier' : '') : '';
   renderBanners();
   renderSync();
+  renderTasksTab();
   renderHome();
   if (tab === 'cats') renderCats();
   if (tab === 'toread') renderToread();
+  if (tab === 'tasks') renderTasks();
   if (tab === 'set') {
     renderMeHead();
     if (typeof renderSet === 'function' && !setDirty) renderSet();
@@ -410,8 +413,8 @@ function renderCats() {
     '<p class="help"><span>Renommer, supprimer et fusionner n\'appellent jamais l\'IA. Seul le re-tri, lancé par vous, le fait.</span></p>';
 }
 
-var TAB_TITLE = { home: 'Mes notes', cats: 'Carnets', toread: 'À lire', set: 'Réglages', account: 'Mon compte' };
-var TAB_VIEW = { home: 'view-home', cats: 'view-cats', toread: 'view-toread', set: 'view-settings', account: 'view-account' };
+var TAB_TITLE = { home: 'Mes notes', cats: 'Carnets', tasks: 'Tâches', toread: 'À lire', set: 'Réglages', account: 'Mon compte' };
+var TAB_VIEW = { home: 'view-home', cats: 'view-cats', tasks: 'view-tasks', toread: 'view-toread', set: 'view-settings', account: 'view-account' };
 function setTab(t) {
   if (!TAB_TITLE[t]) t = 'home';
   tab = t;
@@ -427,4 +430,67 @@ function setTab(t) {
   if (t === 'set') setDirty = false;
   if (t === 'account') accountLoaded = false;
   if (S.user && S.settings) render();
+}
+
+/* ---------- Tâches : cases à cocher des notes ---------- */
+// Barre de progression sur la carte (« 2/3 ») quand la note contient des tâches.
+function todoBar(n) {
+  if (!tasksOn()) return '';
+  var s = todoStats(n);
+  if (!s.total) return '';
+  var late = (n.todos || []).some(function (t) { return !t.done && t.due && t.due < todayStr(); });
+  return '<div class="tprog' + (late ? ' late' : '') + '" role="img" aria-label="' + s.done + ' tâche' + (s.done > 1 ? 's' : '') + ' faite' + (s.done > 1 ? 's' : '') + ' sur ' + s.total + (late ? ', une en retard' : '') + '"><span><i style="width:' + Math.round(s.done / s.total * 100) + '%"></i></span><small>' + s.done + '/' + s.total + '</small></div>';
+}
+// Toutes les tâches non terminées (ou terminées) des notes hors corbeille.
+function allTodos() {
+  var out = [];
+  live().forEach(function (n) { (n.todos || []).forEach(function (t) { out.push({ n: n, t: t }); }); });
+  return out;
+}
+function renderTasksTab() {
+  var on = tasksOn();
+  $('#tab-tasks').hidden = !on;
+  document.body.classList.toggle('has-tasks', on);
+  var open = on ? allTodos().filter(function (x) { return !x.t.done; }) : [];
+  var late = open.filter(function (x) { return x.t.due && x.t.due < todayStr(); }).length;
+  var b = $('#tasksbadge');
+  b.hidden = !open.length;
+  b.textContent = open.length > 99 ? '99+' : open.length;
+  b.classList.toggle('late', !!late);
+  $('#tab-tasks').setAttribute('aria-label', 'Tâches' + (open.length ? ' (' + open.length + ' à faire' + (late ? ', ' + late + ' en retard' : '') + ')' : ''));
+}
+var TK = { mode: 'todo', nb: '' };
+function renderTasks() {
+  var today = todayStr();
+  var week = new Date(); week.setDate(week.getDate() + 7);
+  var weekStr = week.getFullYear() + '-' + String(week.getMonth() + 1).padStart(2, '0') + '-' + String(week.getDate()).padStart(2, '0');
+  var inNb = function (x) { return !TK.nb || (TK.nb === '__none' ? !x.n.notebookId : x.n.notebookId === TK.nb); };
+  var all = allTodos().filter(inNb);
+  var open = all.filter(function (x) { return !x.t.done; });
+  var done = all.filter(function (x) { return x.t.done; }).sort(function (a, b) { return (b.t.doneAt || 0) - (a.t.doneAt || 0); }).slice(0, 100);
+  var byDue = function (a, b) { return (a.t.due || '9') < (b.t.due || '9') ? -1 : (a.t.due || '9') > (b.t.due || '9') ? 1 : a.n.createdAt - b.n.createdAt; };
+  var row = function (x) {
+    var c = nb(x.n.notebookId);
+    var due = x.t.due ? '<span class="tdue' + (!x.t.done && x.t.due < today ? ' late' : x.t.due === today ? ' today' : '') + '">' + esc(x.t.due === today ? 'Aujourd\'hui' : fmtDay(x.t.due)) + '</span>' : '';
+    return '<li class="trow' + (x.t.done ? ' isdone' : '') + '"><button type="button" class="trow-open" data-a="open" data-id="' + x.n.id + '"><small>' + (c ? esc(c.name) + ' · ' : '') + esc(x.n.title) + (due ? ' · ' : '') + due + '</small><b>' + esc(x.t.text) + '</b></button>' +
+      '<button type="button" class="trow-chk' + (x.t.done ? ' on' : '') + '" data-a="todo-toggle" data-id="' + x.n.id + '" data-tid="' + x.t.id + '" role="checkbox" aria-checked="' + x.t.done + '" aria-label="' + (x.t.done ? 'Rouvrir' : 'Terminer') + ' : ' + esc(x.t.text) + '">' + I(IC.check, 22) + '</button></li>';
+  };
+  var groups = [
+    ['En retard', open.filter(function (x) { return x.t.due && x.t.due < today; }), 'late'],
+    ['Aujourd\'hui', open.filter(function (x) { return x.t.due === today; })],
+    ['Cette semaine', open.filter(function (x) { return x.t.due && x.t.due > today && x.t.due <= weekStr; })],
+    ['Plus tard', open.filter(function (x) { return x.t.due && x.t.due > weekStr; })],
+    ['Sans date', open.filter(function (x) { return !x.t.due; })]
+  ];
+  var body;
+  if (TK.mode === 'done') {
+    body = done.length ? '<ul class="tlist">' + done.map(row).join('') + '</ul>' : '<div class="empty"><h3>Aucune tâche terminée</h3><p>Les tâches cochées apparaîtront ici.</p></div>';
+  } else {
+    body = groups.filter(function (g) { return g[1].length; }).map(function (g) {
+      return '<h3 class="tgrp' + (g[2] ? ' ' + g[2] : '') + '">' + g[0] + ' · ' + g[1].length + '</h3><ul class="tlist">' + g[1].sort(byDue).map(row).join('') + '</ul>';
+    }).join('') || '<div class="empty"><h3>Rien à faire</h3><p>Ouvrez une note et ajoutez-y des tâches : elles seront rassemblées ici, avec leur échéance.</p></div>';
+  }
+  var sel = '<select id="tkcat" class="field tkcat" aria-label="Carnet"><option value="">Tous les carnets</option>' + S.notebooks.map(function (c) { return '<option value="' + c.id + '"' + (TK.nb === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '<option value="__none"' + (TK.nb === '__none' ? ' selected' : '') + '>Sans carnet</option></select>';
+  $('#view-tasks').innerHTML = '<div class="tk-top"><p class="sub tr-sub">' + (TK.mode === 'todo' ? (open.length ? plural(open.length, 'tâche à faire', 'tâches à faire') : '') : plural(done.length, 'tâche terminée', 'tâches terminées')) + '</p>' + sel + '</div>' + body +
+    '<div class="tabdock"><div class="modes seg2" role="group" aria-label="Tâches"><button type="button" data-a="tkmode" data-id="todo" aria-pressed="' + (TK.mode === 'todo') + '">À faire · ' + open.length + '</button><button type="button" data-a="tkmode" data-id="done" aria-pressed="' + (TK.mode === 'done') + '">Terminées · ' + all.filter(function (x) { return x.t.done; }).length + '</button></div></div>';
 }

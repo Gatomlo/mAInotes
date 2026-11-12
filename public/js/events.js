@@ -47,6 +47,16 @@ var ACTIONS = {
   fread: function (el) { F.read = el.dataset.id || ''; renderHome(); },
   trmode: function (el) { TR = el.dataset.id; renderToread(); window.scrollTo(0, 0); },
   'read-toggle': function (el) { var n = noteById(el.dataset.id); if (n) setRead(n, n.read === 'todo' ? 'done' : 'todo'); },
+  'todo-toggle': function (el) { todoCall(el.dataset.id, 'PATCH', '/' + el.dataset.tid, { done: el.getAttribute('aria-checked') !== 'true' }); },
+  'todo-del': function (el) { todoCall(el.dataset.id, 'DELETE', '/' + el.dataset.tid); },
+  'todo-add': function (el) {
+    var inp = $('#todoin'), text = inp ? inp.value.trim() : '';
+    if (!text) { if (inp) inp.focus(); return; }
+    var due = $('#todoin-due').value || null;
+    todoCall(el.dataset.id, 'POST', '', { text: text, due: due }).then(function (ok) { var i = $('#todoin'); if (ok && i) i.focus(); });
+  },
+  tkmode: function (el) { TK.mode = el.dataset.id; renderTasks(); },
+  'set-feat': function (el) { saveSettings({ features: { tasks: el.getAttribute('aria-checked') !== 'true' } }); },
   dread: function (el) { var n = curNote(); if (n) setRead(n, el.dataset.id || null).then(function () { if (modal === 'detail' && curId === n.id) openDetail(n.id, false); }); },
   'toast-undo': function () { var f = toastUndo; toastUndo = null; $('#toast').hidden = true; if (f) f(); },
   ftagmode: function (el) { F.tagMode = el.dataset.id; renderHome(); },
@@ -386,6 +396,20 @@ document.addEventListener('submit', function (e) {
     if (!v) return;
     api('POST', 'tags', { name: v }).then(function (r) { if (r.existed) toast('Ce tag existe déjà.'); return sync().then(function () { if (!r.existed) askRetri('Tag #' + r.tag.name + ' ajouté.'); }); }, fail);
   }
+});
+
+// Tâches : appel au serveur puis mise à jour locale sans recharger la fiche (le défilement reste en place).
+function todoCall(noteId, method, suffix, body) {
+  if (!online) { toast('Les tâches se modifient en ligne.'); return Promise.resolve(false); }
+  return api(method, 'notes/' + noteId + '/todos' + suffix, body).then(function (r) {
+    upsertNote(r.note); saveCache(); refreshTodos(r.note); render(); return true;
+  }, function (e) { fail(e); return false; });
+}
+document.addEventListener('keydown', function (e) {
+  if (e.target.id === 'todoin' && e.key === 'Enter') { e.preventDefault(); var b = $('[data-a="todo-add"]'); if (b) ACTIONS['todo-add'](b); }
+});
+document.addEventListener('change', function (e) {
+  if (e.target.id === 'tkcat') { TK.nb = e.target.value; renderTasks(); }
 });
 
 boot();

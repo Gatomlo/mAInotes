@@ -519,3 +519,32 @@ test('Mistral : inactif par défaut, test de connexion, classement des notes', a
   assert.ok(!raw.includes('mk-test'), 'la clé doit être chiffrée');
   await call('PATCH', 'settings', { providers: { classif: 'infomaniak' } });
 });
+
+test('tâches : ajout, coche, échéance, suppression et réglage d\'activation', async () => {
+  const r = await call('POST', 'notes', { type: 'text', content: 'Préparer la réunion de quartier' });
+  const id = r.data.note.id;
+  assert.deepStrictEqual(r.data.note.todos, []);
+  let p = await call('POST', 'notes/' + id + '/todos', { text: 'Réserver la salle', due: '2026-11-19' });
+  assert.strictEqual(p.data.note.todos.length, 1);
+  assert.strictEqual(p.data.note.todos[0].due, '2026-11-19');
+  p = await call('POST', 'notes/' + id + '/todos', { text: 'Imprimer l\'ordre du jour', due: 'pas une date' });
+  assert.strictEqual(p.data.note.todos[1].due, null, 'une date invalide est ignorée');
+  assert.strictEqual((await call('POST', 'notes/' + id + '/todos', { text: '   ' })).status, 400);
+  const [t1, t2] = p.data.note.todos;
+  p = await call('PATCH', 'notes/' + id + '/todos/' + t1.id, { done: true });
+  assert.strictEqual(p.data.note.todos[0].done, true);
+  assert.ok(p.data.note.todos[0].doneAt);
+  assert.strictEqual(p.data.note.locked, false, 'cocher une tâche ne verrouille pas le classement');
+  p = await call('PATCH', 'notes/' + id + '/todos/' + t2.id, { text: 'Imprimer', due: '2026-11-20' });
+  assert.strictEqual(p.data.note.todos[1].text, 'Imprimer');
+  assert.strictEqual((await call('PATCH', 'notes/' + id + '/todos/inconnue', { done: true })).status, 404);
+  p = await call('DELETE', 'notes/' + id + '/todos/' + t1.id);
+  assert.strictEqual(p.data.note.todos.length, 1);
+  const st = await call('GET', 'state');
+  assert.strictEqual(st.data.settings.features.tasks, true);
+  const s = await call('PATCH', 'settings', { features: { tasks: false } });
+  assert.strictEqual(s.data.settings.features.tasks, false);
+  const kept = (await call('GET', 'state')).data.notes.find((n) => n.id === id);
+  assert.strictEqual(kept.todos.length, 1, 'désactiver la fonction ne supprime aucune donnée');
+  await call('PATCH', 'settings', { features: { tasks: true } });
+});

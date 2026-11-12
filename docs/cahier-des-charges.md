@@ -499,6 +499,17 @@ Maquette de référence : `docs/maquette-notion.html` (non reliée au serveur). 
 | F107 | Transformer une note (en liste de tâches, en tableau), reformuler, continuer, résumer : manuel, un appel, confirmation avec coût estimé, annulable. | Should |
 | F108 | Questions sur l'ensemble des notes, réponse sourcée (notes citées), en un appel, comptée dans le plafond mensuel. | Could |
 
+### Tâches et réglages d'activation
+
+| Réf. | Fonction | Priorité | État |
+|---|---|---|---|
+| F109 | **Tâches d'une note** : cases à cocher avec échéance facultative, ajout, coche et suppression depuis la fiche. Stockées dans la note (`todos`), incluses dans la recherche et le texte envoyé au classement. | Must | Codé |
+| F110 | **Progression sur la carte** (« 2/3 », rouge si une tâche est en retard). | Should | Codé |
+| F111 | **Onglet Tâches** : toutes les tâches des notes hors corbeille, regroupées En retard / Aujourd'hui / Cette semaine / Plus tard / Sans date, filtre par carnet, onglet Terminées, badge avec pastille rouge si retard. | Must | Codé |
+| F112 | **Réglage « Espace de travail »** : chaque fonction se désactive sans supprimer de données. Premier interrupteur : Tâches. Les suivants (propriétés, vues, liens, modèles, IA) s'ajoutent avec leur fonction. | Must | Codé (Tâches) |
+
+Les tâches se modifient en ligne uniquement pour l'instant (pas de file d'attente hors connexion pour elles).
+
 ### Choix technique : stockage
 
 - Étape 1 : le JSON de `data/` suffit (`note.blocks[]` remplace `note.content`, migration automatique au démarrage).

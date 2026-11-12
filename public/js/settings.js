@@ -165,6 +165,8 @@ function renderSet() {
     '<div><label class="l" for="hmax">Synthèses gardées dans l\'historique</label><input id="hmax" class="field" type="number" min="5" max="200" data-set="historyMax" data-num="1" value="' + st.historyMax + '"></div></div>' +
     '<div class="actions"><button class="btn" data-a="hist-open">Ouvrir l\'historique</button></div></div>' +
 
+    '<div class="panel"><h3>Espace de travail</h3>' +
+    '<div class="switch"><div><b>Tâches</b><span>Cases à cocher dans les notes, progression sur les cartes et onglet Tâches. Désactivées, elles sont masquées sans rien supprimer.</span></div><button class="sw" role="switch" aria-checked="' + tasksOn() + '" aria-label="Activer les tâches" data-a="set-feat"><i></i></button></div></div>' +
     '<div class="panel"><h3>Carnets et tags</h3><div class="actions"><button class="btn" data-a="tab" data-id="cats">Gérer les carnets et les tags</button></div></div>' +
     '<div class="savebar" id="savebar" hidden><span>Modifications non enregistrées</span><button class="btn primary" data-a="set-save" id="setsave">Enregistrer les réglages</button></div>';
   setDirty = false;

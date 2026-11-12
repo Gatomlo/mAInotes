@@ -66,7 +66,13 @@ function nb(id) { return S.notebooks.filter(function (c) { return c.id === id; }
 function tagById(id) { return S.tags.filter(function (t) { return t.id === id; })[0] || null; }
 function noteById(id) { return S.notes.filter(function (n) { return n.id === id; })[0] || null; }
 function linksText(n) { return (n.links || []).map(function (l) { return [l.title, l.description || l.summary, l.site].filter(Boolean).join(' '); }).join('\n'); }
-function noteText(n) { return [n.content, n.transcript, n.description, linksText(n), n.enrichment ? n.enrichment.explanation : ''].filter(Boolean).join('\n\n'); }
+function todosText(n) { return (n.todos || []).map(function (t) { return t.text; }).join('\n'); }
+function noteText(n) { return [n.content, n.transcript, n.description, todosText(n), linksText(n), n.enrichment ? n.enrichment.explanation : ''].filter(Boolean).join('\n\n'); }
+// Fonction « Tâches » activable dans les réglages ; les données restent même désactivée.
+function tasksOn() { return !S.settings || !S.settings.features || S.settings.features.tasks !== false; }
+function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function fmtDay(s) { var p = String(s).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('fr-BE', { weekday: 'short', day: 'numeric', month: 'short' }); }
+function todoStats(n) { var t = n.todos || []; return { total: t.length, done: t.filter(function (x) { return x.done; }).length }; }
 
 /* Adresses web rendues cliquables (texte échappé, liens ouverts dans un nouvel onglet). */
 var URL_RE = /\b(?:https?:\/\/|www\.)[^\s<>"'«»]+/gi;

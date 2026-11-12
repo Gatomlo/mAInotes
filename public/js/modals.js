@@ -370,10 +370,10 @@ function readView(n, x) {
     '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + propsHtml(n) + readPick(n) + x.media + body + todosHtml(n) + aiNote + relatedHtml(n) + backlinksHtml(n) + x.links +
     (x.busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
     (x.analyzeBtns ? '<div class="actions">' + x.analyzeBtns + '</div>' : '') +
-    (aiOn() && !n.trashedAt && !x.busy && n.type !== 'synthesis' && (n.status === 'ready' || n.type === 'text') && noteText(n).trim() ? '<div class="actions"><button type="button" class="btn" data-a="xf-open" data-id="' + n.id + '">' + I(IC.spark, 18) + 'Transformer avec l\'IA</button></div>' : '') +
+    // Boutons IA : petits, à côté de « Modifier » (voir aiFootBtns).
     '<div class="actions sfoot"><button type="button" class="rbtn" data-a="close" aria-label="Fermer" title="Fermer">' + I('<path d="m15 6-6 6 6 6"/>', 24) + '</button>' +
     (n.trashedAt ? '<button type="button" class="rbtn danger" data-a="purge" data-id="' + n.id + '" aria-label="Supprimer définitivement" title="Supprimer définitivement">' + I(TRASH, 22) + '</button>' : '<button type="button" class="rbtn" data-a="del" aria-label="Mettre à la corbeille" title="Mettre à la corbeille">' + I(TRASH, 22) + '</button>') +
-    '<button class="btn primary" data-a="dedit" autofocus>' + I(IC.text, 18) + 'Modifier</button></div>';
+    aiFootBtns(n, x) + '<button class="btn primary" data-a="dedit" autofocus>' + I(IC.text, 18) + 'Modifier</button></div>';
 }
 
 // Seuls les champs modifiés dans le formulaire depuis son ouverture sont envoyés :
@@ -870,16 +870,22 @@ function onSynced() {
 /* Bloc « Pour aller plus loin » : complément généré par l'IA, liens vérifiés. */
 // Toujours présent dans le détail : sans enrichissement, il propose de le lancer
 // (le texte modifié est enregistré d'abord, puis l'IA travaille sur la version à jour).
-function enrichBtn(n, again) {
-  var st = S.settings;
-  return '<button class="btn" data-a="enrich" data-id="' + n.id + '">' + I(IC.spark, 18) + (again ? 'Régénérer les pistes' : 'Enrichir cette note') + (st.providers.enrich !== 'infomaniak' ? ' (' + PROV[st.providers.enrich] + ')' : '') + '</button>';
+// Transformer et enrichir : deux petits boutons ronds à côté de « Modifier ».
+function aiFootBtns(n, x) {
+  if (!aiOn() || n.trashedAt || x.busy || n.type === 'synthesis' || !(n.status === 'ready' || n.type === 'text') || !noteText(n).trim()) return '';
+  var st = S.settings, prov = st.providers.enrich !== 'infomaniak' ? ' (' + PROV[st.providers.enrich] + ')' : '';
+  var h = '<button type="button" class="rbtn sm" data-a="xf-open" data-id="' + n.id + '" aria-label="Transformer avec l\'IA" title="Transformer avec l\'IA">' + I(IC.spark, 20) + '</button>';
+  if (st.trigger.enrich !== 'off') {
+    var again = !!n.enrichment, lbl = (again ? 'Régénérer les pistes' : 'Enrichir cette note') + prov + ' · un appel IA';
+    h += '<button type="button" class="rbtn sm" data-a="enrich" data-id="' + n.id + '" aria-label="' + lbl + '" title="' + lbl + '">' + I(IC.search, 20) + '</button>';
+  }
+  return h;
 }
 function enrichHtml(n) {
   var e = n.enrichment;
   var st = S.settings;
   if (!e) {
-    if (st.trigger.enrich === 'off') return '<div class="help">' + I(IC.spark, 14) + '<span>Enrichissement désactivé. <button class="linkbtn" data-a="tab" data-id="set" style="min-height:0;padding:0">Changer le réglage</button></span></div>';
-    return '<div class="panel enrich" style="margin:0"><h3>' + I(IC.spark, 16) + ' Pour aller plus loin</h3><p class="sub" style="margin:0">Explication du sujet, pistes, recherches et sources vérifiées. Un appel IA.</p><div class="actions">' + enrichBtn(n, false) + '</div></div>';
+    return '';
   }
   var h = '<div class="panel enrich" style="margin:0"><div class="kv"><h3>' + I(IC.spark, 16) + ' Pour aller plus loin</h3><button class="linkbtn" data-a="enrich-del" data-id="' + n.id + '">Retirer</button></div>';
   if (e.explanation) h += '<p style="margin:0">' + esc(e.explanation) + '</p>';
@@ -888,7 +894,6 @@ function enrichHtml(n) {
   if (e.searches && e.searches.length) h += '<div><div class="l">Rechercher</div><div style="display:flex;flex-direction:column;gap:6px">' + e.searches.map(function (s) {
     return '<div class="kv" style="justify-content:flex-start"><span style="color:var(--ink)">« ' + esc(s.query) + ' »</span><span><a href="' + esc(s.web) + '" target="_blank" rel="noopener noreferrer">Web</a> · <a href="' + esc(s.scholar) + '" target="_blank" rel="noopener noreferrer">Scholar</a></span></div>';
   }).join('') + '</div></div>';
-  if (st.trigger.enrich !== 'off') h += '<div class="actions">' + enrichBtn(n, true) + '</div>';
   h += '<div class="help" style="margin:0">' + I(IC.help, 14) + '<span>Généré par l\'IA (' + esc(PROV[e.provider] || e.provider) + ') le ' + fmtFull(e.at) + ' : à vérifier. Les sources proposées ont été ouvertes par le serveur' + (e.rejected ? ' ; ' + plural(e.rejected, 'lien introuvable a été écarté', 'liens introuvables ont été écartés') : '') + '.</span></div></div>';
   return h;
 }

@@ -703,3 +703,7 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
   .btools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
   .bprev{max-height:200px}
 }
+/* Badge « À lire » / « Lu » : un peu d'air autour de l'icône et entre les badges */
+.chip.read{padding:0 12px 0 10px;gap:7px;margin-right:2px}
+.card .foot,.lrow .lc{gap:8px}
+.rbtn.sm{width:44px;height:44px}

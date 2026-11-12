@@ -698,3 +698,84 @@ test('tâches hors connexion : identifiant fourni par l\'appareil, renvois sans 
   p = await call('POST', 'notes/' + n.id + '/todos', { text: 'x', id: 'a b' });
   assert.notStrictEqual(p.data.note.todos[0].id, 'a b', 'identifiant invalide ignoré');
 });
+
+test('plusieurs comptes : isolation, partage de carnet et de note, tâches assignées, droits', async () => {
+  const adminCookie = cookie;
+  const asBob = async (fn) => { const keep = cookie; cookie = bobCookie; try { return await fn(); } finally { cookie = keep; } };
+  // L'administrateur crée un compte ; l'inscription libre n'existe pas.
+  let r = await call('POST', 'users', { name: 'Bob', login: 'bob@example.be', password: 'motdepasse-bob' });
+  assert.strictEqual(r.status, 200);
+  const bob = r.data.user;
+  assert.strictEqual(bob.role, 'user');
+  assert.strictEqual((await call('POST', 'users', { login: 'bob@example.be', password: 'motdepasse-bob' })).status, 409, 'identifiant déjà pris');
+  cookie = '';
+  r = await call('POST', 'auth/login', { login: 'bob@example.be', password: 'motdepasse-bob' });
+  assert.strictEqual(r.status, 200);
+  const bobCookie = cookie;
+  cookie = adminCookie;
+
+  // Isolation : Bob ne voit rien de l'administrateur.
+  const nb = (await call('POST', 'notebooks', { name: 'Projet partagé' })).data.notebook;
+  const n1 = (await call('POST', 'notes', { type: 'text', content: 'Réunion du projet : préparer le budget', notebookId: nb.id })).data.note;
+  await until(async () => (await call('GET', 'state')).data.notes.find((x) => x.id === n1.id).status === 'ready');
+  let st = (await asBob(() => call('GET', 'state'))).data;
+  assert.ok(!st.notes.some((x) => x.id === n1.id), 'note privée par défaut');
+  assert.ok(!st.notebooks.some((c) => c.id === nb.id));
+  assert.ok(st.notebooks.length >= 4 && st.notebooks.every((c) => c.role === undefined), 'Bob a ses propres carnets de départ');
+  assert.strictEqual((await asBob(() => call('PATCH', 'notes/' + n1.id, { content: 'x' }))).status, 404);
+  assert.strictEqual((await asBob(() => call('GET', 'media/' + n1.id + '/abc'))).status, 404);
+
+  // Partage du carnet en lecture : Bob voit, ne modifie pas.
+  r = await call('PUT', 'notebooks/' + nb.id + '/shares', { shares: [{ userId: bob.id, role: 'read' }, { userId: 'inconnu', role: 'edit' }] });
+  assert.deepStrictEqual(r.data.notebook.shares, [{ userId: bob.id, role: 'read' }]);
+  st = (await asBob(() => call('GET', 'state'))).data;
+  const seen = st.notes.find((x) => x.id === n1.id);
+  assert.ok(seen && seen.role === 'read' && seen.ownerName);
+  assert.strictEqual(st.notebooks.find((c) => c.id === nb.id).role, 'read');
+  assert.strictEqual((await asBob(() => call('PATCH', 'notes/' + n1.id, { content: 'x' }))).status, 403);
+  assert.strictEqual((await asBob(() => call('POST', 'notes/' + n1.id + '/todos', { text: 'non' }))).status, 403);
+  assert.strictEqual((await asBob(() => call('PATCH', 'notebooks/' + nb.id, { name: 'Volé' }))).status, 404, 'seul le propriétaire modifie le carnet');
+  assert.strictEqual((await asBob(() => call('PUT', 'notes/' + n1.id + '/shares', { shares: [] }))).status, 403);
+
+  // En modification : Bob écrit et coche, mais ne supprime pas définitivement.
+  await call('PUT', 'notebooks/' + nb.id + '/shares', { shares: [{ userId: bob.id, role: 'edit' }] });
+  r = await asBob(() => call('POST', 'notes/' + n1.id + '/todos', { text: 'Envoyer le devis', assignee: bob.id }));
+  assert.strictEqual(r.status, 200);
+  const todo = r.data.note.todos[0];
+  assert.strictEqual(todo.assignee, bob.id, 'tâche assignée à une personne qui voit la note');
+  r = await call('PATCH', 'notes/' + n1.id + '/todos/' + todo.id, { assignee: 'inconnu' });
+  assert.strictEqual(r.data.note.todos[0].assignee, null, 'assignation refusée pour une personne sans accès');
+  assert.strictEqual((await asBob(() => call('PATCH', 'notes/' + n1.id + '/todos/' + todo.id, { done: true }))).data.note.todos[0].done, true);
+  assert.strictEqual((await asBob(() => call('DELETE', 'notes/' + n1.id + '?purge=1'))).status, 403);
+  // Bob range une note dans le carnet partagé : l'administrateur la voit.
+  const n2 = (await asBob(() => call('POST', 'notes', { type: 'text', content: 'Note de Bob dans le carnet commun', notebookId: nb.id }))).data.note;
+  assert.ok((await call('GET', 'state')).data.notes.some((x) => x.id === n2.id && x.ownerName === 'Bob'));
+  // Une note de Bob n'est pas rangée dans le carnet d'un autre sans droit.
+  const n3 = (await asBob(() => call('POST', 'notes', { type: 'text', content: 'Privée de Bob' }))).data.note;
+  assert.ok(!(await call('GET', 'state')).data.notes.some((x) => x.id === n3.id), 'les notes de Bob restent privées');
+  r = await asBob(() => call('PATCH', 'notes/' + n3.id, { notebookId: 'nb-inexistant' }));
+  assert.strictEqual(r.data.note.notebookId, null);
+
+  // Partage d'une note seule.
+  const n4 = (await call('POST', 'notes', { type: 'text', content: 'Liste perso partagée seule' })).data.note;
+  await call('PUT', 'notes/' + n4.id + '/shares', { shares: [{ userId: bob.id, role: 'read' }] });
+  assert.ok((await asBob(() => call('GET', 'state'))).data.notes.some((x) => x.id === n4.id));
+  await call('PUT', 'notes/' + n4.id + '/shares', { shares: [] });
+  assert.ok(!(await asBob(() => call('GET', 'state'))).data.notes.some((x) => x.id === n4.id), 'partage retiré');
+
+  // Droits d'administration.
+  assert.strictEqual((await asBob(() => call('GET', 'users'))).status, 403);
+  assert.strictEqual((await asBob(() => call('GET', 'log'))).status, 403);
+  assert.strictEqual((await asBob(() => call('PUT', 'keys/gemini', { key: 'x' }))).status, 403);
+  await asBob(() => call('PATCH', 'settings', { trigger: { classif: 'manual' } }));
+  assert.strictEqual((await call('GET', 'state')).data.settings.trigger.classif, 'auto', 'réglage IA inchangé par un simple compte');
+  assert.ok((await asBob(() => call('GET', 'directory'))).data.users.some((u) => u.id === bob.id));
+
+  // Suppression du compte : ses notes disparaissent, les partages aussi.
+  r = await call('DELETE', 'users/' + bob.id);
+  assert.strictEqual(r.status, 200);
+  st = (await call('GET', 'state')).data;
+  assert.ok(!st.notes.some((x) => x.id === n2.id), 'notes de Bob supprimées avec son compte');
+  assert.deepStrictEqual(st.notebooks.find((c) => c.id === nb.id).shares, []);
+  assert.strictEqual((await call('DELETE', 'users/' + (await call('GET', 'account')).data.user.id)).status, 409, 'on ne se supprime pas ici');
+});

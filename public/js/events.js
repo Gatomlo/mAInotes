@@ -136,6 +136,13 @@ var ACTIONS = {
   'xf-back': function () { var id = xf && xf.id; if (id) openDetail(id, false); else closeModal(); },
   ask: openAsk,
   'ask-go': askGo,
+  fmt: function (el) { var ta = $('#' + el.dataset.target); if (ta) applyInline(ta, el.dataset.id); },
+  bprev: function (el) {
+    var on = !previewOn();
+    try { localStorage.setItem('mainotes-preview', on ? '1' : '0'); } catch (e) { /* rien */ }
+    $$('.bprev-t').forEach(function (b) { b.setAttribute('aria-pressed', String(on)); });
+    initPreview(el.dataset.target);
+  },
   blk: function (el) {
     var ta = $('#' + el.dataset.target);
     if (!ta) return;
@@ -150,6 +157,7 @@ var ACTIONS = {
     var ins = '[[' + n.title.replace(/[\[\]]/g, '') + ']]', a = ta.selectionStart == null ? ta.value.length : ta.selectionStart, z = ta.selectionEnd == null ? a : ta.selectionEnd;
     ta.value = ta.value.slice(0, a) + ins + ta.value.slice(z);
     ta.focus(); ta.setSelectionRange(a + ins.length, a + ins.length);
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
     $('#mbox').hidden = true;
   },
   addcat: function (el) { add.notebookId = el.dataset.id; $('#addcat').value = el.dataset.id; $$('[data-a="addcat"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === el)); }); },
@@ -469,10 +477,18 @@ function todoCall(noteId, method, suffix, body) {
 document.addEventListener('input', function (e) {
   var t = e.target;
   if (t.tagName !== 'TEXTAREA' || (t.id !== 'd-content' && t.id !== 'ntext')) return;
+  initPreview(t.id);
   var m = $('#slashm-' + t.id);
   if (!m) return;
   var v = t.value, p = t.selectionStart, s0 = v.lastIndexOf('\n', p - 1) + 1;
   m.hidden = v.slice(s0, p) !== '/';
+});
+// Raccourcis clavier de l'éditeur : Ctrl+B gras, Ctrl+I italique, Ctrl+K lien.
+document.addEventListener('keydown', function (e) {
+  var t = e.target;
+  if (!t || t.tagName !== 'TEXTAREA' || (t.id !== 'd-content' && t.id !== 'ntext') || !(e.ctrlKey || e.metaKey) || e.altKey) return;
+  var k = { b: 'b', i: 'i', k: 'l' }[String(e.key).toLowerCase()];
+  if (k) { e.preventDefault(); applyInline(t, k); }
 });
 document.addEventListener('keydown', function (e) {
   if (e.key === 'Escape') { var open = $('.slashm:not([hidden])'); if (open) { open.hidden = true; e.stopPropagation(); } }

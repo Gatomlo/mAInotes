@@ -679,3 +679,26 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
 .aimark{color:var(--accent);display:inline-flex;vertical-align:middle}
 .rel{display:flex;flex-direction:column;gap:4px}
 .rel-i{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* Éditeur de texte : barre complète, aperçu en direct */
+.btools{flex-wrap:wrap;gap:6px 10px;overflow:visible;align-items:center}
+.btools .bgrp{display:flex;gap:4px;flex:none;padding-right:10px;border-right:1px solid var(--line)}
+.btools .bgrp:last-child{border-right:0;padding-right:0}
+.btools button{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:0 10px;font-size:14px;font-weight:600;min-width:44px}
+.btools .bi{font-weight:800}
+.btools .bt{display:none;font-weight:500}
+.btools button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.bprev{margin-top:8px;padding:12px 16px;border:1px dashed var(--line-strong);border-radius:12px;background:var(--bg);max-height:320px;overflow:auto}
+.readtext.rich code,.bprev code{font-family:ui-monospace,Menlo,monospace;font-size:.9em;background:var(--chip);padding:1px 5px;border-radius:5px}
+.readtext.rich ol.bul{list-style:decimal}
+@media (min-width:760px){
+  .btools .bgrp{flex-wrap:wrap;flex:0 1 auto}
+  .btools .bt{display:inline}
+  .btools button{height:40px;font-size:13px}
+  #d-content{min-height:240px;font-size:16px;line-height:1.55}
+  #ntext{min-height:200px}
+}
+@media (max-width:759px){
+  .btools{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+  .bprev{max-height:200px}
+}

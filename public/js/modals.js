@@ -86,6 +86,7 @@ function renderAdd() {
     '<div class="pills"><label class="pill"><input type="checkbox" id="addread"' + (addReadOn() ? ' checked' : '') + '>' + I(IC.bookmark, 16) + 'À lire plus tard</label>' +
     (st.trigger.enrich !== 'off' ? '<label class="pill"><input type="checkbox" id="addenrich"' + (add.enrich ? ' checked' : '') + '>' + I(IC.spark, 16) + 'Enrichir</label>' : '') + '</div></div>';
   openSheet(shead('Nouvelle note') + body + opts + '<div class="actions sfoot">' + modes + go + '</div>', 'Nouvelle note');
+  if (add.tab === 'text') initPreview('ntext');
 }
 // « À lire » : choix explicite, sinon déduit de la présence d'un lien (règle locale, sans IA).
 function hasLink(v) { URL_RE.lastIndex = 0; return URL_RE.test(String(v || '')); }
@@ -279,6 +280,7 @@ function openDetail(id, edit) {
       '<div class="switch"><div><b>Verrouiller ce classement</b><span>Un re-tri ne le modifiera plus. Toute correction le verrouille.</span></div><button class="sw" role="switch" aria-checked="' + !!n.locked + '" aria-label="Verrouiller ce classement" data-a="dlock"><i></i></button></div>' : '') +
     '<div class="actions"><button class="btn" data-a="dcancel">Annuler</button><button class="btn primary" data-a="dsave">Enregistrer</button></div>', 'Modifier la note');
   if (n.type !== 'synthesis') dtSel();
+  if (n.type === 'text') initPreview('d-content');
 }
 
 // Lecture : texte mis en forme, liens cliquables, classement en pastilles.
@@ -398,12 +400,27 @@ function patchNote(p) {
 }
 
 /* ---------- Éditeur simplifié : barre de mise en forme et menu « / » ---------- */
-var BLOCKS = [['h', '##', 'Titre', 'H'], ['ul', '-', 'Liste', '•'], ['q', '>', 'Citation', '❝'], ['hr', '---', 'Séparateur', '—']];
+var BLOCKS = [['h1', '#', 'Titre 1', 'H1'], ['h2', '##', 'Titre 2', 'H2'], ['h3', '###', 'Titre 3', 'H3'], ['ul', '-', 'Liste à puces', '•'], ['ol', '1.', 'Liste numérotée', '1.'], ['q', '>', 'Citation', '❝'], ['hr', '---', 'Séparateur', '—']];
+var INLINES = [['b', 'Gras', 'B', 'Ctrl+B'], ['i', 'Italique', 'I', 'Ctrl+I'], ['s', 'Barré', 'S', ''], ['c', 'Code', '</>', ''], ['l', 'Lien', '🔗', 'Ctrl+K']];
 function blocksBar(target) {
-  return '<div class="btools" role="toolbar" aria-label="Mise en forme" data-target="' + target + '">' + BLOCKS.map(function (b) { return '<button type="button" data-a="blk" data-id="' + b[0] + '" data-target="' + target + '" aria-label="' + b[2] + '" title="' + b[2] + '">' + b[3] + '</button>'; }).join('') + '</div>';
+  var btn = function (kind, label, ico, key, extra) { return '<button type="button" data-a="' + (extra || 'blk') + '" data-id="' + kind + '" data-target="' + target + '" aria-label="' + label + '" title="' + label + (key ? ' (' + key + ')' : '') + '"><span class="bi">' + ico + '</span><span class="bt">' + label + '</span></button>'; };
+  var inl = INLINES.map(function (b) { return btn(b[0], b[1], b[2], b[3], 'fmt'); }).join('');
+  var blk = BLOCKS.map(function (b) { return btn(b[0], b[2], b[3]); }).join('');
+  var rest = (linksOn() && target !== 'ntext' ? btn('mention', 'Lier une note', '@', '', 'mention-open') : '') + '<button type="button" class="bprev-t" data-a="bprev" data-target="' + target + '" aria-pressed="' + previewOn() + '" title="Afficher l\'aperçu mis en forme"><span class="bi">👁</span><span class="bt">Aperçu</span></button>';
+  return '<div class="btools" role="toolbar" aria-label="Mise en forme" data-target="' + target + '"><div class="bgrp">' + inl + '</div><div class="bgrp">' + blk + '</div><div class="bgrp">' + rest + '</div></div>';
+}
+function previewOn() { try { var v = localStorage.getItem('mainotes-preview'); return v === null ? window.matchMedia('(min-width:760px)').matches : v === '1'; } catch (e) { return false; } }
+function previewHtml(text, selfId) { var r = richText(text, selfId); return r !== null ? r : '<p>' + mentionify(linkify(text), selfId) + '</p>'; }
+// Aperçu mis en forme sous le champ (ordinateur) : suit la saisie.
+function initPreview(target) {
+  var ta = $('#' + target), box = $('#prev-' + target);
+  if (!ta || !box) return;
+  box.hidden = !previewOn();
+  box.innerHTML = ta.value.trim() ? previewHtml(ta.value, target === 'd-content' ? curId : null) : '<p class="muted">L\'aperçu apparaît ici.</p>';
 }
 function slashMenu(target) {
-  return '<div class="slashm" id="slashm-' + target + '" hidden role="menu" aria-label="Insérer un bloc">' + BLOCKS.map(function (b) { return '<button type="button" role="menuitem" data-a="blk" data-slash="1" data-id="' + b[0] + '" data-target="' + target + '"><i>' + b[3] + '</i>' + b[2] + '</button>'; }).join('') + (linksOn() && target !== 'ntext' ? '<button type="button" role="menuitem" data-a="mention-open" data-slash="1" data-target="' + target + '"><i>@</i>Lier une note</button>' : '') + '</div>';
+  return '<div class="slashm" id="slashm-' + target + '" hidden role="menu" aria-label="Insérer un bloc">' + BLOCKS.map(function (b) { return '<button type="button" role="menuitem" data-a="blk" data-slash="1" data-id="' + b[0] + '" data-target="' + target + '"><i>' + b[3] + '</i>' + b[2] + '</button>'; }).join('') + (linksOn() && target !== 'ntext' ? '<button type="button" role="menuitem" data-a="mention-open" data-slash="1" data-target="' + target + '"><i>@</i>Lier une note</button>' : '') + '</div>' +
+    '<div class="readtext rich bprev" id="prev-' + target + '" hidden aria-label="Aperçu"></div>';
 }
 // Applique un bloc sur la ligne du curseur (ou le retire s'il y est déjà).
 function applyBlock(ta, kind, fromSlash) {
@@ -416,14 +433,37 @@ function applyBlock(ta, kind, fromSlash) {
   var repl, caret;
   if (kind === 'hr') { repl = (line ? line + '\n' : '') + '---\n'; caret = s + repl.length; }
   else {
-    var stripped = line.replace(/^(#{1,3} |[-*] |> )/, '');
-    var has = line.indexOf(mk + ' ') === 0;
+    var stripped = line.replace(/^(#{1,3} |[-*] |\d+\. |> )/, '');
+    var has = kind === 'ol' ? /^\d+\. /.test(line) : line.indexOf(mk + ' ') === 0;
     repl = has ? stripped : mk + ' ' + stripped;
     caret = s + repl.length;
   }
   ta.value = v.slice(0, s) + repl + v.slice(e);
   ta.focus();
   ta.setSelectionRange(caret, caret);
+  ta.dispatchEvent(new Event('input', { bubbles: true }));
+}
+// Met la sélection en gras, italique, barré, code ou lien (sans sélection : insère un modèle sélectionné).
+function applyInline(ta, kind) {
+  var v = ta.value, a = ta.selectionStart == null ? v.length : ta.selectionStart, z = ta.selectionEnd == null ? a : ta.selectionEnd;
+  var sel = v.slice(a, z);
+  var mk = { b: '**', i: '*', s: '~~', c: '`' }[kind];
+  var out, from, to;
+  if (kind === 'l') {
+    if (/^https?:\/\//i.test(sel)) { out = '[texte](' + sel + ')'; from = a + 1; to = a + 6; }
+    else { out = '[' + (sel || 'texte') + '](https://)'; from = a + out.length - 9; to = a + out.length - 1; if (!sel) { from = a + 1; to = a + 6; } }
+  } else if (sel && v.slice(a - mk.length, a) === mk && v.slice(z, z + mk.length) === mk) {
+    // Déjà mis en forme : on retire les marques.
+    ta.value = v.slice(0, a - mk.length) + sel + v.slice(z + mk.length);
+    ta.focus(); ta.setSelectionRange(a - mk.length, z - mk.length);
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    return;
+  } else {
+    var inner = sel || { b: 'gras', i: 'italique', s: 'barré', c: 'code' }[kind];
+    out = mk + inner + mk; from = a + mk.length; to = from + inner.length;
+  }
+  ta.value = v.slice(0, a) + out + v.slice(z);
+  ta.focus(); ta.setSelectionRange(from, to);
   ta.dispatchEvent(new Event('input', { bubbles: true }));
 }
 

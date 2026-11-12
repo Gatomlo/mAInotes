@@ -12,7 +12,7 @@ function hl(text, q) {
   return out + esc(text.slice(i));
 }
 function snippet(c, q) {
-  c = String(c || '').replace(/^(#{1,3} |[-*] |> )/gm, '').replace(/^---$/gm, '');
+  c = String(c || '').replace(/^(#{1,3} |[-*] |\d+\. |> )/gm, '').replace(/^---$/gm, '').replace(/\*\*|~~|`/g, '');
   var nq = norm(q).trim(), nt = norm(c), k = nq && nt.length === c.length ? nt.indexOf(nq) : -1;
   var st = k > 110 ? k - 50 : 0, s = c.slice(st, st + 170);
   return (st ? '…' : '') + s + (st + 170 < c.length ? '…' : '');

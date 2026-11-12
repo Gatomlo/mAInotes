@@ -72,17 +72,34 @@ function noteText(n) { return [n.content, n.transcript, n.description, todosText
 function tasksOn() { return !S.settings || !S.settings.features || S.settings.features.tasks !== false; }
 function aiOn() { return !S.settings || !S.settings.features || S.settings.features.ai !== false; }
 // Mise en forme simple dans le texte d'une note : « # » titre, « - » liste, « > » citation, « --- » séparateur.
-var BLOCK_RE = /^(#{1,3} |[-*] |> |---$)/m;
+var BLOCK_RE = /^(#{1,3} |[-*] |\d+\. |> |---$)/m;
+// Mise en forme dans une ligne : **gras**, *italique*, ~~barré~~, `code`, [texte](adresse).
+var INLINE_RE = /\*\*[^*\n]+\*\*|~~[^~\n]+~~|`[^`\n]+`|(?:^|[\s(])\*[^*\s][^*\n]*\*(?=$|[\s.,;:!?)])|\[[^\]\n]+\]\(https?:\/\/[^)\s]+\)/m;
+function inlineFmt(text, selfId) {
+  var links = [];
+  text = String(text || '').replace(/\[([^\]\n]+)\]\((https?:\/\/[^)\s]+)\)/g, function (m, t, u) { links.push([t, u]); return '\u0001' + (links.length - 1) + '\u0001'; });
+  var html = linkify(text);
+  html = html.replace(/\u0001(\d+)\u0001/g, function (m, i) { var l = links[+i]; return '<a href="' + esc(l[1]) + '" target="_blank" rel="noopener noreferrer">' + esc(l[0]) + '</a>'; });
+  // La mise en forme ne touche pas l'intérieur des liens.
+  html = html.split(/(<a [^>]*>.*?<\/a>)/).map(function (seg, i) {
+    if (i % 2) return seg;
+    return seg.replace(/`([^`\n]+)`/g, '<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>').replace(/~~([^~\n]+)~~/g, '<s>$1</s>')
+      .replace(/(^|[\s(])\*([^*\s][^*\n]*?)\*(?=$|[\s.,;:!?)])/g, '$1<em>$2</em>');
+  }).join('');
+  return mentionify(html, selfId);
+}
 function richText(text, selfId) {
-  if (!BLOCK_RE.test(text)) return null;
-  var out = '', list = false, para = [];
-  var flush = function () { if (para.length) { out += '<p>' + mentionify(linkify(para.join('\n')), selfId) + '</p>'; para = []; } };
-  var closeList = function () { if (list) { out += '</ul>'; list = false; } };
+  if (!BLOCK_RE.test(text) && !INLINE_RE.test(text)) return null;
+  var out = '', list = '', para = [];
+  var flush = function () { if (para.length) { out += '<p>' + inlineFmt(para.join('\n'), selfId) + '</p>'; para = []; } };
+  var closeList = function () { if (list) { out += '</' + list + '>'; list = ''; } };
+  var openList = function (kind) { if (list !== kind) { closeList(); out += '<' + kind + ' class="bul">'; list = kind; } };
   text.split('\n').forEach(function (line) {
     var m;
-    if ((m = /^(#{1,3}) (.*)$/.exec(line))) { flush(); closeList(); out += '<h3 class="bh bh' + m[1].length + '">' + mentionify(linkify(m[2]), selfId) + '</h3>'; }
-    else if ((m = /^[-*] (.*)$/.exec(line))) { flush(); if (!list) { out += '<ul class="bul">'; list = true; } out += '<li>' + mentionify(linkify(m[1]), selfId) + '</li>'; }
-    else if ((m = /^> ?(.*)$/.exec(line))) { flush(); closeList(); out += '<blockquote class="bq">' + mentionify(linkify(m[1]), selfId) + '</blockquote>'; }
+    if ((m = /^(#{1,3}) (.*)$/.exec(line))) { flush(); closeList(); out += '<h3 class="bh bh' + m[1].length + '">' + inlineFmt(m[2], selfId) + '</h3>'; }
+    else if ((m = /^[-*] (.*)$/.exec(line))) { flush(); openList('ul'); out += '<li>' + inlineFmt(m[1], selfId) + '</li>'; }
+    else if ((m = /^\d+\. (.*)$/.exec(line))) { flush(); openList('ol'); out += '<li>' + inlineFmt(m[1], selfId) + '</li>'; }
+    else if ((m = /^> ?(.*)$/.exec(line))) { flush(); closeList(); out += '<blockquote class="bq">' + inlineFmt(m[1], selfId) + '</blockquote>'; }
     else if (/^---$/.test(line)) { flush(); closeList(); out += '<hr class="bhr">'; }
     else if (!line.trim()) { flush(); closeList(); }
     else { closeList(); para.push(line); }

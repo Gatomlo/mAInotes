@@ -337,7 +337,9 @@ try { ops = JSON.parse(localStorage.getItem(OPS_KEY) || '[]') || []; } catch (e)
 function saveOps() { try { localStorage.setItem(OPS_KEY, JSON.stringify(ops)); } catch (e) { /* stockage indisponible : la file reste en mémoire */ } }
 function opApply(op, n) {
   n.todos = n.todos || [];
-  if (op.kind === 'todo-add') {
+  if (op.kind === 'note-due') {
+    n.due = op.due || null;
+  } else if (op.kind === 'todo-add') {
     if (!n.todos.some(function (t) { return t.id === op.tid; })) n.todos.push({ id: op.tid, text: op.text, done: false, due: op.due || null, doneAt: null });
   } else if (op.kind === 'todo-patch') {
     var t = n.todos.filter(function (x) { return x.id === op.tid; })[0];
@@ -374,6 +376,7 @@ function sendOp(op) {
   var p = op.kind === 'todo-add' ? api('POST', base + '/todos', { text: op.text, due: op.due, id: op.tid })
     : op.kind === 'todo-patch' ? api('PATCH', base + '/todos/' + op.tid, op.patch)
     : op.kind === 'todo-del' ? api('DELETE', base + '/todos/' + op.tid)
+    : op.kind === 'note-due' ? api('PATCH', base, { due: op.due || null })
     : api('PATCH', base, { props: op.props });
   return p.then(function (r) { return r.note; });
 }

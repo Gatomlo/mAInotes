@@ -196,7 +196,12 @@ test('liste détectée : cases à cocher et échéance créées automatiquement,
   const r = await call('POST', 'notes', { type: 'text', content: 'Prévoir une liste de courses pour mardi prochain : 500 g de patates, une douzaine d\'œufs, un pain.' });
   const n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r.data.note.id); return x.status === 'ready' && x; });
   assert.deepStrictEqual(n.todos.map((t) => t.text), ['500 g de patates', 'Une douzaine d\'œufs', 'Un pain']);
-  assert.ok(n.todos.every((t) => t.due === '2026-11-17' && !t.done));
+  assert.strictEqual(n.due, '2026-11-17', 'date limite portée par la note');
+  assert.ok(n.todos.every((t) => !t.done));
+  const up = await call('PATCH', 'notes/' + n.id, { due: '2026-11-20' });
+  assert.strictEqual(up.data.note.due, '2026-11-20');
+  assert.strictEqual(up.data.note.locked, n.locked, 'la date ne verrouille pas le classement');
+  assert.strictEqual((await call('PATCH', 'notes/' + n.id, { due: 'n\'importe quoi' })).data.note.due, null);
   assert.strictEqual(calls.length - before, 1, 'un seul appel IA');
   await call('PATCH', 'settings', { trigger: { todos: 'off' } });
   const r2 = await call('POST', 'notes', { type: 'text', content: 'Une autre liste de courses.' });

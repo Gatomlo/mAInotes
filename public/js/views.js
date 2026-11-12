@@ -445,13 +445,14 @@ function todoBar(n) {
   if (!tasksOn()) return '';
   var s = todoStats(n);
   if (!s.total) return '';
-  var late = (n.todos || []).some(function (t) { return !t.done && t.due && t.due < todayStr(); });
+  var late = (n.todos || []).some(function (t) { var d = todoDue(n, t); return !t.done && d && d < todayStr(); });
   return '<div class="tprog' + (late ? ' late' : '') + '" role="img" aria-label="' + s.done + ' tâche' + (s.done > 1 ? 's' : '') + ' faite' + (s.done > 1 ? 's' : '') + ' sur ' + s.total + (late ? ', une en retard' : '') + '"><span><i style="width:' + Math.round(s.done / s.total * 100) + '%"></i></span><small>' + s.done + '/' + s.total + '</small></div>';
 }
 // Toutes les tâches non terminées (ou terminées) des notes hors corbeille.
+function todoDue(n, t) { return t.due || n.due || null; }
 function allTodos() {
   var out = [];
-  live().forEach(function (n) { (n.todos || []).forEach(function (t) { out.push({ n: n, t: t }); }); });
+  live().forEach(function (n) { (n.todos || []).forEach(function (t) { out.push({ n: n, t: Object.assign({}, t, { due: todoDue(n, t) }) }); }); });
   return out;
 }
 function renderTasksTab() {
@@ -570,7 +571,7 @@ function pvKanban(notes, c) {
   var cols = p.options.concat(['']).map(function (o) {
     var items = notes.filter(function (n) { var v = propValue(n, p); return o === '' ? !v || p.options.indexOf(v) < 0 : v === o; });
     var cards = items.map(function (n) {
-      var due = (n.todos || []).filter(function (t) { return !t.done && t.due && t.due < todayStr(); }).length;
+      var due = (n.todos || []).filter(function (t) { var d = todoDue(n, t); return !t.done && d && d < todayStr(); }).length;
       return '<div class="kcard" draggable="true" data-nid="' + n.id + '"><button type="button" class="ktitle" data-a="open" data-id="' + n.id + '">' + esc(n.title) + '</button>' + todoBar(n) +
         '<div class="kfoot"><select class="kmove" data-nid="' + n.id + '" aria-label="Déplacer : ' + esc(n.title) + '"><option value="">Sans valeur</option>' + p.options.map(function (x) { return '<option' + (propValue(n, p) === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>' + (due ? '<span class="tdue late">en retard</span>' : '') + '</div></div>';
     }).join('');

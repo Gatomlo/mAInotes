@@ -580,8 +580,20 @@ test('propriétés de carnet : définition, valeurs typées, nettoyage et régla
   assert.strictEqual(after.props[st.id], undefined, 'option supprimée : valeur retirée');
   assert.strictEqual(after.props[due.id], '2026-12-20');
   const s = await call('PATCH', 'settings', { features: { props: false, views: false } });
-  assert.deepStrictEqual(s.data.settings.features, { tasks: true, props: false, views: false });
+  assert.deepStrictEqual(s.data.settings.features, { tasks: true, props: false, views: false, links: true, templates: true });
   const kept = (await call('GET', 'state')).data.notes.find((x) => x.id === n.id);
   assert.strictEqual(kept.props[due.id], '2026-12-20', 'désactiver ne supprime aucune donnée');
   await call('PATCH', 'settings', { features: { props: true, views: true } });
+});
+
+test('modèle de note : tâches de départ à la création, réglages liens et modèles', async () => {
+  const r = await call('POST', 'notes', { type: 'text', content: 'Liste de courses', todos: ['Pain', '  ', 'Lait'] });
+  assert.deepStrictEqual(r.data.note.todos.map((t) => t.text), ['Pain', 'Lait']);
+  assert.ok(r.data.note.todos.every((t) => t.done === false && t.id));
+  const plain = await call('POST', 'notes', { type: 'text', content: 'Sans modèle' });
+  assert.deepStrictEqual(plain.data.note.todos, []);
+  const s = await call('PATCH', 'settings', { features: { links: false, templates: false } });
+  assert.strictEqual(s.data.settings.features.links, false);
+  assert.strictEqual(s.data.settings.features.templates, false);
+  await call('PATCH', 'settings', { features: { links: true, templates: true } });
 });

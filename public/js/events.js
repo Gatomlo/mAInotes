@@ -107,6 +107,30 @@ var ACTIONS = {
 
   addtab: function (el) { if (add.rec && add.rec.on) return; if ($('#ntext')) add.text = $('#ntext').value; if ($('#icap')) add.caption = $('#icap').value; add.notebookId = $('#addcat').value; add.tab = el.dataset.id; renderAdd(); },
   'add-text': addText,
+  tpl: function (el) {
+    var t = TEMPLATES.filter(function (x) { return x.id === el.dataset.id; })[0];
+    if (!t) return;
+    var cur = $('#ntext') ? $('#ntext').value.trim() : '';
+    add.notebookId = $('#addcat').value;
+    if (add.tpl === t.id) { add.tpl = null; add.todos = []; add.text = cur === t.text ? '' : cur; }
+    else {
+      add.tpl = t.id; add.todos = (t.todos || []).slice();
+      add.text = cur && cur !== (TEMPLATES.filter(function (x) { return x.id === add.prevTpl; })[0] || {}).text ? cur + '\n\n' + t.text : t.text;
+      if (t.read) add.read = t.read === 'todo';
+    }
+    add.prevTpl = add.tpl;
+    renderAdd();
+    var ta = $('#ntext'); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+  },
+  'mention-open': function () { var b = $('#mbox'); b.hidden = !b.hidden; if (!b.hidden) { mentionList(); $('#mq').focus(); } },
+  'mention-ins': function (el) {
+    var n = noteById(el.dataset.id), ta = $('#d-content') || $('#d-transcript');
+    if (!n || !ta) return;
+    var ins = '[[' + n.title.replace(/[\[\]]/g, '') + ']]', a = ta.selectionStart == null ? ta.value.length : ta.selectionStart, z = ta.selectionEnd == null ? a : ta.selectionEnd;
+    ta.value = ta.value.slice(0, a) + ins + ta.value.slice(z);
+    ta.focus(); ta.setSelectionRange(a + ins.length, a + ins.length);
+    $('#mbox').hidden = true;
+  },
   addcat: function (el) { add.notebookId = el.dataset.id; $('#addcat').value = el.dataset.id; $$('[data-a="addcat"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b === el)); }); },
   'rec-start': function () { add.notebookId = $('#addcat').value; startRecording(); },
   'rec-stop': function () { stopRecording(); },
@@ -379,6 +403,7 @@ document.addEventListener('input', function (e) {
   if (t.id === 'q') { F.q = t.value; renderHome(); return; }
   if (t.classList && t.classList.contains('fpq')) { FP.q = t.value; renderFilterPanel(); return; }
   if (t.id === 'dtagq') { dtI = 0; dtList(true); return; }
+  if (t.id === 'mq') { mentionList(); return; }
   if ((t.id === 'ntext' || t.id === 'icap') && add && add.read === null) { var rb = $('#addread'); if (rb) rb.checked = hasLink(t.value); return; }
   if (t.id === 'mfrom' || t.id === 'mto') { mergeInfo(); return; }
   if (t.closest && t.closest('#view-set') && t.hasAttribute('data-set')) { setDirty = true; var b = $('#savebar'); if (b) b.hidden = false; }

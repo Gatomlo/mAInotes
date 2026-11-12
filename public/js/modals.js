@@ -35,6 +35,13 @@ function closeZoom() { var lb = $('#lb'); lb.hidden = true; $('img', lb).removeA
 
 /* ---------- Ajout d'une note ---------- */
 var add = null;
+// Modèles de notes : texte de départ, tâches initiales et, pour la fiche livre, « à lire ».
+var TEMPLATES = [
+  { id: 'cr', name: 'Compte rendu', text: 'Compte rendu\n\nDate :\nParticipants :\n\nDécisions :\n- \n\nÀ suivre :\n- ' },
+  { id: 'courses', name: 'Liste de courses', text: 'Liste de courses', todos: ['Pain', 'Lait', 'Fruits et légumes'] },
+  { id: 'livre', name: 'Fiche livre', text: 'Titre :\nAuteur :\nPourquoi je veux le lire :\n', read: 'todo' },
+  { id: 'projet', name: 'Projet', text: 'Projet\n\nObjectif :\nÉchéance :\nÉtapes :', todos: ['Définir les étapes', 'Fixer une échéance'] }
+];
 function openAdd(t) {
   add = { tab: t || 'text', read: null, enrich: S.settings.trigger.enrich === 'auto', notebookId: S.settings.defaultNotebook || '', text: '', caption: '', rec: null, audio: null, images: [] };
   modal = 'add';
@@ -47,7 +54,8 @@ function renderAdd() {
   var modes = (add.tab !== 'text' ? other('text', 'Écrire une note') : '') + (add.tab !== 'voice' ? other('voice', 'Enregistrer un vocal') : '') + (add.tab !== 'image' ? other('image', 'Ajouter une image') : '');
   var body = '', go = '';
   if (add.tab === 'text') {
-    body = '<div class="addtext"><label class="sr" for="ntext">Votre note</label><textarea id="ntext" class="field big" rows="6" placeholder="Écrivez librement…" autofocus>' + esc(add.text) + '</textarea></div>';
+    var tpl = templatesOn() ? '<div class="tpls" role="group" aria-label="Modèles"><span class="l" style="margin:0">Modèle</span>' + TEMPLATES.map(function (t) { return '<button type="button" class="fchip tag" data-a="tpl" data-id="' + t.id + '" aria-pressed="' + (add.tpl === t.id) + '">' + esc(t.name) + '</button>'; }).join('') + '</div>' + (add.todos && add.todos.length ? '<div class="help"><span>' + plural(add.todos.length, 'tâche sera ajoutée', 'tâches seront ajoutées') + ' avec la note (modifiables ensuite).</span></div>' : '') : '';
+    body = tpl + '<div class="addtext"><label class="sr" for="ntext">Votre note</label><textarea id="ntext" class="field big" rows="6" placeholder="Écrivez librement…" autofocus>' + esc(add.text) + '</textarea></div>';
     go = '<button class="btn primary" data-a="add-text">' + I(IC.check, 20) + 'Enregistrer</button>';
   } else if (add.tab === 'voice') {
     var on = add.rec && add.rec.on;
@@ -97,7 +105,7 @@ function addEnrich() {
 function addText() {
   var t = $('#ntext').value.trim();
   if (!t) { toast('La note est vide.'); return; }
-  queueNote({ type: 'text', content: t, notebookId: $('#addcat').value, enrich: addEnrich(), read: addRead() });
+  queueNote({ type: 'text', content: t, todos: add.todos && add.todos.length ? add.todos : undefined, notebookId: $('#addcat').value, enrich: addEnrich(), read: addRead() });
   closeModal();
   toast(online ? 'Note ajoutée' : 'Note enregistrée sur l\'appareil');
 }
@@ -263,7 +271,7 @@ function openDetail(id, edit) {
     (busy ? '<div class="status">' + I(IC.spark) + 'Analyse en cours…</div>' : '') +
     (n.status === 'error' && n.error ? '<div class="err">' + esc(n.error) + '</div>' : '') +
     (n.status === 'pending' && (n.pendingReason === 'budget' || n.pendingReason === 'config' || n.pendingReason === 'quota') ? '<div class="err">' + esc((n.error || 'Analyse en attente.').replace(/ Nouvel essai.*$/, '')) + (n.retryAt ? ' Nouvel essai automatique à ' + new Date(n.retryAt).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' }) + '.' : '') + '</div>' : '') +
-    media + fields +
+    media + fields + (n.type !== 'synthesis' ? mentionPicker() : '') +
     linksBlock +
     (n.type !== 'synthesis' ? '<div><label class="l" for="d-cat">Carnet</label><select id="d-cat" class="field">' + opts + '</select>' + (n.notebookChosen ? '<div class="help"><span>Carnet choisi à la création : l\'IA ne le change pas.</span></div>' : '') + '</div>' +
       '<div><label class="l" for="dtagq">Tags</label><div class="sel" id="dsel"></div><div class="cbx"><input id="dtagq" class="field" role="combobox" aria-expanded="false" aria-controls="dtaglist" aria-autocomplete="list" autocomplete="off" placeholder="Rechercher ou créer un tag…"><div class="list2" id="dtaglist" role="listbox" hidden></div></div></div>' +
@@ -290,6 +298,21 @@ function propsHtml(n) {
     else input = '<input' + at + ' maxlength="500" value="' + esc(v) + '">';
     return '<label class="pk" for="' + id + '">' + esc(p.name) + '</label><div class="pv-in">' + input + '</div>';
   }).join('') + '</div>';
+}
+function backlinksHtml(n) {
+  var b = backlinks(n);
+  if (!b.length) return '';
+  return '<div><div class="l">Citée dans</div><div class="bl">' + b.map(function (x) { return '<button type="button" class="mention" data-a="open" data-id="' + x.id + '">' + esc(x.title) + '</button>'; }).join('') + '</div></div>';
+}
+// Sélecteur de note à citer (édition) : insère [[Titre]] à l'emplacement du curseur.
+function mentionPicker() {
+  if (!linksOn()) return '';
+  return '<div><button type="button" class="btn" data-a="mention-open">@ Lier une note</button><div id="mbox" hidden><input id="mq" class="field" autocomplete="off" placeholder="Rechercher la note à citer…" aria-label="Rechercher la note à citer"><div id="mlist" class="mlist"></div></div></div>';
+}
+function mentionList() {
+  var q = norm($('#mq').value).trim(), self = curId;
+  var list = live().filter(function (n) { return n.id !== self && n.type !== 'synthesis' && n.title && (!q || norm(n.title).indexOf(q) > -1); }).slice(0, 6);
+  $('#mlist').innerHTML = list.length ? list.map(function (n) { return '<button type="button" data-a="mention-ins" data-id="' + n.id + '">' + esc(n.title) + '</button>'; }).join('') : '<div class="none muted">Aucune note trouvée</div>';
 }
 // Section « Tâches » de la fiche : cases à cocher, échéance, ajout.
 function todosHtml(n) {
@@ -320,7 +343,7 @@ function readPick(n) {
 }
 function readView(n, x) {
   var block = function (label, text, empty) {
-    return '<div>' + (label ? '<div class="l">' + label + '</div>' : '') + (text ? '<div class="readtext">' + linkify(text) + '</div>' : '<p class="muted" style="margin:0">' + empty + '</p>') + '</div>';
+    return '<div>' + (label ? '<div class="l">' + label + '</div>' : '') + (text ? '<div class="readtext">' + mentionify(linkify(text), n.id) + '</div>' : '<p class="muted" style="margin:0">' + empty + '</p>') + '</div>';
   };
   var body = '';
   if (n.type === 'text') body = block('', n.content, 'Note vide.');
@@ -332,7 +355,7 @@ function readView(n, x) {
   var classif = n.type === 'synthesis' ? '' : '<div class="foot" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">' + catChip(n) + tags +
     (n.locked ? '<span class="chip">' + I(IC.lock, 13) + 'Verrouillé</span>' : n.ai && n.notebookId ? '<span class="chip">' + I(IC.spark, 13) + 'Classé par l\'IA</span>' : '') + '</div>';
   return '<div class="shead"><h2 style="overflow-wrap:anywhere">' + esc(n.title) + '</h2>' + xbtn() + '</div>' +
-    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + propsHtml(n) + readPick(n) + x.media + body + todosHtml(n) + aiNote + x.links +
+    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + propsHtml(n) + readPick(n) + x.media + body + todosHtml(n) + aiNote + backlinksHtml(n) + x.links +
     (x.busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
     (x.analyzeBtns ? '<div class="actions">' + x.analyzeBtns + '</div>' : '') +
     '<div class="actions sfoot"><button type="button" class="rbtn" data-a="close" aria-label="Fermer" title="Fermer">' + I('<path d="m15 6-6 6 6 6"/>', 24) + '</button>' +

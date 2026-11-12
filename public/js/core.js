@@ -70,6 +70,27 @@ function todosText(n) { return (n.todos || []).map(function (t) { return t.text;
 function noteText(n) { return [n.content, n.transcript, n.description, todosText(n), linksText(n), n.enrichment ? n.enrichment.explanation : ''].filter(Boolean).join('\n\n'); }
 // Fonction « Tâches » activable dans les réglages ; les données restent même désactivée.
 function tasksOn() { return !S.settings || !S.settings.features || S.settings.features.tasks !== false; }
+function linksOn() { return !S.settings || !S.settings.features || S.settings.features.links !== false; }
+function templatesOn() { return !S.settings || !S.settings.features || S.settings.features.templates !== false; }
+// Mentions : [[Titre d'une note]] devient un lien vers cette note (résolu à l'affichage, donc toujours à jour).
+function mentionTarget(title, selfId) {
+  var q = norm(title).trim();
+  return live().filter(function (n) { return n.id !== selfId && n.type !== 'synthesis' && norm(n.title).trim() === q; })[0] || null;
+}
+function mentionify(html, selfId) {
+  if (!linksOn()) return html;
+  return html.replace(/\[\[([^\[\]\n]{1,200})\]\]/g, function (m, t) {
+    var plain = t.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+    var n = mentionTarget(plain, selfId);
+    return n ? '<button type="button" class="mention" data-a="open" data-id="' + n.id + '" title="Ouvrir la note">' + t + '</button>' : '<span class="mention broken" title="Aucune note avec ce titre">' + t + '</span>';
+  });
+}
+// Notes dont le texte cite celle-ci.
+function backlinks(n) {
+  if (!linksOn() || !n.title) return [];
+  var key = '[[' + norm(n.title).trim() + ']]';
+  return live().filter(function (x) { return x.id !== n.id && norm(noteText(x)).indexOf(key) > -1; });
+}
 function propsOn() { return !S.settings || !S.settings.features || S.settings.features.props !== false; }
 function viewsOn() { return !S.settings || !S.settings.features || S.settings.features.views !== false; }
 // Propriétés du carnet (vide si la fonction est désactivée).
@@ -251,7 +272,7 @@ function flushOutbox() {
 }
 
 function sendItem(item) {
-  return api('POST', 'notes', { clientId: item.clientId, type: item.type, content: item.content, notebookId: item.notebookId, dur: item.dur, createdAt: item.createdAt, enrich: item.enrich, read: item.read ? 'todo' : undefined })
+  return api('POST', 'notes', { clientId: item.clientId, type: item.type, content: item.content, todos: item.todos, notebookId: item.notebookId, dur: item.dur, createdAt: item.createdAt, enrich: item.enrich, read: item.read ? 'todo' : undefined })
     .then(function (r) {
       var note = r.note;
       if (item.type === 'text' || note.status !== 'uploading') return note;

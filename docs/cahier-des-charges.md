@@ -484,13 +484,13 @@ Maquette de référence : `docs/maquette-notion.html` (non reliée au serveur). 
 
 ### Étape 3 : liens et structure
 
-| Réf. | Fonction | Priorité |
-|---|---|---|
-| F102 | Mentions `@note` dans un bloc, et rétroliens affichés sur la note citée. | Should |
-| F103 | Sous-pages d'une note. | Could |
-| F104 | Notes liées suggérées par l'IA (à valider d'un clic). | Could |
-| F105 | Modèles de notes (compte rendu, courses, fiche livre, projet) proposés à la création, en plus de la note libre. | Should |
-| F106 | Vue graphe des liens. | Could |
+| Réf. | Fonction | Priorité | État |
+|---|---|---|---|
+| F102 | Mentions `@note` dans un bloc, et rétroliens affichés sur la note citée. | Should | Codé : syntaxe `[[Titre]]` avec sélecteur « Lier une note » en édition ; « Citée dans » sur la note citée |
+| F103 | Sous-pages d'une note. | Could | Non codé |
+| F104 | Notes liées suggérées par l'IA (à valider d'un clic). | Could | Non codé |
+| F105 | Modèles de notes (compte rendu, courses, fiche livre, projet) proposés à la création, en plus de la note libre. | Should | Codé (4 modèles, tâches de départ à la création) |
+| F106 | Vue graphe des liens. | Could | Non codé |
 
 ### Fonctions IA
 
@@ -506,7 +506,7 @@ Maquette de référence : `docs/maquette-notion.html` (non reliée au serveur). 
 | F109 | **Tâches d'une note** : cases à cocher avec échéance facultative, ajout, coche et suppression depuis la fiche. Stockées dans la note (`todos`), incluses dans la recherche et le texte envoyé au classement. | Must | Codé |
 | F110 | **Progression sur la carte** (« 2/3 », rouge si une tâche est en retard). | Should | Codé |
 | F111 | **Onglet Tâches** : toutes les tâches des notes hors corbeille, regroupées En retard / Aujourd'hui / Cette semaine / Plus tard / Sans date, filtre par carnet, onglet Terminées, badge avec pastille rouge si retard. | Must | Codé |
-| F112 | **Réglage « Espace de travail »** : chaque fonction se désactive sans supprimer de données. Interrupteurs codés : Tâches, Propriétés, Vues supplémentaires. Les suivants (liens, modèles, IA) s'ajouteront avec leur fonction. | Must | Codé |
+| F112 | **Réglage « Espace de travail »** : chaque fonction se désactive sans supprimer de données. Interrupteurs codés : Tâches, Propriétés, Vues supplémentaires, Liens entre notes, Modèles. Celui des fonctions IA s'ajoutera avec elles. | Must | Codé |
 
 Les tâches se modifient en ligne uniquement pour l'instant (pas de file d'attente hors connexion pour elles).
 

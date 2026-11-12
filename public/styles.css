@@ -636,3 +636,16 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
 .cn{color:var(--muted)}.cd.today .cn{color:var(--ink);font-weight:700}
 .cev{border:0;text-align:left;padding:3px 6px;border-radius:6px;font-size:11px;line-height:1.25;background:var(--soft,var(--chip));color:var(--cink,var(--chip-ink));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;min-height:24px}
 @media (max-width:759px){.cd{min-height:64px;padding:2px}.cev{font-size:10px;padding:2px 3px}.kanban{grid-auto-columns:minmax(78%,1fr)}}
+
+/* Liens entre notes et modèles */
+.mention{display:inline;border:0;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:0 6px;font:inherit;font-weight:600;cursor:pointer}
+.mention.broken{background:var(--chip);color:var(--muted);font-weight:400;cursor:help}
+.bl{display:flex;flex-wrap:wrap;gap:6px}
+.bl .mention{min-height:36px;padding:0 12px;border-radius:18px}
+#mbox{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.mlist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.mlist button{min-height:44px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;padding:0 14px}
+.mlist button:last-child{border-bottom:0}
+.mlist button:hover{background:var(--accent-soft)}
+.mlist .none{padding:12px 14px}
+.tpls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}

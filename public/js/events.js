@@ -55,6 +55,18 @@ var ACTIONS = {
     var due = $('#todoin-due').value || null;
     todoCall(el.dataset.id, 'POST', '', { text: text, due: due }).then(function (ok) { var i = $('#todoin'); if (ok && i) i.focus(); });
   },
+  'user-pw': function (el) {
+    var pw = prompt('Nouveau mot de passe provisoire (10 caractères au moins) :');
+    if (pw) api('PATCH', 'users/' + el.dataset.id, { password: pw }).then(function () { toast('Mot de passe changé : la personne devra en choisir un nouveau'); renderUsers(); }, fail);
+  },
+  'user-role': function (el) { api('PATCH', 'users/' + el.dataset.id, { role: el.dataset.role }).then(function () { renderUsers(); }, fail); },
+  'user-del': function (el) {
+    if (!confirm('Supprimer le compte de ' + el.dataset.name + ' et toutes ses notes, carnets et tags ? Les partages vers lui disparaissent.')) return;
+    api('DELETE', 'users/' + el.dataset.id).then(function () { toast('Compte supprimé'); return sync(); }).then(renderUsers, fail);
+  },
+  'share-note': function (el) { openShare('note', el.dataset.id); },
+  'share-nb': function (el) { openShare('nb', el.dataset.id); },
+  'share-save': function () { saveShare(); },
   tkcal: function (el) { TK.calf = el.dataset.id; renderTasks(); },
   tkmode: function (el) { TK.mode = el.dataset.id; renderTasks(); },
   'set-feat': function (el) { var f = {}; f[el.dataset.id] = el.getAttribute('aria-checked') !== 'true'; saveSettings({ features: f }); },
@@ -195,7 +207,11 @@ var ACTIONS = {
   'trash-empty': function () { if (!confirm('Vider la corbeille ? Les notes et leurs fichiers seront supprimés définitivement.')) return; api('POST', 'trash/empty', {}).then(function () { S.notes = S.notes.filter(function (n) { return !n.trashedAt; }); closeModal(); render(); }, fail); },
 
   'cat-new': function () { openNotebook(null); },
-  'cat-edit': function (el) { openNotebook(el.dataset.id); },
+  'cat-edit': function (el) {
+    var c = nb(el.dataset.id);
+    if (c && roleOf(c) !== 'owner') return toast('Carnet de ' + c.ownerName + ' (' + (c.role === 'edit' ? 'modification' : 'lecture') + ') : seul son propriétaire le modifie.');
+    openNotebook(el.dataset.id);
+  },
   ccolor: function (el) { ce.color = el.dataset.id; $$('#sw button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.id === ce.color)); }); },
   csave: saveNotebook,
   cdel: function () {
@@ -500,7 +516,9 @@ document.addEventListener('keydown', function (e) {
 document.addEventListener('change', function (e) {
   var t = e.target;
   if (t.classList && t.classList.contains('tdue-in')) { todoCall(t.dataset.id, 'PATCH', '/' + t.dataset.tid, { due: t.value || null }); }
+  if (t.classList && t.classList.contains('tassign')) { todoCall(t.dataset.id, 'PATCH', '/' + t.dataset.tid, { assignee: t.value || null }); }
   if (t.id === 'notedue') { queueOp({ kind: 'note-due', noteId: t.dataset.id, due: t.value || null }); }
+  if (t.id === 'tkwho') { TK.who = t.value; renderTasks(); }
   if (t.id === 'tkcat') { TK.nb = t.value; renderTasks(); }
   if (t.classList && t.classList.contains('pe-type')) { peSync(); peRender(); }
   if (t.hasAttribute && t.hasAttribute('data-pvprop')) { PV[t.getAttribute('data-pvprop')] = t.value; renderHome(); }

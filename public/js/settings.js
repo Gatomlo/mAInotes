@@ -260,7 +260,9 @@ function renderAccount() {
     var u = r.user;
     S.user = u;
     $('#view-account').innerHTML =
-      '<div class="sec" style="margin-top:8px"><p class="sub" style="margin:0;flex:1 1 200px">' + esc(u.name || u.login) + ' · compte unique de cette application, créé le ' + fmtFull(u.createdAt) + '.</p><button class="btn" data-a="logout">Se déconnecter</button></div>' +
+      '<div class="sec" style="margin-top:8px"><p class="sub" style="margin:0;flex:1 1 200px">' + esc(u.name || u.login) + ' · ' + (u.role === 'admin' ? 'administrateur' : 'compte') + ', créé le ' + fmtFull(u.createdAt) + '.</p><button class="btn" data-a="logout">Se déconnecter</button></div>' +
+      (u.mustChangePassword ? '<div class="banner warn">Votre mot de passe a été défini par l\'administrateur : choisissez-en un nouveau ci-dessous.</div>' : '') +
+      '<div id="usersbox"></div>' +
       '<form class="panel" id="f-profile"><h3>Profil</h3>' +
       '<div><label class="l" for="acc-name">Nom affiché</label><input id="acc-name" class="field" maxlength="80" value="' + esc(u.name) + '" autocomplete="name"></div>' +
       '<div><label class="l" for="acc-login">Identifiant de connexion</label><input id="acc-login" class="field" maxlength="120" value="' + esc(u.login) + '" autocomplete="username"></div>' +
@@ -288,6 +290,7 @@ function renderAccount() {
       '<div class="err" id="del-err" role="alert" hidden></div>' +
       '<div class="actions"><button type="submit" class="btn danger">Supprimer définitivement</button></div></form>';
     bindAccountForms(u);
+    if (u.role === 'admin') renderUsers();
     accordionize($('#view-account'));
   }, function (e) { $('#view-account').innerHTML = '<p class="err">' + esc(e.message) + '</p>'; });
 }
@@ -316,7 +319,7 @@ function bindAccountForms(u) {
       .then(function () {
         clearCache();
         outbox = [];
-        S = { user: null, notebooks: [], tags: [], notes: [], settings: null, providers: [], retri: null, synthesesCount: 0 };
+        S = { user: null, users: [], notebooks: [], tags: [], notes: [], settings: null, providers: [], retri: null, synthesesCount: 0 };
         showAuth('setup', {});
         toast('Compte supprimé.');
       }, function (er) { showErr('del-err', er.message); });
@@ -332,4 +335,28 @@ function openLog() {
       return '<div><span>' + fmtFull(l.date) + '</span><b>' + (lbl[l.fn] || l.fn) + '</b><span>' + PROV[l.provider] + '</span><span>' + fmtEur(l.cost) + '</span>' + (l.ok ? '<span class="ok">OK</span>' : '<span class="ko" title="' + esc(l.error || '') + '">Échec</span>') + '</div>';
     }).join('') : '<p class="sub">Aucun appel pour l\'instant.</p>';
   }, fail);
+}
+
+/* ---------- Utilisateurs (administrateur) ---------- */
+function renderUsers() {
+  api('GET', 'users').then(function (r) {
+    var rows = r.users.map(function (x) {
+      var me = S.user && x.id === S.user.id;
+      return '<div class="urow"><span class="rt"><b>' + esc(x.name) + (me ? ' <small>· vous</small>' : '') + '</b><span>' + esc(x.login) + ' · ' + (x.role === 'admin' ? 'administrateur' : 'compte') + ' · ' + plural(x.notes, 'note', 'notes') + (x.mustChangePassword ? ' · mot de passe provisoire' : '') + '</span></span>' +
+        (me ? '' : '<span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" style="height:40px" data-a="user-pw" data-id="' + x.id + '">Mot de passe</button><button class="btn" style="height:40px" data-a="user-role" data-id="' + x.id + '" data-role="' + (x.role === 'admin' ? 'user' : 'admin') + '">' + (x.role === 'admin' ? 'Retirer admin' : 'Nommer admin') + '</button><button class="btn danger" style="height:40px" data-a="user-del" data-id="' + x.id + '" data-name="' + esc(x.name) + '">Supprimer</button></span>') + '</div>';
+    }).join('');
+    $('#usersbox').innerHTML = '<div class="panel"><h3>Utilisateurs</h3><p class="sub" style="margin:0">Vous créez les comptes (pas d\'inscription libre). Chacun a ses carnets, tags et notes, privés par défaut, et partage ce qu\'il veut. Les clés d\'IA, le plafond mensuel et les réglages restent les vôtres.</p>' +
+      '<div style="display:flex;flex-direction:column;gap:8px">' + rows + '</div>' +
+      '<form id="f-newuser" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"><div class="l" style="margin:0">Ajouter un compte</div>' +
+      '<input id="nu-name" class="field" maxlength="80" placeholder="Nom affiché" aria-label="Nom affiché" autocomplete="off">' +
+      '<input id="nu-login" class="field" maxlength="120" placeholder="Identifiant de connexion" aria-label="Identifiant" autocomplete="off" required>' +
+      '<input id="nu-pw" class="field" type="text" minlength="10" placeholder="Mot de passe provisoire (10 caractères au moins)" aria-label="Mot de passe provisoire" autocomplete="off" required>' +
+      '<div class="err" id="nu-err" role="alert" hidden></div>' +
+      '<div class="actions"><button type="submit" class="btn primary">Créer le compte</button></div></form></div>';
+    $('#f-newuser').addEventListener('submit', function (e) {
+      e.preventDefault();
+      api('POST', 'users', { name: $('#nu-name').value.trim(), login: $('#nu-login').value.trim(), password: $('#nu-pw').value })
+        .then(function () { toast('Compte créé : transmettez l\'identifiant et le mot de passe provisoire'); return sync(); }).then(renderUsers, function (er) { var el = $('#nu-err'); el.textContent = er.message; el.hidden = false; });
+    });
+  }, function (e) { $('#usersbox').innerHTML = '<p class="err">' + esc(e.message) + '</p>'; });
 }

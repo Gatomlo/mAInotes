@@ -257,7 +257,8 @@ function openDetail(id, edit) {
   var linksBlock = n.links && n.links.length ? '<div><div class="l">' + (n.links.length > 1 ? 'Liens' : 'Lien') + '</div><div style="display:flex;flex-direction:column;gap:8px">' + n.links.map(function (l) { return linkCard(l, false); }).join('') + '</div>' +
       (n.links.some(function (l) { return l.aiDescription; }) ? '<div class="help">' + I(IC.spark, 14) + '<span>Descriptif rédigé par l\'IA pendant le classement, à partir de la page.</span></div>' : '') + '</div>' : '';
   var meta = TYPE_LABEL[n.type] + ' · ' + fmtFull(n.createdAt) + (n.updatedAt - n.createdAt > 60000 ? ' · modifiée ' + fmtDate(n.updatedAt) : '') + (provLabel(n) ? ' · IA : ' + provLabel(n) : '') + (n.confidence != null && n.ai ? ' · confiance ' + Math.round(n.confidence * 100) + ' %' : '');
-  var banners = (n.trashedAt ? '<div class="banner warn">Cette note est dans la corbeille.<button data-a="restore" data-id="' + n.id + '">Restaurer</button></div>' : '') +
+  var banners = (n.ownerName ? '<div class="banner">Note de ' + esc(n.ownerName) + ' · ' + (canEdit(n) ? 'vous pouvez la modifier.' : 'lecture seule.') + '</div>' : '') +
+    (n.trashedAt ? '<div class="banner warn">Cette note est dans la corbeille.<button data-a="restore" data-id="' + n.id + '">Restaurer</button></div>' : '') +
     (busy ? '<div class="status">' + I(IC.spark) + 'Analyse en cours…</div>' : '') +
     (n.status === 'error' && n.error ? '<div class="err">' + esc(n.error) + '</div>' : '') +
     (n.status === 'pending' && (n.pendingReason === 'budget' || n.pendingReason === 'config' || n.pendingReason === 'quota') ? '<div class="err">' + esc((n.error || 'Analyse en attente.').replace(/ Nouvel essai.*$/, '')) + (n.retryAt ? ' Nouvel essai automatique à ' + new Date(n.retryAt).toLocaleTimeString('fr-BE', { hour: '2-digit', minute: '2-digit' }) + '.' : '') + '</div>' : '');
@@ -329,16 +330,19 @@ function mentionList() {
 function todosHtml(n) {
   if (!tasksOn() || n.type === 'synthesis') return '';
   var today = todayStr();
+  var ro = !canEdit(n) || !!n.trashedAt;
+  var people = (n.participants || []).filter(function (id) { return userName(id); });
   var list = (n.todos || []).map(function (t) {
     var late = !t.done && t.due && t.due < today;
-    return '<li class="todo' + (t.done ? ' done' : '') + '"><button type="button" class="tchk" role="checkbox" aria-checked="' + t.done + '" data-a="todo-toggle" data-id="' + n.id + '" data-tid="' + t.id + '" aria-label="' + (t.done ? 'Rouvrir' : 'Terminer') + ' : ' + esc(t.text) + '">' + (t.done ? I(IC.check, 18) : '') + '</button>' +
-      '<span class="ttx">' + esc(t.text) + '</span>' + '<input type="date" class="field tdue-in' + (late ? ' late' : '') + '" data-id="' + n.id + '" data-tid="' + t.id + '" value="' + esc(t.due || '') + '" aria-label="Date propre à la tâche : ' + esc(t.text) + (n.due ? ' (sinon celle de la note)' : '') + '" title="' + (t.due ? 'Date propre à cette tâche' : n.due ? 'Date de la note (' + esc(fmtDay(n.due)) + ') ; choisissez-en une pour cette tâche' : 'Date facultative pour cette tâche') + '" style="width:auto;min-height:36px;padding:2px 6px' + (t.due || !n.due ? '' : ';opacity:.55') + '">' +
-      '<button type="button" class="iconbtn" data-a="todo-del" data-id="' + n.id + '" data-tid="' + t.id + '" aria-label="Supprimer la tâche : ' + esc(t.text) + '">' + I(IC.x, 18) + '</button></li>';
+    var who = people.length > 1 ? (ro ? (t.assignee ? '<span class="chip" title="Assignée à">' + esc(userName(t.assignee)) + '</span>' : '') : '<select class="field tassign" data-id="' + n.id + '" data-tid="' + t.id + '" aria-label="Assigner la tâche : ' + esc(t.text) + '" style="width:auto;min-height:36px;padding:2px 6px"><option value="">Non assignée</option>' + people.map(function (id) { return '<option value="' + id + '"' + (t.assignee === id ? ' selected' : '') + '>' + esc(userName(id)) + (S.user && id === S.user.id ? ' (moi)' : '') + '</option>'; }).join('') + '</select>') : (t.assignee ? '<span class="chip">' + esc(userName(t.assignee)) + '</span>' : '');
+    return '<li class="todo' + (t.done ? ' done' : '') + '"><button type="button" class="tchk" role="checkbox"' + (ro ? ' disabled' : '') + ' aria-checked="' + t.done + '" data-a="todo-toggle" data-id="' + n.id + '" data-tid="' + t.id + '" aria-label="' + (t.done ? 'Rouvrir' : 'Terminer') + ' : ' + esc(t.text) + '">' + (t.done ? I(IC.check, 18) : '') + '</button>' +
+      '<span class="ttx">' + esc(t.text) + '</span>' + who + (ro ? (t.due ? '<span class="tdue' + (late ? ' late' : t.due === today ? ' today' : '') + '">' + esc(t.due === today ? 'Aujourd\'hui' : fmtDay(t.due)) + '</span>' : '') : '<input type="date" class="field tdue-in' + (late ? ' late' : '') + '" data-id="' + n.id + '" data-tid="' + t.id + '" value="' + esc(t.due || '') + '" aria-label="Date propre à la tâche : ' + esc(t.text) + (n.due ? ' (sinon celle de la note)' : '') + '" title="' + (t.due ? 'Date propre à cette tâche' : n.due ? 'Date de la note (' + esc(fmtDay(n.due)) + ') ; choisissez-en une pour cette tâche' : 'Date facultative pour cette tâche') + '" style="width:auto;min-height:36px;padding:2px 6px' + (t.due || !n.due ? '' : ';opacity:.55') + '">') +
+      (ro ? '' : '<button type="button" class="iconbtn" data-a="todo-del" data-id="' + n.id + '" data-tid="' + t.id + '" aria-label="Supprimer la tâche : ' + esc(t.text) + '">' + I(IC.x, 18) + '</button>') + '</li>';
   }).join('');
   var s = todoStats(n);
   return '<div id="todobox"><div class="l">Tâches' + (s.total ? ' · ' + s.done + '/' + s.total : '') + '</div>' +
-    (n.trashedAt ? (n.due ? '<p class="sub">Date limite : ' + esc(fmtDay(n.due)) + '</p>' : '') : '<label class="notedue' + (n.due && n.due < today && s.done < s.total ? ' late' : '') + '"><span class="l" style="margin:0">Date limite</span><input id="notedue" class="field" type="date" data-id="' + n.id + '" value="' + esc(n.due || '') + '" aria-label="Date limite de la note" style="width:auto"></label>') + + (list ? '<ul class="todos">' + list + '</ul>' : '') +
-    (n.trashedAt ? '' : '<div class="todo-add"><input id="todoin" class="field" maxlength="300" placeholder="Ajouter une tâche…" aria-label="Nouvelle tâche" enterkeyhint="done"><input id="todoin-due" class="field" type="date" aria-label="Date propre à la tâche (facultative)"><button type="button" class="btn" data-a="todo-add" data-id="' + n.id + '">Ajouter</button></div>') + '</div>';
+    (ro ? (n.due ? '<p class="sub">Date limite : ' + esc(fmtDay(n.due)) + '</p>' : '') : '<label class="notedue' + (n.due && n.due < today && s.done < s.total ? ' late' : '') + '"><span class="l" style="margin:0">Date limite</span><input id="notedue" class="field" type="date" data-id="' + n.id + '" value="' + esc(n.due || '') + '" aria-label="Date limite de la note" style="width:auto"></label>') + (list ? '<ul class="todos">' + list + '</ul>' : '') +
+    (ro ? '' : '<div class="todo-add"><input id="todoin" class="field" maxlength="300" placeholder="Ajouter une tâche…" aria-label="Nouvelle tâche" enterkeyhint="done"><input id="todoin-due" class="field" type="date" aria-label="Date propre à la tâche (facultative)"><button type="button" class="btn" data-a="todo-add" data-id="' + n.id + '">Ajouter</button></div>') + '</div>';
 }
 function refreshTodos(n) {
   var box = $('#todobox');
@@ -367,13 +371,13 @@ function readView(n, x) {
   var classif = n.type === 'synthesis' ? '' : '<div class="foot" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">' + catChip(n) + tags +
     (n.locked ? '<span class="chip">' + I(IC.lock, 13) + 'Verrouillé</span>' : n.ai && n.notebookId ? '<span class="chip">' + I(IC.spark, 13) + 'Classé par l\'IA</span>' : '') + '</div>';
   return '<div class="shead"><h2 style="overflow-wrap:anywhere">' + esc(n.title) + '</h2>' + xbtn() + '</div>' +
-    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + propsHtml(n) + readPick(n) + x.media + body + todosHtml(n) + aiNote + relatedHtml(n) + backlinksHtml(n) + x.links +
+    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + propsHtml(n) + readPick(n) + shareHtml(n) + x.media + body + todosHtml(n) + aiNote + relatedHtml(n) + backlinksHtml(n) + x.links +
     (x.busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
     (x.analyzeBtns ? '<div class="actions">' + x.analyzeBtns + '</div>' : '') +
     // Boutons IA : petits, à côté de « Modifier » (voir aiFootBtns).
     '<div class="actions sfoot"><button type="button" class="rbtn" data-a="close" aria-label="Fermer" title="Fermer">' + I('<path d="m15 6-6 6 6 6"/>', 24) + '</button>' +
-    (n.trashedAt ? '<button type="button" class="rbtn danger" data-a="purge" data-id="' + n.id + '" aria-label="Supprimer définitivement" title="Supprimer définitivement">' + I(TRASH, 22) + '</button>' : '<button type="button" class="rbtn" data-a="del" aria-label="Mettre à la corbeille" title="Mettre à la corbeille">' + I(TRASH, 22) + '</button>') +
-    aiFootBtns(n, x) + '<button class="btn primary" data-a="dedit" autofocus>' + I(IC.text, 18) + 'Modifier</button></div>';
+    (!canEdit(n) ? '' : n.trashedAt ? '<button type="button" class="rbtn danger" data-a="purge" data-id="' + n.id + '" aria-label="Supprimer définitivement" title="Supprimer définitivement">' + I(TRASH, 22) + '</button>' : '<button type="button" class="rbtn" data-a="del" aria-label="Mettre à la corbeille" title="Mettre à la corbeille">' + I(TRASH, 22) + '</button>') +
+    (canEdit(n) ? aiFootBtns(n, x) + '<button class="btn primary" data-a="dedit" autofocus>' + I(IC.text, 18) + 'Modifier</button>' : '') + '</div>';
 }
 
 // Seuls les champs modifiés dans le formulaire depuis son ouverture sont envoyés :
@@ -590,6 +594,7 @@ function openNotebook(id) {
     '<div><label class="l" for="cdesc">Ce qu\'il doit contenir</label><textarea id="cdesc" class="field" rows="2" placeholder="ex. Billets, réservations, itinéraires">' + esc(c ? c.desc : '') + '</textarea><div class="help">' + I(IC.spark, 14) + '<span>L\'IA s\'appuie sur cette description pour classer.</span></div></div>' +
     '<div><div class="l">Couleur</div><div class="swatches" id="sw">' + sw + '</div></div>' +
     (propsOn() ? '<div id="peditor">' + propsEditor() + '</div>' : '') +
+    (c && (S.users || []).length > 1 ? '<div class="kv"><span>' + ((c.shares || []).length ? 'Partagé avec ' + plural((c.shares || []).length, 'personne', 'personnes') : 'Carnet privé') + '</span><button type="button" class="btn" style="height:40px" data-a="share-nb" data-id="' + c.id + '">Partager…</button></div>' : '') +
     '<div class="err" id="cerr" role="alert" hidden></div>' +
     '<div class="actions"><button class="btn primary" data-a="csave">' + (c ? 'Enregistrer' : 'Créer le carnet') + '</button>' + (c ? '<button class="btn danger" data-a="cdel">Supprimer</button>' : '<button class="btn ghost" data-a="close">Annuler</button>') + '</div>' +
     (c ? '<div class="help"><span>Supprimer : ' + plural(count, 'note passe', 'notes passent') + ' « à vérifier ». Pour les garder ensemble, utilisez plutôt la fusion.</span></div>' : '') +
@@ -908,4 +913,34 @@ function openQuick(id) {
     b('open', IC.synthesis, 'Ouvrir') + b('qedit', IC.text, 'Modifier') +
     b('qread', n.read === 'todo' ? IC.check : IC.bookmark, n.read === 'todo' ? 'Marquer lue' : 'À lire') +
     b('qtrash', TRASH, 'Corbeille', 'danger') + '</div>', 'Actions rapides');
+}
+
+/* ---------- Partage : notes et carnets ---------- */
+// Ligne de partage dans la fiche : seulement pour la personne qui a écrit la note.
+function shareHtml(n) {
+  if (n.trashedAt || n.type === 'synthesis' || roleOf(n) !== 'owner' || (S.users || []).length < 2) return '';
+  var k = (n.shares || []).length;
+  return '<div class="kv"><span class="l" style="margin:0">Partage · ' + (k ? plural(k, 'personne', 'personnes') : 'privée') + '</span><button type="button" class="btn" style="height:40px" data-a="share-note" data-id="' + n.id + '">Partager…</button></div>';
+}
+var shareCtx = null;
+function openShare(kind, id) {
+  var obj = kind === 'nb' ? nb(id) : noteById(id);
+  if (!obj) return;
+  shareCtx = { kind: kind, id: id };
+  var cur = {};
+  (obj.shares || []).forEach(function (s) { cur[s.userId] = s.role; });
+  var rows = (S.users || []).filter(function (u) { return !S.user || u.id !== S.user.id; }).map(function (u) {
+    return '<div class="kv" style="gap:10px"><span><b>' + esc(u.name) + '</b> <small class="muted">' + esc(u.login) + '</small></span>' +
+      '<select class="field shsel" data-uid="' + u.id + '" aria-label="Accès de ' + esc(u.name) + '" style="width:auto">' + opt('', cur[u.id] || '', 'Aucun accès') + opt('read', cur[u.id] || '', 'Lecture') + opt('edit', cur[u.id] || '', 'Modification') + '</select></div>';
+  }).join('') || '<p class="sub">Aucun autre compte. L\'administrateur peut en créer dans l\'onglet Compte.</p>';
+  modal = 'share';
+  openSheet(shead(kind === 'nb' ? 'Partager le carnet' : 'Partager la note') + '<div class="sub">' + esc(kind === 'nb' ? obj.name : obj.title) + '</div>' + rows +
+    '<div class="help"><span>' + (kind === 'nb' ? 'Les notes de ce carnet et leurs tâches sont partagées avec les mêmes droits ; chacun peut y ranger ses propres notes si vous autorisez la modification.' : 'La note et ses tâches : lecture seule, ou modification (cocher, ajouter, écrire). Seul vous pouvez la supprimer définitivement.') + '</span></div>' +
+    '<div class="actions"><button class="btn primary" data-a="share-save">Enregistrer</button><button class="btn ghost" data-a="close">Annuler</button></div>', 'Partage');
+}
+function saveShare() {
+  if (!shareCtx) return;
+  var shares = Array.prototype.slice.call(document.querySelectorAll('.shsel')).filter(function (s) { return s.value; }).map(function (s) { return { userId: s.dataset.uid, role: s.value }; });
+  var path = shareCtx.kind === 'nb' ? 'notebooks/' + shareCtx.id + '/shares' : 'notes/' + shareCtx.id + '/shares';
+  api('PUT', path, { shares: shares }).then(function () { closeModal(); toast(shares.length ? 'Partage enregistré' : 'Partage retiré'); return sync(); }, fail);
 }

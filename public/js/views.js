@@ -27,7 +27,16 @@ function catChip(n, quick) {
   return chk;
 }
 // Badge de lecture : le toucher fait passer « À lire » à « Lu » (et inversement).
+// Pastille de partage : « de Bob » pour une note reçue, « Partagée » pour une note que je partage.
+function shareChip(n) {
+  if (n.ownerName) return '<span class="chip share" title="' + (canEdit(n) ? 'Vous pouvez la modifier' : 'Lecture seule') + '">de ' + esc(n.ownerName) + (canEdit(n) ? '' : ' · lecture') + '</span>';
+  if ((n.shares || []).length) return '<span class="chip share" title="Partagée avec ' + esc(n.shares.map(function (s) { return userName(s.userId); }).filter(Boolean).join(', ')) + '">Partagée</span>';
+  return '';
+}
 function readChip(n) {
+  return shareChip(n) + readChip0(n);
+}
+function readChip0(n) {
   if (n.read === 'todo') return '<button class="chip read todo" data-a="read-toggle" data-id="' + n.id + '" title="Marquer comme lu">' + I(IC.bookmark, 13) + 'À lire</button>';
   if (n.read === 'done') return '<button class="chip read done" data-a="read-toggle" data-id="' + n.id + '" title="Lu' + (n.readAt ? ' le ' + esc(fmtFull(n.readAt)) : '') + ' · toucher pour remettre à lire">' + I(IC.check, 13) + 'Lu</button>';
   return '';
@@ -393,7 +402,7 @@ function renderCats() {
   var def = '<option value="">Choisi par l\'IA (aucun défaut)</option>' + S.notebooks.map(function (c) { return '<option value="' + c.id + '"' + (st.defaultNotebook === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('');
   var rows = S.notebooks.map(function (c) {
     var k = live().filter(function (n) { return n.notebookId === c.id; }).length;
-    return '<button class="row cat-' + c.color + '" data-a="cat-edit" data-id="' + c.id + '"><i class="dot"></i><span class="rt"><b>' + esc(c.name) + (st.defaultNotebook === c.id ? ' <small>· par défaut</small>' : '') + '</b><span>' + (c.needsDesc || !c.desc ? '<em>Description à compléter pour guider le classement.</em>' : esc(c.desc)) + '</span></span><span class="n">' + k + '</span></button>';
+    return '<button class="row cat-' + c.color + '" data-a="cat-edit" data-id="' + c.id + '"><i class="dot"></i><span class="rt"><b>' + esc(c.name) + (st.defaultNotebook === c.id ? ' <small>· par défaut</small>' : '') + (c.ownerName ? ' <small>· de ' + esc(c.ownerName) + (c.role === 'edit' ? '' : ' · lecture') + '</small>' : (c.shares || []).length ? ' <small>· partagé</small>' : '') + '</b><span>' + (c.needsDesc || !c.desc ? '<em>Description à compléter pour guider le classement.</em>' : esc(c.desc)) + '</span></span><span class="n">' + k + '</span></button>';
   }).join('') || '<div class="empty">Aucun carnet.</div>';
   var tags = S.tags.map(function (t) {
     var k = live().filter(function (n) { return n.tagIds.indexOf(t.id) > -1; }).length;
@@ -457,6 +466,7 @@ function allTodos() {
 }
 function renderTasksTab() {
   var on = tasksOn();
+  $('#tab-set').hidden = !isAdmin();
   $('#tab-tasks').hidden = !on;
   document.body.classList.toggle('has-tasks', on);
   var open = on ? allTodos().filter(function (x) { return !x.t.done; }) : [];
@@ -467,7 +477,7 @@ function renderTasksTab() {
   b.classList.toggle('late', !!late);
   $('#tab-tasks').setAttribute('aria-label', 'Tâches' + (open.length ? ' (' + open.length + ' à faire' + (late ? ', ' + late + ' en retard' : '') + ')' : ''));
 }
-var TK = { mode: 'todo', nb: '', calf: 'both' };
+var TK = { mode: 'todo', nb: '', calf: 'both', who: '' };
 // Calendrier mensuel des échéances de tâches : un clic ouvre la note.
 function tasksCalendar(all, notes) {
   var first = new Date(PV.y, PV.m, 1), lead = (first.getDay() + 6) % 7, days = new Date(PV.y, PV.m + 1, 0).getDate();
@@ -490,7 +500,7 @@ function renderTasks() {
   var today = todayStr();
   var week = new Date(); week.setDate(week.getDate() + 7);
   var weekStr = week.getFullYear() + '-' + String(week.getMonth() + 1).padStart(2, '0') + '-' + String(week.getDate()).padStart(2, '0');
-  var inNb = function (x) { return !TK.nb || (TK.nb === '__none' ? !x.n.notebookId : x.n.notebookId === TK.nb); };
+  var inNb = function (x) { return (!TK.nb || (TK.nb === '__none' ? !x.n.notebookId : x.n.notebookId === TK.nb)) && (TK.who !== 'me' || (S.user && x.t.assignee === S.user.id)); };
   var all = allTodos().filter(inNb);
   var open = all.filter(function (x) { return !x.t.done; });
   var done = all.filter(function (x) { return x.t.done; }).sort(function (a, b) { return (b.t.doneAt || 0) - (a.t.doneAt || 0); }).slice(0, 100);
@@ -498,7 +508,7 @@ function renderTasks() {
   var row = function (x) {
     var c = nb(x.n.notebookId);
     var due = x.t.due ? '<span class="tdue' + (!x.t.done && x.t.due < today ? ' late' : x.t.due === today ? ' today' : '') + '">' + esc(x.t.due === today ? 'Aujourd\'hui' : fmtDay(x.t.due)) + '</span>' : '';
-    return '<li class="trow' + (x.t.done ? ' isdone' : '') + '"><button type="button" class="trow-open" data-a="open" data-id="' + x.n.id + '"><small>' + (c ? esc(c.name) + ' · ' : '') + esc(x.n.title) + (due ? ' · ' : '') + due + '</small><b>' + esc(x.t.text) + '</b></button>' +
+    return '<li class="trow' + (x.t.done ? ' isdone' : '') + '"><button type="button" class="trow-open" data-a="open" data-id="' + x.n.id + '"><small>' + (c ? esc(c.name) + ' · ' : '') + esc(x.n.title) + (x.t.assignee ? ' · pour ' + esc(userName(x.t.assignee)) : '') + (due ? ' · ' : '') + due + '</small><b>' + esc(x.t.text) + '</b></button>' +
       '<button type="button" class="trow-chk' + (x.t.done ? ' on' : '') + '" data-a="todo-toggle" data-id="' + x.n.id + '" data-tid="' + x.t.id + '" role="checkbox" aria-checked="' + x.t.done + '" aria-label="' + (x.t.done ? 'Rouvrir' : 'Terminer') + ' : ' + esc(x.t.text) + '">' + I(IC.check, 22) + '</button></li>';
   };
   var groups = [
@@ -519,6 +529,7 @@ function renderTasks() {
     }).join('') || '<div class="empty"><h3>Rien à faire</h3><p>Ouvrez une note et ajoutez-y des tâches : elles seront rassemblées ici, avec leur échéance.</p></div>';
   }
   var sel = '<select id="tkcat" class="field tkcat" aria-label="Carnet"><option value="">Tous les carnets</option>' + S.notebooks.map(function (c) { return '<option value="' + c.id + '"' + (TK.nb === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '<option value="__none"' + (TK.nb === '__none' ? ' selected' : '') + '>Sans carnet</option></select>';
+  if ((S.users || []).length > 1) sel += '<select id="tkwho" class="field tkcat" aria-label="Assignation"><option value="">Toutes les tâches</option><option value="me"' + (TK.who === 'me' ? ' selected' : '') + '>Assignées à moi</option></select>';
   $('#view-tasks').innerHTML = '<div class="tk-top"><p class="sub tr-sub">' + (TK.mode === 'todo' || TK.mode === 'cal' ? (open.length ? plural(open.length, 'tâche à faire', 'tâches à faire') : '') : plural(done.length, 'tâche terminée', 'tâches terminées')) + '</p>' + sel + '</div>' + body +
     '<div class="tabdock"><div class="modes seg2" role="group" aria-label="Tâches"><button type="button" data-a="tkmode" data-id="todo" aria-pressed="' + (TK.mode === 'todo') + '">À faire · ' + open.length + '</button><button type="button" data-a="tkmode" data-id="done" aria-pressed="' + (TK.mode === 'done') + '">Terminées · ' + all.filter(function (x) { return x.t.done; }).length + '</button></div></div>';
 }

@@ -29,7 +29,12 @@ var IC = {
 };
 
 /* ---------- État ---------- */
-var S = { user: null, notebooks: [], tags: [], notes: [], settings: null, providers: [], retri: null, synthesesCount: 0 };
+var S = { user: null, users: [], notebooks: [], tags: [], notes: [], settings: null, providers: [], retri: null, synthesesCount: 0 };
+/* Comptes et partage : rôle de la personne sur une note ou un carnet (« owner », « edit », « read »). */
+function isAdmin() { return !!(S.user && S.user.role === 'admin'); }
+function roleOf(x) { return x.role || 'owner'; }
+function canEdit(n) { return roleOf(n) !== 'read'; }
+function userName(id) { var u = (S.users || []).filter(function (x) { return x.id === id; })[0]; return u ? u.name : ''; }
 var F = { q: '', cat: null, tags: [], tagMode: 'all', read: '', period: '', from: '', to: '' };
 var VIEW = 'cards';
 try { VIEW = localStorage.getItem('mainotes-view') === 'list' ? 'list' : 'cards'; } catch (e) { /* stockage indisponible */ }
@@ -347,6 +352,7 @@ function opApply(op, n) {
       if (op.patch.done !== undefined) { t.done = !!op.patch.done; t.doneAt = t.done ? Date.now() : null; }
       if (op.patch.text !== undefined) t.text = op.patch.text;
       if (op.patch.due !== undefined) t.due = op.patch.due || null;
+      if (op.patch.assignee !== undefined) t.assignee = op.patch.assignee || null;
     }
   } else if (op.kind === 'todo-del') {
     n.todos = n.todos.filter(function (x) { return x.id !== op.tid; });
@@ -407,7 +413,7 @@ var syncTimer = null;
 function sync() {
   if (!S.user) return Promise.resolve();
   return flushOps().then(function () { return api('GET', 'state', undefined, { timeout: 15000 }); }).then(function (d) {
-    S.notebooks = d.notebooks; S.tags = d.tags; S.notes = d.notes; S.settings = d.settings;
+    S.notebooks = d.notebooks; S.tags = d.tags; S.notes = d.notes; S.settings = d.settings; S.users = d.users || [];
     opsApplyAll();
     S.providers = d.providers; S.retri = d.retri; S.synthesesCount = d.synthesesCount;
     saveCache();

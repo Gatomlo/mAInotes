@@ -7,7 +7,7 @@ Lire d'abord `docs/cahier-des-charges.md`. Le comportement de référence est ce
 ## Décisions déjà prises
 - Une note appartient à **un seul carnet** et peut avoir **plusieurs tags**. « Catégorie » dans les anciennes sections du cahier = « carnet ».
 - PWA, notes stockées sur le serveur, compte utilisateur, file d'attente hors connexion.
-- Un seul compte, créé à la première ouverture après déploiement, modifiable dans l'onglet Compte (F64–F71).
+- Premier compte (administrateur) créé à la première ouverture après déploiement, modifiable dans l'onglet Compte (F64–F71). Autres comptes créés par l'administrateur, données privées par défaut, partage de carnets/notes/tâches en lecture ou modification, IA et budget communs gérés par l'administrateur (F113–F120).
 - Déploiement Infomaniak via `node-gateway` : `server.js` exporte l'app Express, chemins navigateur toujours relatifs, aucune dépendance native (stockage JSON + fichiers dans `data/`). Voir `docs/deploiement-infomaniak.md`.
 - Fournisseurs d'IA derrière une interface commune. Infomaniak par défaut (API compatible OpenAI), Gemini et Claude optionnels, inactifs par défaut. Clés API uniquement côté serveur, chiffrées.
 - Sobriété IA : classement sur le texte seul, transcription une seule fois, vocal 2 minutes maximum, photo réduite avant envoi, plafond mensuel avec alerte à 80 %.

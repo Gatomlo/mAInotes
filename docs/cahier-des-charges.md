@@ -551,10 +551,26 @@ Le principal risque est un classement IA qui déçoit au début ; la parade est 
 **Questions à trancher avant de coder**
 
 - [x] Où héberger l'application et les fichiers : hébergement Infomaniak, application montée par `node-gateway`, données dans un dossier du serveur.
-- [x] Usage strictement personnel : un seul compte, créé à la première ouverture (F64 à F71).
+- [x] Premier compte créé à la première ouverture (F64 à F71) ; d'autres comptes créés par l'administrateur (F113 à F120).
 - [ ] Fournisseur d'IA pour la transcription, la vision et le classement : un seul ou un par fonction ?
 - [ ] Une seule catégorie par note (proposé) ou plusieurs ?
 - [ ] Les catégories de départ : à lister ensemble avant la première version.
 - [ ] Langues des vocaux : français seul, ou mélange avec d'autres langues ?
 - [ ] Budget mensuel acceptable pour l'IA et l'hébergement.
 - [ ] Espace façon Notion : Node 22 disponible chez Infomaniak (pour SQLite sans compilation) ? Éditeur de blocs écrit à la main ou petite bibliothèque embarquée ? Usages prioritaires : tâches, bases, wiki ?
+
+
+## Comptes multiples et partage (F113 à F120)
+
+| N° | Fonction | Priorité | État |
+|---|---|---|---|
+| F113 | **Utilisateurs créés par l'administrateur** (onglet Compte) : identifiant, nom, mot de passe provisoire ; pas d'inscription libre. Le premier compte est administrateur ; on peut nommer d'autres administrateurs, réinitialiser un mot de passe, supprimer un compte (ses notes, carnets et tags sont supprimés, les partages vers lui disparaissent). | Must | Codé |
+| F114 | **Données privées par défaut** : chacun a ses notes, carnets, tags, synthèses, re-tris et description du carnet de notes. L'IA ne range une note que parmi les carnets et tags de son propriétaire. | Must | Codé |
+| F115 | **Partage de carnet** avec une personne en lecture ou en modification ; les notes du carnet et leurs tâches suivent. Une personne avec droit de modification peut y ranger ses propres notes ; le propriétaire du carnet les voit toutes. | Must | Codé |
+| F116 | **Partage d'une note seule** (lecture ou modification), retirable à tout moment. Seule la personne qui l'a écrite la partage ou la supprime définitivement. | Must | Codé |
+| F117 | **Tâches assignées** à une personne qui voit la note ; filtre « Assignées à moi » dans l'onglet Tâches. | Should | Codé |
+| F118 | **IA et budget communs** : clés, fournisseurs, plafond mensuel, déclenchement et réglages d'IA réservés à l'administrateur ; chacun garde son carnet par défaut et sa description. Onglet Réglages et journal des appels visibles de l'administrateur seulement. | Must | Codé |
+| F119 | **Lecture seule respectée** : une note ou un carnet en lecture seule ne se modifie pas (cases, date, ajout, suppression masqués ; serveur : refus 403). Pastille « de Bob · lecture » sur les cartes, « Partagée » pour mes notes partagées. | Must | Codé |
+| F120 | **Suppression de son compte** par un non-administrateur : retire ses données seulement. L'administrateur unique ne peut pas se supprimer tant qu'il reste d'autres comptes. Mot de passe oublié : `npm run reset-password -- identifiant`. | Should | Codé |
+
+Hors périmètre pour l'instant : mises à jour en temps réel (un partage apparaît à la prochaine synchronisation), commentaires, notifications, groupes.

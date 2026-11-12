@@ -475,12 +475,12 @@ Maquette de référence : `docs/maquette-notion.html` (non reliée au serveur). 
 
 ### Étape 2 : carnets-bases de données
 
-| Réf. | Fonction | Priorité |
-|---|---|---|
-| F98 | Propriétés par carnet : texte, nombre, date, sélection, sélection multiple, case à cocher, URL. Une propriété peut être marquée « remplie par l'IA ». | Must |
-| F99 | L'IA propose les valeurs des propriétés marquées dans l'appel de classement (aucun appel en plus), sans jamais écraser une valeur saisie à la main. | Should |
-| F100 | Vues d'un carnet : cartes (actuelle), tableau, kanban par propriété de sélection (glisser pour changer de valeur), calendrier par propriété date. | Must |
-| F101 | Filtres et tris enregistrés par vue. L'onglet « À lire / Lu » devient un carnet-base avec vue kanban. | Should |
+| Réf. | Fonction | Priorité | État |
+|---|---|---|---|
+| F98 | Propriétés par carnet : texte, nombre, date, sélection, sélection multiple, case à cocher, URL. Une propriété peut être marquée « remplie par l'IA ». | Must | Codé, sauf sélection multiple et marque « IA » |
+| F99 | L'IA propose les valeurs des propriétés marquées dans l'appel de classement (aucun appel en plus), sans jamais écraser une valeur saisie à la main. | Should | Non codé |
+| F100 | Vues d'un carnet : cartes (actuelle), tableau, kanban par propriété de sélection (glisser pour changer de valeur), calendrier par propriété date. | Must | Codé (tableau, kanban, calendrier) |
+| F101 | Filtres et tris enregistrés par vue. L'onglet « À lire / Lu » devient un carnet-base avec vue kanban. | Should | Non codé : la vue choisie est gardée par carnet sur l'appareil, sans filtres ni tris enregistrés |
 
 ### Étape 3 : liens et structure
 
@@ -506,7 +506,7 @@ Maquette de référence : `docs/maquette-notion.html` (non reliée au serveur). 
 | F109 | **Tâches d'une note** : cases à cocher avec échéance facultative, ajout, coche et suppression depuis la fiche. Stockées dans la note (`todos`), incluses dans la recherche et le texte envoyé au classement. | Must | Codé |
 | F110 | **Progression sur la carte** (« 2/3 », rouge si une tâche est en retard). | Should | Codé |
 | F111 | **Onglet Tâches** : toutes les tâches des notes hors corbeille, regroupées En retard / Aujourd'hui / Cette semaine / Plus tard / Sans date, filtre par carnet, onglet Terminées, badge avec pastille rouge si retard. | Must | Codé |
-| F112 | **Réglage « Espace de travail »** : chaque fonction se désactive sans supprimer de données. Premier interrupteur : Tâches. Les suivants (propriétés, vues, liens, modèles, IA) s'ajoutent avec leur fonction. | Must | Codé (Tâches) |
+| F112 | **Réglage « Espace de travail »** : chaque fonction se désactive sans supprimer de données. Interrupteurs codés : Tâches, Propriétés, Vues supplémentaires. Les suivants (liens, modèles, IA) s'ajouteront avec leur fonction. | Must | Codé |
 
 Les tâches se modifient en ligne uniquement pour l'instant (pas de file d'attente hors connexion pour elles).
 

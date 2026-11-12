@@ -274,6 +274,23 @@ function openDetail(id, edit) {
 }
 
 // Lecture : texte mis en forme, liens cliquables, classement en pastilles.
+// Propriétés du carnet de la note, modifiables dans la fiche.
+function propsHtml(n) {
+  var c = nb(n.notebookId), ps = nbProps(c);
+  if (!ps.length || n.type === 'synthesis') return '';
+  var ro = n.trashedAt ? ' disabled' : '';
+  return '<div class="pgrid"><div class="l" style="grid-column:1/-1;margin:0">Propriétés · ' + esc(c.name) + '</div>' + ps.map(function (p) {
+    var v = propValue(n, p), id = 'pp-' + p.id, at = ' id="' + id + '" class="field pinp" data-nid="' + n.id + '" data-pid="' + p.id + '" data-ptype="' + p.type + '"' + ro;
+    var input;
+    if (p.type === 'select') input = '<select' + at + '><option value="">—</option>' + p.options.map(function (o) { return '<option' + (v === o ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select>';
+    else if (p.type === 'checkbox') input = '<input' + at.replace('class="field pinp"', 'class="pinp pchk"') + ' type="checkbox"' + (v ? ' checked' : '') + '>';
+    else if (p.type === 'number') input = '<input' + at + ' type="number" step="any" value="' + esc(v) + '">';
+    else if (p.type === 'date') input = '<input' + at + ' type="date" value="' + esc(v) + '">';
+    else if (p.type === 'url') input = '<input' + at + ' type="url" inputmode="url" placeholder="https://…" value="' + esc(v) + '">' + (/^https?:\/\//i.test(v) ? '<a class="pl" href="' + esc(v) + '" target="_blank" rel="noopener noreferrer">Ouvrir</a>' : '');
+    else input = '<input' + at + ' maxlength="500" value="' + esc(v) + '">';
+    return '<label class="pk" for="' + id + '">' + esc(p.name) + '</label><div class="pv-in">' + input + '</div>';
+  }).join('') + '</div>';
+}
 // Section « Tâches » de la fiche : cases à cocher, échéance, ajout.
 function todosHtml(n) {
   if (!tasksOn() || n.type === 'synthesis') return '';
@@ -315,7 +332,7 @@ function readView(n, x) {
   var classif = n.type === 'synthesis' ? '' : '<div class="foot" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">' + catChip(n) + tags +
     (n.locked ? '<span class="chip">' + I(IC.lock, 13) + 'Verrouillé</span>' : n.ai && n.notebookId ? '<span class="chip">' + I(IC.spark, 13) + 'Classé par l\'IA</span>' : '') + '</div>';
   return '<div class="shead"><h2 style="overflow-wrap:anywhere">' + esc(n.title) + '</h2>' + xbtn() + '</div>' +
-    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + readPick(n) + x.media + body + todosHtml(n) + aiNote + x.links +
+    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + propsHtml(n) + readPick(n) + x.media + body + todosHtml(n) + aiNote + x.links +
     (x.busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
     (x.analyzeBtns ? '<div class="actions">' + x.analyzeBtns + '</div>' : '') +
     '<div class="actions sfoot"><button type="button" class="rbtn" data-a="close" aria-label="Fermer" title="Fermer">' + I('<path d="m15 6-6 6 6 6"/>', 24) + '</button>' +
@@ -383,7 +400,7 @@ function dtPick(i) {
 var ce = null;
 function openNotebook(id) {
   var c = id ? nb(id) : null;
-  ce = { id: id || null, color: c ? c.color : COLORS[S.notebooks.length % COLORS.length] };
+  ce = { id: id || null, color: c ? c.color : COLORS[S.notebooks.length % COLORS.length], props: c && c.properties ? JSON.parse(JSON.stringify(c.properties)) : [] };
   modal = 'cat';
   var sw = COLORS.map(function (k) { return '<button type="button" class="cat-' + k + '" data-a="ccolor" data-id="' + k + '" aria-label="' + CNAME[k] + '" aria-pressed="' + (ce.color === k) + '"><i></i></button>'; }).join('');
   var count = c ? live().filter(function (n) { return n.notebookId === c.id; }).length : 0;
@@ -391,13 +408,39 @@ function openNotebook(id) {
     '<div><label class="l" for="cname">Nom</label><input id="cname" class="field" value="' + esc(c ? c.name : '') + '" maxlength="40" autofocus></div>' +
     '<div><label class="l" for="cdesc">Ce qu\'il doit contenir</label><textarea id="cdesc" class="field" rows="2" placeholder="ex. Billets, réservations, itinéraires">' + esc(c ? c.desc : '') + '</textarea><div class="help">' + I(IC.spark, 14) + '<span>L\'IA s\'appuie sur cette description pour classer.</span></div></div>' +
     '<div><div class="l">Couleur</div><div class="swatches" id="sw">' + sw + '</div></div>' +
+    (propsOn() ? '<div id="peditor">' + propsEditor() + '</div>' : '') +
     '<div class="err" id="cerr" role="alert" hidden></div>' +
     '<div class="actions"><button class="btn primary" data-a="csave">' + (c ? 'Enregistrer' : 'Créer le carnet') + '</button>' + (c ? '<button class="btn danger" data-a="cdel">Supprimer</button>' : '<button class="btn ghost" data-a="close">Annuler</button>') + '</div>' +
     (c ? '<div class="help"><span>Supprimer : ' + plural(count, 'note passe', 'notes passent') + ' « à vérifier ». Pour les garder ensemble, utilisez plutôt la fusion.</span></div>' : '') +
     '<div class="help"><span>Après une création ou une modification, vous pouvez relancer le tri depuis l\'onglet Carnets.</span></div>', 'Carnet');
 }
+var PTYPES = [['text', 'Texte'], ['number', 'Nombre'], ['date', 'Date'], ['select', 'Sélection'], ['checkbox', 'Case à cocher'], ['url', 'Lien (URL)']];
+function propsEditor() {
+  var rows = ce.props.map(function (p, i) {
+    return '<div class="pe-row" data-i="' + i + '"><input class="field pe-name" maxlength="30" placeholder="Nom" aria-label="Nom de la propriété" value="' + esc(p.name) + '">' +
+      '<select class="field pe-type" aria-label="Type">' + PTYPES.map(function (t) { return '<option value="' + t[0] + '"' + (p.type === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('') + '</select>' +
+      '<button type="button" class="iconbtn" data-a="pe-del" data-id="' + i + '" aria-label="Supprimer la propriété">' + I(IC.x, 18) + '</button>' +
+      (p.type === 'select' ? '<input class="field pe-opts" placeholder="Options séparées par des virgules (ex. À lire, En cours, Lu)" aria-label="Options" value="' + esc((p.options || []).join(', ')) + '">' : '') + '</div>';
+  }).join('');
+  return '<div><div class="l">Propriétés</div>' + (rows || '<p class="muted" style="margin:0 0 6px">Aucune. Les propriétés (statut, échéance, note…) alimentent les vues Tableau, Kanban et Calendrier.</p>') +
+    '<div class="actions"><button type="button" class="btn" data-a="pe-add"' + (ce.props.length >= 12 ? ' disabled' : '') + '>+ Ajouter une propriété</button></div></div>';
+}
+// Relit le formulaire des propriétés avant de le redessiner ou de l'enregistrer.
+function peSync() {
+  $$('#peditor .pe-row').forEach(function (row) {
+    var p = ce.props[+row.dataset.i];
+    if (!p) return;
+    p.name = $('.pe-name', row).value;
+    p.type = $('.pe-type', row).value;
+    var o = $('.pe-opts', row);
+    if (p.type === 'select') p.options = o ? o.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean) : (p.options || []);
+    else delete p.options;
+  });
+}
+function peRender() { var e = $('#peditor'); if (e) e.innerHTML = propsEditor(); }
 function saveNotebook() {
   var body = { name: $('#cname').value.trim(), desc: $('#cdesc').value.trim(), color: ce.color };
+  if (propsOn()) { peSync(); body.properties = ce.props.map(function (p) { var o = { id: p.id, name: p.name.trim(), type: p.type }; if (p.type === 'select') o.options = p.options || []; return o; }); }
   var p = ce.id ? api('PATCH', 'notebooks/' + ce.id, body) : api('POST', 'notebooks', body);
   p.then(function () { closeModal(); return sync(); }).then(function () { askRetri(ce && ce.id ? 'Carnet enregistré.' : 'Carnet créé.'); }, function (e) { var el = $('#cerr'); if (el) { el.textContent = e.message; el.hidden = false; } });
 }

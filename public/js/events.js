@@ -56,7 +56,7 @@ var ACTIONS = {
     todoCall(el.dataset.id, 'POST', '', { text: text, due: due }).then(function (ok) { var i = $('#todoin'); if (ok && i) i.focus(); });
   },
   tkmode: function (el) { TK.mode = el.dataset.id; renderTasks(); },
-  'set-feat': function (el) { saveSettings({ features: { tasks: el.getAttribute('aria-checked') !== 'true' } }); },
+  'set-feat': function (el) { var f = {}; f[el.dataset.id] = el.getAttribute('aria-checked') !== 'true'; saveSettings({ features: f }); },
   dread: function (el) { var n = curNote(); if (n) setRead(n, el.dataset.id || null).then(function () { if (modal === 'detail' && curId === n.id) openDetail(n.id, false); }); },
   'toast-undo': function () { var f = toastUndo; toastUndo = null; $('#toast').hidden = true; if (f) f(); },
   ftagmode: function (el) { F.tagMode = el.dataset.id; renderHome(); },
@@ -73,7 +73,19 @@ var ACTIONS = {
   qcat: function (el) { F.cat = el.dataset.id; if (tab !== 'home') setTab('home'); else renderHome(); window.scrollTo(0, 0); },
   qtag: function (el) { if (F.tags.indexOf(el.dataset.id) < 0) F.tags.push(el.dataset.id); renderHome(); window.scrollTo(0, 0); },
   clearf: function () { F = { q: F.q, cat: null, tags: [], tagMode: 'all', read: '', period: '', from: '', to: '' }; renderHome(); },
-  view: function (el) { VIEW = el.dataset.id; try { localStorage.setItem('mainotes-view', VIEW); } catch (e) { /* rien */ } renderHome(); },
+  view: function (el) {
+    var id = el.dataset.id, c = homeNb();
+    if (id === 'table' || id === 'kanban' || id === 'calendar') { if (c) nbViewSet(c.id, id); }
+    else { if (c) nbViewSet(c.id, null); VIEW = id; try { localStorage.setItem('mainotes-view', VIEW); } catch (e) { /* rien */ } }
+    renderHome();
+  },
+  calnav: function (el) {
+    var d = +el.dataset.id;
+    if (!d) { PV.y = new Date().getFullYear(); PV.m = new Date().getMonth(); } else { var t = new Date(PV.y, PV.m + d, 1); PV.y = t.getFullYear(); PV.m = t.getMonth(); }
+    renderHome();
+  },
+  'pe-add': function () { peSync(); ce.props.push({ name: '', type: 'text' }); peRender(); var r = $$('#peditor .pe-name'); if (r.length) r[r.length - 1].focus(); },
+  'pe-del': function (el) { peSync(); ce.props.splice(+el.dataset.id, 1); peRender(); },
   qclear: function () { F.q = ''; $('#q').value = ''; renderHome(); $('#q').focus(); },
   open: function (el) { if (modal === 'detail' && curId !== el.dataset.id) saveDetail(false); openDetail(el.dataset.id); },
   analyze: function (el) { analyze(el.dataset.id); },
@@ -409,7 +421,35 @@ document.addEventListener('keydown', function (e) {
   if (e.target.id === 'todoin' && e.key === 'Enter') { e.preventDefault(); var b = $('[data-a="todo-add"]'); if (b) ACTIONS['todo-add'](b); }
 });
 document.addEventListener('change', function (e) {
-  if (e.target.id === 'tkcat') { TK.nb = e.target.value; renderTasks(); }
+  var t = e.target;
+  if (t.id === 'tkcat') { TK.nb = t.value; renderTasks(); }
+  if (t.classList && t.classList.contains('pe-type')) { peSync(); peRender(); }
+  if (t.hasAttribute && t.hasAttribute('data-pvprop')) { PV[t.getAttribute('data-pvprop')] = t.value; renderHome(); }
+  if (t.classList && t.classList.contains('kmove')) { moveCard(t.dataset.nid, $('.kanban').dataset.pid, t.value); }
+  if (t.classList && t.classList.contains('pinp')) {
+    var v = t.dataset.ptype === 'checkbox' ? t.checked : t.value;
+    var p = {}; p[t.dataset.pid] = v === '' ? null : v;
+    patchProps(t.dataset.nid, p, true);
+  }
+});
+// Propriétés : enregistrement (mise à jour locale sans recharger la fiche).
+function patchProps(noteId, props, fromForm) {
+  if (!online) { toast('Les propriétés se modifient en ligne.'); if (fromForm && modal === 'detail') openDetail(noteId, false); return Promise.resolve(false); }
+  return api('PATCH', 'notes/' + noteId, { props: props }).then(function (r) { upsertNote(r.note); saveCache(); render(); return true; },
+    function (e) { fail(e); if (fromForm && modal === 'detail') openDetail(noteId, false); return false; });
+}
+function moveCard(noteId, pid, value) { var p = {}; p[pid] = value || null; return patchProps(noteId, p); }
+// Kanban : glisser une carte vers une autre colonne change la valeur de la propriété.
+var dragNote = null;
+document.addEventListener('dragstart', function (e) { var k = e.target.closest && e.target.closest('.kcard'); if (!k) return; dragNote = k.dataset.nid; k.classList.add('drag'); try { e.dataTransfer.setData('text/plain', dragNote); e.dataTransfer.effectAllowed = 'move'; } catch (x) { /* rien */ } });
+document.addEventListener('dragend', function (e) { dragNote = null; $$('.kcard.drag,.kcol.over').forEach(function (x) { x.classList.remove('drag', 'over'); }); });
+document.addEventListener('dragover', function (e) { var c = e.target.closest && e.target.closest('.kcol'); if (!c || !dragNote) return; e.preventDefault(); $$('.kcol.over').forEach(function (x) { if (x !== c) x.classList.remove('over'); }); c.classList.add('over'); });
+document.addEventListener('drop', function (e) {
+  var c = e.target.closest && e.target.closest('.kcol');
+  if (!c || !dragNote) return;
+  e.preventDefault();
+  var id = dragNote; dragNote = null;
+  moveCard(id, $('.kanban').dataset.pid, c.dataset.val);
 });
 
 boot();

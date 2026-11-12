@@ -287,7 +287,11 @@ function renderHome() {
   $('#fbtn').setAttribute('aria-label', 'Filtres' + (nf ? ' (' + nf + ' actif' + (nf > 1 ? 's' : '') + ')' : ''));
   renderActive();
   renderFilterPanel();
-  $$('[data-a="view"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.id === VIEW)); });
+  var cv = curView(), hc = homeNb();
+  $$('[data-a="view"]').forEach(function (b) {
+    if (b.dataset.id === 'table' || b.dataset.id === 'kanban' || b.dataset.id === 'calendar') b.hidden = !(hc && viewApplicable(hc, b.dataset.id));
+    b.setAttribute('aria-pressed', String(b.dataset.id === cv));
+  });
   $('#resinfo').textContent = active ? plural(list.length, 'note', 'notes') + ' sur ' + live().length : '';
   $('#qclear').hidden = !F.q;
   var toread = live().filter(function (n) { return n.read === 'todo'; }).length;
@@ -303,7 +307,9 @@ function renderHome() {
   var calls = pend.reduce(function (a, n) { return a + 1 + ((n.type === 'voice' && !n.transcript) || (n.type === 'image' && !n.description && !n.content) ? 1 : 0); }, 0);
   $('#pendbar').innerHTML = pend.length ? '<div class="pendbar"><span>' + plural(pend.length, 'note à analyser', 'notes à analyser') + '</span><button class="btn primary" style="height:44px" data-a="analyze-all">Tout analyser · ≈ ' + plural(calls, 'appel', 'appels') + '</button></div>' : '';
   var showOutbox = !active ? outbox.map(outboxCard).join('') : '';
-  $('#grid').className = VIEW === 'list' ? 'rows' : 'grid';
+  var pvMode = cv === 'table' || cv === 'kanban' || cv === 'calendar';
+  $('#grid').className = pvMode ? 'pv' : cv === 'list' ? 'rows' : 'grid';
+  if (pvMode) { $('#grid').innerHTML = renderPropView(list, hc, cv); layoutMasonry(); return; }
   $('#grid').innerHTML = showOutbox + (list.length ? list.map(function (n) { return VIEW === 'list' ? listRow(n, F.q) : card(n, F.q); }).join('') :
     (showOutbox ? '' : '<div class="empty"><h3>' + (active ? 'Aucune note ne correspond' : 'Aucune note pour l\'instant') + '</h3><p>' + (active ? 'Essayez un autre mot ou retirez un filtre.' : 'Ajoutez un texte, un vocal ou une image : le classement se fait tout seul.') + '</p></div>'));
   layoutMasonry();
@@ -322,7 +328,7 @@ function masonrySpan(el) {
 function layoutMasonry() {
   var g = $('#grid');
   if (masonryRO) masonryRO.disconnect();
-  if (!masonryRO || VIEW === 'list') return; // sans ResizeObserver : grille simple
+  if (!masonryRO || curView() !== 'cards') return; // sans ResizeObserver : grille simple
   g.classList.add('masonry');
   Array.prototype.forEach.call(g.children, function (el) { masonrySpan(el); masonryRO.observe(el); });
 }
@@ -493,4 +499,80 @@ function renderTasks() {
   var sel = '<select id="tkcat" class="field tkcat" aria-label="Carnet"><option value="">Tous les carnets</option>' + S.notebooks.map(function (c) { return '<option value="' + c.id + '"' + (TK.nb === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '<option value="__none"' + (TK.nb === '__none' ? ' selected' : '') + '>Sans carnet</option></select>';
   $('#view-tasks').innerHTML = '<div class="tk-top"><p class="sub tr-sub">' + (TK.mode === 'todo' ? (open.length ? plural(open.length, 'tâche à faire', 'tâches à faire') : '') : plural(done.length, 'tâche terminée', 'tâches terminées')) + '</p>' + sel + '</div>' + body +
     '<div class="tabdock"><div class="modes seg2" role="group" aria-label="Tâches"><button type="button" data-a="tkmode" data-id="todo" aria-pressed="' + (TK.mode === 'todo') + '">À faire · ' + open.length + '</button><button type="button" data-a="tkmode" data-id="done" aria-pressed="' + (TK.mode === 'done') + '">Terminées · ' + all.filter(function (x) { return x.t.done; }).length + '</button></div></div>';
+}
+
+/* ---------- Propriétés et vues d'un carnet : tableau, kanban, calendrier ---------- */
+var PV = { kprop: '', cprop: '', y: new Date().getFullYear(), m: new Date().getMonth() };
+function homeNb() { return F.cat && F.cat !== '__none' ? nb(F.cat) : null; }
+function viewApplicable(c, mode) {
+  if (!c || !viewsOn()) return false;
+  if (mode === 'kanban') return nbProps(c).some(function (p) { return p.type === 'select'; });
+  if (mode === 'calendar') return nbProps(c).some(function (p) { return p.type === 'date'; });
+  return mode === 'table';
+}
+// Vue réellement affichée : celle du carnet filtré si elle s'applique, sinon cartes ou liste.
+function curView() {
+  var c = homeNb();
+  if (c && viewsOn()) { var v = nbViewGet(c.id); if (v && viewApplicable(c, v)) return v; }
+  return VIEW;
+}
+function propSel(c, type, key) {
+  var ps = nbProps(c).filter(function (p) { return p.type === type; });
+  var p = ps.filter(function (x) { return x.id === PV[key]; })[0] || ps[0];
+  PV[key] = p ? p.id : '';
+  return { list: ps, cur: p };
+}
+function propChooser(sel, label) {
+  if (sel.list.length < 2) return '';
+  return '<label class="pv-sel"><span>' + label + '</span><select class="field" data-pvprop="' + (sel.cur.type === 'select' ? 'kprop' : 'cprop') + '">' + sel.list.map(function (p) { return '<option value="' + p.id + '"' + (p.id === sel.cur.id ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select></label>';
+}
+function renderPropView(list, c, mode) {
+  var notes = list.filter(function (n) { return n.type !== 'synthesis'; });
+  if (!notes.length) return '<div class="empty"><h3>Aucune note à afficher</h3><p>Retirez un filtre ou ajoutez une note dans ce carnet.</p></div>';
+  if (mode === 'kanban') return pvKanban(notes, c);
+  if (mode === 'calendar') return pvCalendar(notes, c);
+  return pvTable(notes, c);
+}
+function pvTable(notes, c) {
+  var props = nbProps(c);
+  var head = '<th>Titre</th><th>Créée</th>' + props.map(function (p) { return '<th>' + esc(p.name) + '</th>'; }).join('') + '<th>Tags</th>';
+  var rows = notes.map(function (n) {
+    var cells = props.map(function (p) {
+      var v = propValue(n, p), t = esc(propShow(p, v));
+      return '<td>' + (p.type === 'select' && v !== '' ? '<span class="chip cat cat-' + c.color + '"><i class="dot"></i>' + t + '</span>' : t) + '</td>';
+    }).join('');
+    var tags = n.tagIds.map(function (id) { var t = tagById(id); return t ? '<span class="chip">#' + esc(t.name) + '</span>' : ''; }).join(' ');
+    return '<tr data-a="open" data-id="' + n.id + '" tabindex="0" role="button"><td class="pt-title">' + esc(n.title) + todoMini(n) + '</td><td>' + esc(fmtDate(n.createdAt)) + '</td>' + cells + '<td>' + tags + '</td></tr>';
+  }).join('');
+  return '<div class="ptable-w"><table class="ptable"><thead><tr>' + head + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+}
+function todoMini(n) { var s = tasksOn() ? todoStats(n) : { total: 0 }; return s.total ? ' <small class="muted">' + s.done + '/' + s.total + '</small>' : ''; }
+function pvKanban(notes, c) {
+  var sel = propSel(c, 'select', 'kprop'), p = sel.cur;
+  var cols = p.options.concat(['']).map(function (o) {
+    var items = notes.filter(function (n) { var v = propValue(n, p); return o === '' ? !v || p.options.indexOf(v) < 0 : v === o; });
+    var cards = items.map(function (n) {
+      var due = (n.todos || []).filter(function (t) { return !t.done && t.due && t.due < todayStr(); }).length;
+      return '<div class="kcard" draggable="true" data-nid="' + n.id + '"><button type="button" class="ktitle" data-a="open" data-id="' + n.id + '">' + esc(n.title) + '</button>' + todoBar(n) +
+        '<div class="kfoot"><select class="kmove" data-nid="' + n.id + '" aria-label="Déplacer : ' + esc(n.title) + '"><option value="">Sans valeur</option>' + p.options.map(function (x) { return '<option' + (propValue(n, p) === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>' + (due ? '<span class="tdue late">en retard</span>' : '') + '</div></div>';
+    }).join('');
+    return '<div class="kcol" data-val="' + esc(o) + '"><h3>' + (o === '' ? '<span class="muted">Sans valeur</span>' : esc(o)) + ' <small>' + items.length + '</small></h3>' + (cards || '<div class="kempty">Déposez une note ici</div>') + '</div>';
+  }).join('');
+  return propChooser(sel, 'Colonnes') + '<div class="kanban" data-pid="' + p.id + '">' + cols + '</div>';
+}
+function pvCalendar(notes, c) {
+  var sel = propSel(c, 'date', 'cprop'), p = sel.cur;
+  var first = new Date(PV.y, PV.m, 1), lead = (first.getDay() + 6) % 7, days = new Date(PV.y, PV.m + 1, 0).getDate();
+  var by = {}, undated = 0;
+  notes.forEach(function (n) { var v = propValue(n, p); if (!v) { undated++; return; } (by[v] = by[v] || []).push(n); });
+  var today = todayStr(), cells = '';
+  ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'].forEach(function (d) { cells += '<div class="ch">' + d + '</div>'; });
+  for (var i = 0; i < lead; i++) cells += '<div class="cd out"></div>';
+  for (var d = 1; d <= days; d++) {
+    var key = PV.y + '-' + String(PV.m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0'), its = by[key] || [];
+    cells += '<div class="cd' + (key === today ? ' today' : '') + '"><span class="cn">' + d + '</span>' + its.slice(0, 3).map(function (n) { return '<button type="button" class="cev cat-' + c.color + '" data-a="open" data-id="' + n.id + '" title="' + esc(n.title) + '">' + esc(n.title) + '</button>'; }).join('') + (its.length > 3 ? '<small class="muted">+ ' + (its.length - 3) + '</small>' : '') + '</div>';
+  }
+  var label = first.toLocaleDateString('fr-BE', { month: 'long', year: 'numeric' });
+  return propChooser(sel, 'Date') + '<div class="cal-top"><button type="button" class="iconbtn" data-a="calnav" data-id="-1" aria-label="Mois précédent">‹</button><b>' + esc(label) + '</b><button type="button" class="iconbtn" data-a="calnav" data-id="1" aria-label="Mois suivant">›</button><button type="button" class="btn" style="height:40px" data-a="calnav" data-id="0">Aujourd\'hui</button></div>' +
+    '<div class="cal">' + cells + '</div>' + (undated ? '<p class="sub">' + plural(undated, 'note sans date n\'apparaît pas', 'notes sans date n\'apparaissent pas') + ' dans le calendrier.</p>' : '');
 }

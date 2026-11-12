@@ -70,6 +70,21 @@ function todosText(n) { return (n.todos || []).map(function (t) { return t.text;
 function noteText(n) { return [n.content, n.transcript, n.description, todosText(n), linksText(n), n.enrichment ? n.enrichment.explanation : ''].filter(Boolean).join('\n\n'); }
 // Fonction « Tâches » activable dans les réglages ; les données restent même désactivée.
 function tasksOn() { return !S.settings || !S.settings.features || S.settings.features.tasks !== false; }
+function propsOn() { return !S.settings || !S.settings.features || S.settings.features.props !== false; }
+function viewsOn() { return !S.settings || !S.settings.features || S.settings.features.views !== false; }
+// Propriétés du carnet (vide si la fonction est désactivée).
+function nbProps(c) { return propsOn() && c && c.properties ? c.properties : []; }
+// Vue choisie pour un carnet (tableau, kanban, calendrier), gardée sur cet appareil.
+function nbViewGet(id) { try { return JSON.parse(localStorage.getItem('mainotes-nbview') || '{}')[id] || null; } catch (e) { return null; } }
+function nbViewSet(id, v) { try { var o = JSON.parse(localStorage.getItem('mainotes-nbview') || '{}'); if (v) o[id] = v; else delete o[id]; localStorage.setItem('mainotes-nbview', JSON.stringify(o)); } catch (e) { /* rien */ } }
+function propValue(n, p) { var v = n.props ? n.props[p.id] : undefined; return v === undefined || v === null ? '' : v; }
+function propShow(p, v) {
+  if (v === '' || v === undefined) return '';
+  if (p.type === 'date') return fmtDay(v);
+  if (p.type === 'checkbox') return v ? '✓' : '';
+  if (p.type === 'url') return String(v).replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+  return String(v);
+}
 function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function fmtDay(s) { var p = String(s).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]).toLocaleDateString('fr-BE', { weekday: 'short', day: 'numeric', month: 'short' }); }
 function todoStats(n) { var t = n.todos || []; return { total: t.length, done: t.filter(function (x) { return x.done; }).length }; }

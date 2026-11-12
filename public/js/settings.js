@@ -166,7 +166,9 @@ function renderSet() {
     '<div class="actions"><button class="btn" data-a="hist-open">Ouvrir l\'historique</button></div></div>' +
 
     '<div class="panel"><h3>Espace de travail</h3>' +
-    '<div class="switch"><div><b>Tâches</b><span>Cases à cocher dans les notes, progression sur les cartes et onglet Tâches. Désactivées, elles sont masquées sans rien supprimer.</span></div><button class="sw" role="switch" aria-checked="' + tasksOn() + '" aria-label="Activer les tâches" data-a="set-feat"><i></i></button></div></div>' +
+    '<div class="switch"><div><b>Tâches</b><span>Cases à cocher dans les notes, progression sur les cartes et onglet Tâches. Désactivées, elles sont masquées sans rien supprimer.</span></div><button class="sw" role="switch" aria-checked="' + tasksOn() + '" aria-label="Activer les tâches" data-a="set-feat" data-id="tasks"><i></i></button></div>' +
+    '<div class="switch"><div><b>Propriétés des carnets</b><span>Statut, échéance, note… par carnet, modifiables dans la fiche d\'une note.</span></div><button class="sw" role="switch" aria-checked="' + propsOn() + '" aria-label="Activer les propriétés" data-a="set-feat" data-id="props"><i></i></button></div>' +
+    '<div class="switch"><div><b>Vues Tableau, Kanban et Calendrier</b><span>Proposées quand un seul carnet est affiché (le kanban demande une propriété de type sélection, le calendrier une propriété de type date).</span></div><button class="sw" role="switch" aria-checked="' + viewsOn() + '" aria-label="Activer les vues supplémentaires" data-a="set-feat" data-id="views"><i></i></button></div></div>' +
     '<div class="panel"><h3>Carnets et tags</h3><div class="actions"><button class="btn" data-a="tab" data-id="cats">Gérer les carnets et les tags</button></div></div>' +
     '<div class="savebar" id="savebar" hidden><span>Modifications non enregistrées</span><button class="btn primary" data-a="set-save" id="setsave">Enregistrer les réglages</button></div>';
   setDirty = false;

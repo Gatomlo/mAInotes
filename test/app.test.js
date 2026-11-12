@@ -548,3 +548,40 @@ test('tâches : ajout, coche, échéance, suppression et réglage d\'activation'
   assert.strictEqual(kept.todos.length, 1, 'désactiver la fonction ne supprime aucune donnée');
   await call('PATCH', 'settings', { features: { tasks: true } });
 });
+
+test('propriétés de carnet : définition, valeurs typées, nettoyage et réglages', async () => {
+  const nbs = (await call('GET', 'state')).data.notebooks;
+  const c = nbs[0];
+  let p = await call('PATCH', 'notebooks/' + c.id, { properties: [
+    { name: 'Statut', type: 'select', options: 'À lire, En cours, Lu' },
+    { name: 'Échéance', type: 'date' },
+    { name: 'Note', type: 'number' }
+  ] });
+  assert.strictEqual(p.status, 200);
+  const [st, due, note] = p.data.notebook.properties;
+  assert.deepStrictEqual(st.options, ['À lire', 'En cours', 'Lu']);
+  assert.strictEqual((await call('PATCH', 'notebooks/' + c.id, { properties: [{ name: 'A', type: 'text' }, { name: 'a', type: 'text' }] })).status, 400, 'noms en double refusés');
+  assert.strictEqual((await call('PATCH', 'notebooks/' + c.id, { properties: [{ name: 'S', type: 'select', options: '' }] })).status, 400, 'sélection sans option refusée');
+  const n = (await call('POST', 'notes', { type: 'text', content: 'Roman à lire', notebookId: c.id })).data.note;
+  assert.deepStrictEqual(n.props, {});
+  p = await call('PATCH', 'notes/' + n.id, { props: { [st.id]: 'En cours', [due.id]: '2026-12-20', [note.id]: '4' } });
+  assert.strictEqual(p.status, 200);
+  assert.strictEqual(p.data.note.props[st.id], 'En cours');
+  assert.strictEqual(p.data.note.props[note.id], 4);
+  assert.strictEqual(p.data.note.locked, false, 'une propriété ne verrouille pas le classement');
+  assert.strictEqual((await call('PATCH', 'notes/' + n.id, { props: { [st.id]: 'Inconnue' } })).status, 400);
+  assert.strictEqual((await call('PATCH', 'notes/' + n.id, { props: { [due.id]: 'demain' } })).status, 400);
+  assert.strictEqual((await call('PATCH', 'notes/' + n.id, { props: { xyz: 'a' } })).status, 400);
+  p = await call('PATCH', 'notes/' + n.id, { props: { [note.id]: null } });
+  assert.strictEqual(p.data.note.props[note.id], undefined, 'valeur retirée');
+  // Retirer une propriété nettoie les valeurs des notes ; retirer une option aussi.
+  await call('PATCH', 'notebooks/' + c.id, { properties: [{ id: st.id, name: 'Statut', type: 'select', options: ['À lire', 'Lu'] }, { id: due.id, name: 'Échéance', type: 'date' }] });
+  const after = (await call('GET', 'state')).data.notes.find((x) => x.id === n.id);
+  assert.strictEqual(after.props[st.id], undefined, 'option supprimée : valeur retirée');
+  assert.strictEqual(after.props[due.id], '2026-12-20');
+  const s = await call('PATCH', 'settings', { features: { props: false, views: false } });
+  assert.deepStrictEqual(s.data.settings.features, { tasks: true, props: false, views: false });
+  const kept = (await call('GET', 'state')).data.notes.find((x) => x.id === n.id);
+  assert.strictEqual(kept.props[due.id], '2026-12-20', 'désactiver ne supprime aucune donnée');
+  await call('PATCH', 'settings', { features: { props: true, views: true } });
+});

@@ -682,6 +682,7 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
     <button class="fchip" data-s="s4" aria-pressed="false">4 · Modèles &amp; liens</button>
     <button class="fchip" data-s="s5" aria-pressed="false">5 · IA sur les notes</button>
     <button class="fchip" data-s="s6" aria-pressed="false">6 · Téléphone</button>
+    <button class="fchip" data-s="s7" aria-pressed="false">7 · To-dos</button>
   </nav>
 
   <!-- ===== 1. CARNET-BASE ===== -->
@@ -922,6 +923,44 @@ table.m-t{border-collapse:collapse;width:100%;min-width:640px;font-size:14px}
         </div>
       </div>
     </div>
+  </section>
+
+
+  <!-- ===== 7. TODOS ===== -->
+  <section class="m-screen" id="s7">
+    <span class="m-lbl">Écran 7 · To-dos</span>
+    <p class="m-ann">Une to-do = un bloc « case à cocher » (F94, F96), avec en option une échéance. Trois endroits où elle apparaît : sur la <b>carte</b>, dans la <b>note</b>, et dans une vue <b>Tâches</b> qui rassemble les cases non cochées de toutes les notes.</p>
+    <div class="m-phone two">
+      <div>
+        <h3 style="font-size:18px;margin-bottom:8px">Sur la carte <span class="m-new">NEW</span></h3>
+        <div class="grid" style="grid-template-columns:1fr">
+          <div class="card"><div class="head"><span>Texte</span><span>10 nov.</span></div><div class="ttl">Préparer la réunion de quartier</div>
+            <div style="display:flex;align-items:center;gap:10px"><div style="flex:1;height:8px;border-radius:4px;background:var(--skeleton);overflow:hidden"><i style="display:block;width:33%;height:100%;background:var(--accent)"></i></div><small style="color:var(--muted)">1/3</small></div>
+            <div class="exc">☑ Réserver la salle · ☐ Envoyer l'invitation · ☐ Imprimer l'ordre du jour</div>
+            <div class="foot"><span class="chip" style="--soft:var(--rose-soft);--cink:var(--rose-ink)">Travail</span><span class="chip st-todo"><i class="dot"></i>Échéance jeudi</span></div></div>
+          <div class="card"><div class="head"><span>Vocal · 0:31</span><span>9 nov.</span></div><div class="ttl">Courses du week-end</div>
+            <div style="display:flex;align-items:center;gap:10px"><div style="flex:1;height:8px;border-radius:4px;background:var(--skeleton);overflow:hidden"><i style="display:block;width:75%;height:100%;background:var(--accent)"></i></div><small style="color:var(--muted)">6/8</small></div>
+            <div class="foot"><span class="chip" style="--soft:var(--green-soft);--cink:var(--green-ink)">Maison</span><span class="end" title="Liste créée par l'IA depuis le vocal">✦</span></div></div>
+        </div>
+        <p class="m-ann">Le vocal « n'oublie pas le pain, le lait, les œufs… » devient une liste cochable (F107, sur confirmation).</p>
+      </div>
+      <div>
+        <h3 style="font-size:18px;margin-bottom:8px">Vue « Tâches » <span class="m-new">NEW</span></h3>
+        <div class="chips tags" style="padding-top:0"><button class="fchip tag" aria-pressed="true">À faire <small>9</small></button><button class="fchip tag" aria-pressed="false">Faites <small>14</small></button><button class="fchip tag" aria-pressed="false">Tous carnets ▾</button></div>
+        <div class="m-box" id="todos" style="margin-top:8px">
+          <h3 style="color:var(--danger)">En retard · 1</h3>
+          <label class="blk"><input type="checkbox"><div class="b">Appeler le plombier <small style="display:block;color:var(--muted)">Travaux salle de bain · hier</small></div></label>
+          <h3 style="margin-top:12px">Aujourd'hui · 2</h3>
+          <label class="blk"><input type="checkbox"><div class="b">Envoyer l'invitation aux voisins <small style="display:block;color:var(--muted)">Préparer la réunion de quartier</small></div></label>
+          <label class="blk"><input type="checkbox"><div class="b">Acheter le lait <small style="display:block;color:var(--muted)">Courses du week-end</small></div></label>
+          <h3 style="margin-top:12px">Cette semaine · 1</h3>
+          <label class="blk"><input type="checkbox"><div class="b">Imprimer l'ordre du jour <small style="display:block;color:var(--muted)">Préparer la réunion de quartier · jeu. 19</small></div></label>
+          <h3 style="margin-top:12px;color:var(--muted)">Sans date · 5</h3>
+          <div class="m-ann" style="margin:0">Cocher ici coche aussi la case dans la note d'origine ; toucher le texte ouvre la note.</div>
+        </div>
+      </div>
+    </div>
+    <div class="demo" style="margin-top:14px">Rappels : une échéance peut envoyer une notification si l'app est installée (à étudier). Une to-do répétée (« chaque lundi ») est possible plus tard.</div>
   </section>
 
   <p class="m-foot">Maquette statique : aucun code de l'app n'est modifié. Fichier : <code>docs/maquette-notion.html</code>.</p>

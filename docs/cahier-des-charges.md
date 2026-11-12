@@ -584,3 +584,16 @@ Hors périmètre pour l'instant : mises à jour en temps réel (un partage appar
 | F123 | **Prérequis** : site en HTTPS ; sur iPhone et iPad (iOS 16.4 ou plus), l'appli doit d'abord être installée sur l'écran d'accueil. Clés VAPID créées par le serveur à la première utilisation et gardées dans `data/db.json`. | Should | Codé |
 
 Hors périmètre : rappel avant l'échéance (la veille, une heure avant), notification en cas de retard, heure propre à chaque tâche.
+
+## Automatismes dans le classement, mode voiture (F124 à F129)
+
+Tous ces automatismes sont demandés dans l'appel de classement existant : aucun appel IA en plus, une seule fois par note, réglables (Réglages › Déclenchement).
+
+| N° | Fonction | Priorité | État |
+|---|---|---|---|
+| F124 | **Nettoyage des dictées** : hésitations (« euh », « hum ») retirées en local (gratuit) dès la transcription ; puis texte reformulé par l'IA dans l'appel de classement (sans formules adressées à un assistant). La transcription d'origine reste consultable et restaurable ; une transcription corrigée à la main n'est jamais touchée. | Should | Codé |
+| F125 | **Ajout à une liste existante** : « rajoute des clémentines à ma liste du marché » complète la liste ; la note d'origine part à la corbeille. Bandeau « Annuler » sur la liste pendant 48 h (annulation : les éléments repartent, la note revient). | Should | Codé |
+| F126 | **Heure précise** sur une note ou une tâche (« demain à 14 h ») ; rappel individuel `x` minutes avant (réglage par personne : à l'heure, 15, 30 min, 1 h, 2 h ; 1 h par défaut), en plus du résumé du matin qui ne reprend que ce qui n'a pas d'heure. | Should | Codé |
+| F127 | **Assignation automatique** : « dis à Bob de… » assigne la tâche si Bob voit déjà la note ; sinon simple suggestion (« Assigner à Bob ? ») : un clic partage la note avec Bob en modification et lui assigne la tâche. Jamais appliqué sans clic. | Should | Codé |
+| F128 | **Mode voiture** : l'adresse `?action=new&type=voice&car=1` ouvre l'enregistrement et le démarre aussitôt, très gros bouton, note enregistrée dès l'arrêt. Activé uniquement par cette adresse (ouverte par une routine du téléphone à la connexion Bluetooth de la voiture) ; adresse effacée à l'ouverture, sortie automatique après 10 minutes ; aucun raccourci manuel. | Should | Codé |
+| F129 | **Ce qui n'existe pas** : détecter le mode voiture ou le Bluetooth depuis la page web (impossible) ; la routine du téléphone (Samsung Routines, Tasker, MacroDroid) fait le déclenchement. | — | — |

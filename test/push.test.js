@@ -55,3 +55,33 @@ test('résumé du jour : tâches et notes dues, une seule fois par jour, abonnem
   assert.strictEqual(await push.runDue(new Date('2026-11-18T08:00:00+01:00').getTime()), 1, 'Alice seulement : Bob a désactivé');
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+test('rappels à l\'heure : une fois, délai avant, heure d\'été, hors résumé du matin', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mainotes-rem-'));
+  const store = new Store(dir);
+  const sent = [];
+  const push = createPush(store, { sender: async (sub, payload) => { sent.push(JSON.parse(payload)); } });
+  // Heure belge → UTC : hiver (+1) et été (+2).
+  assert.strictEqual(new Date(push.brusselsToMs('2026-11-17', '14:00')).toISOString(), '2026-11-17T13:00:00.000Z');
+  assert.strictEqual(new Date(push.brusselsToMs('2026-07-01', '14:00')).toISOString(), '2026-07-01T12:00:00.000Z');
+  store.db.users.push({ id: 'a', name: 'Alice', login: 'a', role: 'admin', password: 'x', createdAt: 1, notify: { enabled: true, hour: 8, lead: 60 } });
+  push.subscribe(store.db.users[0], { endpoint: 'https://push.example/a', keys: { p256dh: 'k', auth: 'a' } }, 'x');
+  store.db.notes.push({ id: 'n', ownerId: 'a', shares: [], type: 'text', title: 'Rendez-vous dentiste', due: '2026-11-17', dueTime: '14:00', todos: [{ id: 't', text: 'Prendre la carte', done: false, due: null, time: null }, { id: 'u', text: 'Appeler avant', done: false, due: null, time: '10:00' }], tagIds: [], media: [], notebookId: null });
+  // Le résumé du matin ne reprend pas ce qui a une heure.
+  const due = push.dueFor('a', '2026-11-17');
+  assert.deepStrictEqual([due.tasks.length, due.notes.length], [0, 0]);
+  const at = (hhmm) => new Date(`2026-11-17T${hhmm}:00+01:00`).getTime();
+  assert.strictEqual(await push.runReminders(at('08:30')), 0, 'trop tôt');
+  assert.strictEqual(await push.runReminders(at('09:05')), 1, '10 h − 1 h : rappel « Appeler avant »');
+  assert.match(sent[0].title, /^À 10 h · Rendez-vous dentiste/);
+  assert.match(sent[0].body, /Appeler avant/);
+  assert.strictEqual(await push.runReminders(at('09:30')), 0, 'une seule fois');
+  assert.strictEqual(await push.runReminders(at('13:10')), 1, '14 h − 1 h : « Prendre la carte »');
+  assert.match(sent[1].body, /Prendre la carte/);
+  assert.strictEqual(await push.runReminders(at('15:30')), 0, 'trop tard : plus de rappel');
+  store.db.users[0].notify.lead = 0;
+  store.db.users[0].sentRem = {};
+  assert.strictEqual(await push.runReminders(at('13:00')), 0, 'délai 0 : pas avant l\'heure');
+  assert.strictEqual(await push.runReminders(at('14:00')), 1, 'délai 0 : à l\'heure');
+  fs.rmSync(dir, { recursive: true, force: true });
+});

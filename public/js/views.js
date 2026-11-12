@@ -463,7 +463,7 @@ function todoBar(n) {
 function todoDue(n, t) { return t.due || n.due || null; }
 function allTodos() {
   var out = [];
-  live().forEach(function (n) { (n.todos || []).forEach(function (t) { out.push({ n: n, t: Object.assign({}, t, { due: todoDue(n, t) }) }); }); });
+  live().forEach(function (n) { (n.todos || []).forEach(function (t) { out.push({ n: n, t: Object.assign({}, t, { due: todoDue(n, t), time: t.time || n.dueTime || null }) }); }); });
   return out;
 }
 function renderTasksTab() {
@@ -514,10 +514,10 @@ function renderTasks() {
   var all = allTodos().filter(inNb);
   var open = all.filter(function (x) { return !x.t.done; });
   var done = all.filter(function (x) { return x.t.done; }).sort(function (a, b) { return (b.t.doneAt || 0) - (a.t.doneAt || 0); }).slice(0, 100);
-  var byDue = function (a, b) { return (a.t.due || '9') < (b.t.due || '9') ? -1 : (a.t.due || '9') > (b.t.due || '9') ? 1 : a.n.createdAt - b.n.createdAt; };
+  var byDue = function (a, b) { var ka = (a.t.due || '9') + (a.t.time || '99:99'), kb = (b.t.due || '9') + (b.t.time || '99:99'); return ka < kb ? -1 : ka > kb ? 1 : a.n.createdAt - b.n.createdAt; };
   var row = function (x) {
     var c = nb(x.n.notebookId);
-    var due = x.t.due ? '<span class="tdue' + (!x.t.done && x.t.due < today ? ' late' : x.t.due === today ? ' today' : '') + '">' + esc(x.t.due === today ? 'Aujourd\'hui' : fmtDay(x.t.due)) + '</span>' : '';
+    var due = x.t.due ? '<span class="tdue' + (!x.t.done && x.t.due < today ? ' late' : x.t.due === today ? ' today' : '') + '">' + esc((x.t.due === today ? 'Aujourd\'hui' : fmtDay(x.t.due)) + (x.t.time ? ' · ' + x.t.time : '')) + '</span>' : '';
     return '<li class="trow' + (x.t.done ? ' isdone' : '') + '"><button type="button" class="trow-open" data-a="open" data-id="' + x.n.id + '"><small>' + (c ? esc(c.name) + ' · ' : '') + esc(x.n.title) + (x.t.assignee ? ' · pour ' + esc(userName(x.t.assignee)) : '') + (due ? ' · ' : '') + due + '</small><b>' + esc(x.t.text) + '</b></button>' +
       '<button type="button" class="trow-chk' + (x.t.done ? ' on' : '') + '" data-a="todo-toggle" data-id="' + x.n.id + '" data-tid="' + x.t.id + '" role="checkbox" aria-checked="' + x.t.done + '" aria-label="' + (x.t.done ? 'Rouvrir' : 'Terminer') + ' : ' + esc(x.t.text) + '">' + I(IC.check, 22) + '</button></li>';
   };

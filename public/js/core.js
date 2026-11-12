@@ -352,7 +352,8 @@ function opApply(op, n) {
       if (op.patch.done !== undefined) { t.done = !!op.patch.done; t.doneAt = t.done ? Date.now() : null; }
       if (op.patch.text !== undefined) t.text = op.patch.text;
       if (op.patch.due !== undefined) t.due = op.patch.due || null;
-      if (op.patch.assignee !== undefined) t.assignee = op.patch.assignee || null;
+      if (op.patch.assignee !== undefined) { t.assignee = op.patch.assignee || null; delete t.suggest; }
+      if (op.patch.time !== undefined) t.time = op.patch.time || null;
     }
   } else if (op.kind === 'todo-del') {
     n.todos = n.todos.filter(function (x) { return x.id !== op.tid; });

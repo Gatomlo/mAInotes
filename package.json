@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test test/app.test.js test/push.test.js",
+    "test": "node --test test/app.test.js test/push.test.js test/pipeline.test.js",
     "reset-password": "node scripts/reset-password.js"
   },
   "dependencies": {

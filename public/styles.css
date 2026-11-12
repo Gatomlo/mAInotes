@@ -740,3 +740,10 @@ body.carmode .recbox .recdot{font-size:20px}
 body.carmode .sheet>:not(.shead):not(.recbox):not(.sfoot){display:none}
 body.carmode .sfoot .rbtn{display:none}
 body.carmode .sfoot .btn{height:64px!important;min-height:64px!important;font-size:18px}
+
+.chip.sugg{gap:4px;padding:0 4px 0 8px;background:var(--accent-soft);color:var(--accent)}
+.chip.sugg button{border:0;background:none;color:inherit;font:inherit;font-size:12px;display:inline-flex;align-items:center;gap:4px;min-height:26px;cursor:pointer;padding:0 4px}
+.rawbox{margin:0;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.rawbox summary{cursor:pointer;font-size:13px;color:var(--muted)}
+.rawbox .readtext{margin-top:8px}
+.rawbox .actions{margin-top:10px}

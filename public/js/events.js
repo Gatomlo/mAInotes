@@ -68,6 +68,15 @@ var ACTIONS = {
   'notify-disable': function () { notifyDisable(); },
   'notify-test': function () { api('POST', 'notify/test', {}).then(function () { toast('Notification de test envoyée'); }, fail); },
   'notify-toggle': function (el) { api('PATCH', 'notify', { enabled: el.getAttribute('aria-checked') !== 'true' }).then(function () { renderNotify(); }, fail); },
+  'todo-suggest': function (el) {
+    if (!confirm('Partager la note avec ' + el.dataset.name + ' (elle pourra la modifier) et lui assigner cette tâche ?')) return;
+    api('POST', 'notes/' + el.dataset.id + '/todos/' + el.dataset.tid + '/suggest', { accept: true }).then(function (r) { upsertNote(r.note); render(); openDetail(el.dataset.id); toast('Tâche assignée à ' + el.dataset.name); sync(); }, fail);
+  },
+  'todo-suggest-no': function (el) { api('POST', 'notes/' + el.dataset.id + '/todos/' + el.dataset.tid + '/suggest', { accept: false }).then(function (r) { upsertNote(r.note); render(); openDetail(el.dataset.id); }, fail); },
+  'undo-append': function (el) {
+    api('POST', 'notes/' + el.dataset.id + '/undo-append', { noteId: el.dataset.src }).then(function () { toast('Ajout annulé : la note d\'origine est restaurée'); return sync(); }).then(function () { openDetail(el.dataset.id); render(); }, fail);
+  },
+  'raw-restore': function (el) { api('PATCH', 'notes/' + el.dataset.id, { restoreRaw: true }).then(function (r) { upsertNote(r.note); render(); openDetail(el.dataset.id); toast('Transcription d\'origine restaurée'); }, fail); },
   'todo-edit': function (el) { todoOpen = todoOpen === el.dataset.tid ? null : el.dataset.tid; var n = noteById(el.dataset.id); if (n) refreshTodos(n); },
   'share-note': function (el) { openShare('note', el.dataset.id); },
   'share-nb': function (el) { openShare('nb', el.dataset.id); },
@@ -521,8 +530,10 @@ document.addEventListener('keydown', function (e) {
 document.addEventListener('change', function (e) {
   var t = e.target;
   if (t.classList && t.classList.contains('tdue-in')) { todoCall(t.dataset.id, 'PATCH', '/' + t.dataset.tid, { due: t.value || null }); }
+  if (t.classList && t.classList.contains('ttime-in')) { todoCall(t.dataset.id, 'PATCH', '/' + t.dataset.tid, { time: t.value || null }); }
   if (t.classList && t.classList.contains('tassign')) { todoCall(t.dataset.id, 'PATCH', '/' + t.dataset.tid, { assignee: t.value || null }); }
   if (t.id === 'notedue') { queueOp({ kind: 'note-due', noteId: t.dataset.id, due: t.value || null }); }
+  if (t.id === 'notify-lead') { api('PATCH', 'notify', { lead: +t.value }).then(function () { toast('Délai enregistré'); }, fail); }
   if (t.id === 'notify-hour') { api('PATCH', 'notify', { hour: +t.value }).then(function () { toast('Heure enregistrée'); }, fail); }
   if (t.id === 'tkwho') { TK.who = t.value; renderTasks(); }
   if (t.id === 'tkcat') { TK.nb = t.value; renderTasks(); }

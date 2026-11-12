@@ -148,9 +148,10 @@ function renderSet() {
     trig('transcr', 'Transcription', [['auto', 'Automatique'], ['manual', 'Manuel']]) +
     trig('classif', 'Classement', [['auto', 'Automatique'], ['manual', 'Manuel']]) +
     trig('vision', 'Description des images', [['off', 'Désactivée'], ['demand', 'À la demande'], ['auto', 'Automatique']]) +
-    trig('todos', 'Listes à cocher et échéances', [['off', 'Désactivées'], ['auto', 'Automatiques']]) +
+    trig('todos', 'Listes, échéances, heures et personnes', [['off', 'Désactivés'], ['auto', 'Automatiques']]) +
+    trig('clean', 'Nettoyage des dictées', [['off', 'Désactivé'], ['auto', 'Automatique']]) +
     trig('enrich', 'Enrichissement des notes', [['off', 'Désactivé'], ['demand', 'À la demande'], ['auto', 'Automatique']]) +
-    '<div class="help">' + I(IC.spark, 14) + '<span>Listes à cocher : si la note est une liste (courses, choses à faire), les éléments deviennent des cases à cocher, avec la date limite citée (« mardi prochain »). Demandé dans l\'appel de classement, aucun appel en plus ; une seule fois par note, jamais si elle a déjà des tâches.</span></div>' +
+    '<div class="help">' + I(IC.spark, 14) + '<span>Listes : si la note est une liste (courses, choses à faire), les éléments deviennent des cases à cocher, avec la date et l\'heure citées (« mardi prochain à 14 h ») et la personne désignée (« dis à Bob de… » : suggestion, un clic pour partager et assigner). « Rajoute du lait à ma liste » complète la liste existante (annulable). Nettoyage des dictées : hésitations retirées en local (gratuit), texte reformulé par l\'IA dans le même appel, original conservé. Aucun appel en plus ; une seule fois par note.</span></div>' +
     '<div class="help">' + I(IC.spark, 14) + '<span>Enrichissement : explication du sujet, pistes, recherches et liens vérifiés. Automatique : demandé dans l\'appel de classement (aucun appel en plus, réponse plus longue, fournisseur du classement), seulement pour les notes qui s\'y prêtent. À la demande : bouton « Enrichir » sur la note, un appel par clic.</span></div>' +
     '<div class="help"><span>En manuel, la note est enregistrée sans appel IA, avec le statut « À analyser ». Le re-tri et la synthèse restent toujours lancés par vous.</span></div></div>' +
     '<div class="panel"><h3>Création par l\'IA</h3>' +
@@ -385,7 +386,8 @@ function renderNotify() {
     box.innerHTML = '<div class="panel"><h3>Notifications</h3>' +
       '<p class="sub" style="margin:0">Une notification par jour, à l\'heure choisie : les tâches à faire et les notes dont la date limite tombe ce jour-là (vos tâches, et celles non assignées des notes que vous voyez). Aucun appel IA.</p>' +
       '<div class="switch" style="border:0;padding:0"><div><b>Recevoir les notifications</b><span>' + plural(n.devices, 'appareil abonné', 'appareils abonnés') + '.</span></div><button type="button" class="sw" role="switch" aria-checked="' + n.enabled + '" aria-label="Recevoir les notifications" data-a="notify-toggle"><i></i></button></div>' +
-      '<div><label class="l" for="notify-hour">Heure d\'envoi (heure belge)</label><select id="notify-hour" class="field">' + hours + '</select></div>' +
+      '<div><label class="l" for="notify-hour">Résumé du matin (heure belge)</label><select id="notify-hour" class="field">' + hours + '</select></div>' +
+      '<div><label class="l" for="notify-lead">Rappel des notes et tâches qui ont une heure</label><select id="notify-lead" class="field">' + [[0, 'À l\'heure'], [15, '15 minutes avant'], [30, '30 minutes avant'], [60, '1 heure avant'], [120, '2 heures avant']].map(function (o) { return opt(o[0], n.lead, o[1]); }).join('') + '</select></div>' +
       (!pushSupported() ? '<div class="help"><span>Ce navigateur ne gère pas les notifications. Sur iPhone et iPad, installez d\'abord l\'appli sur l\'écran d\'accueil (Partager › Sur l\'écran d\'accueil).</span></div>' :
         denied ? '<div class="help"><span>Les notifications sont bloquées pour ce site : autorisez-les dans les réglages du navigateur, puis revenez ici.</span></div>' :
         '<div class="actions">' + (here ? '<button type="button" class="btn" data-a="notify-test">Envoyer un test</button><button type="button" class="btn" data-a="notify-disable">Désactiver sur cet appareil</button>' : '<button type="button" class="btn primary" data-a="notify-enable">Activer sur cet appareil</button>') + '</div>' +

@@ -42,6 +42,9 @@ before(async () => {
       if (prompt.includes('Propriétés à remplir')) out.proprietes = { P1: 'En cours', P2: '2026-12-20', P3: 'pas utilisé' };
       if (prompt.includes('Notes existantes proches')) out.liees = ['N1'];
       if (prompt.includes('liste de courses')) out.taches = { liste: ['500 g de patates', 'Une douzaine d\'œufs', '500 g de patates', { texte: 'Un pain', echeance: '2026-11-16' }, { texte: 'Confiture', echeance: '2026-11-17' }], echeance: '2026-11-17' };
+      if (prompt.includes('Rajoute des clémentines')) { out.taches = { liste: ['Clémentines'], echeance: null }; if (prompt.includes('Listes existantes')) out.ajout_a = 'A1'; }
+      const carol = /U(\d+) Carol/.exec(prompt);
+      if (carol && prompt.includes('Dis à Carol')) out.taches = { liste: [{ texte: 'Acheter le pain', pour: 'U' + carol[1], heure: '14:00' }], echeance: '2026-11-18', heure: '14:00' };
       if (prompt.includes('L1 ')) out.liens = { L1: 'Fiche d\'un robinet thermostatique vendu par un magasin de bricolage.' };
       content = JSON.stringify(out);
     } else if (prompt.includes('liste des tâches à faire')) {
@@ -778,4 +781,44 @@ test('plusieurs comptes : isolation, partage de carnet et de note, tâches assig
   assert.ok(!st.notes.some((x) => x.id === n2.id), 'notes de Bob supprimées avec son compte');
   assert.deepStrictEqual(st.notebooks.find((c) => c.id === nb.id).shares, []);
   assert.strictEqual((await call('DELETE', 'users/' + (await call('GET', 'account')).data.user.id)).status, 409, 'on ne se supprime pas ici');
+});
+
+test('automatismes : ajout à une liste existante (annulable), heure, assignation suggérée', async () => {
+  const carol = (await call('POST', 'users', { name: 'Carol', login: 'carol@example.be', password: 'motdepasse-carol' })).data.user;
+  const ready = async (id) => until(async () => { const x = (await call('GET', 'state')).data.notes.find((y) => y.id === id); return x && x.status === 'ready' && x; });
+  // 1. « Rajoute des clémentines à ma liste du marché » : les éléments rejoignent la liste, la note part à la corbeille.
+  const list = (await call('POST', 'notes', { type: 'text', content: 'Liste du marché', todos: ['Pommes'] })).data.note;
+  await ready(list.id);
+  await call('PATCH', 'notes/' + list.id, { title: 'Liste du marché' });
+  const add = (await call('POST', 'notes', { type: 'text', content: 'Rajoute des clémentines à ma liste du marché' })).data.note;
+  const merged = await until(async () => { const x = (await call('GET', 'state')).data.notes.find((y) => y.id === add.id); return x && x.trashedAt && x; });
+  assert.strictEqual(merged.mergedInto, list.id);
+  let target = (await call('GET', 'state')).data.notes.find((y) => y.id === list.id);
+  assert.deepStrictEqual(target.todos.map((t) => t.text), ['Pommes', 'Clémentines']);
+  assert.strictEqual(target.appended.length, 1);
+  // Annulation : l'élément repart, la note d'origine revient.
+  let r = await call('POST', 'notes/' + list.id + '/undo-append', { noteId: add.id });
+  assert.strictEqual(r.status, 200);
+  assert.deepStrictEqual(r.data.note.todos.map((t) => t.text), ['Pommes']);
+  const back = (await call('GET', 'state')).data.notes.find((y) => y.id === add.id);
+  assert.ok(!back.trashedAt && !back.mergedInto, 'note d\'origine restaurée');
+  // 2. Heure et personne désignée : suggestion (jamais appliquée sans clic), puis acceptée.
+  const dis = (await call('POST', 'notes', { type: 'text', content: 'Dis à Carol d\'acheter le pain pour demain à 14h' })).data.note;
+  const n = await ready(dis.id);
+  assert.strictEqual(n.due, '2026-11-18');
+  assert.strictEqual(n.dueTime, '14:00');
+  assert.strictEqual(n.todos[0].time, null, 'même heure que la note : pas de copie');
+  assert.strictEqual(n.todos[0].assignee, null);
+  assert.strictEqual(n.todos[0].suggest, carol.id, 'Carol ne voit pas la note : simple suggestion');
+  r = await call('POST', 'notes/' + dis.id + '/todos/' + n.todos[0].id + '/suggest', { accept: true });
+  assert.strictEqual(r.data.note.todos[0].assignee, carol.id);
+  assert.ok(r.data.note.shares.some((s) => s.userId === carol.id && s.role === 'edit'), 'note partagée avec Carol pour qu\'elle voie la tâche');
+  assert.strictEqual(r.data.note.todos[0].suggest, undefined);
+  // 3. Heure : validée, effacée avec la date.
+  assert.strictEqual((await call('PATCH', 'notes/' + dis.id, { dueTime: '25:00' })).data.note.dueTime, null);
+  assert.strictEqual((await call('PATCH', 'notes/' + dis.id, { dueTime: '09:30' })).data.note.dueTime, '09:30');
+  assert.strictEqual((await call('PATCH', 'notes/' + dis.id, { due: null })).data.note.dueTime, null, 'pas d\'heure sans date');
+  r = await call('POST', 'notes/' + dis.id + '/todos', { text: 'Vérifier le stock', time: '08:15', due: '2026-11-19' });
+  assert.strictEqual(r.data.note.todos.find((t) => t.text === 'Vérifier le stock').time, '08:15');
+  await call('DELETE', 'users/' + carol.id);
 });

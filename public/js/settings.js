@@ -174,10 +174,12 @@ function renderSet() {
     '<div class="switch"><div><b>Liens entre notes</b><span>Citez une note avec [[Titre]] ; la note citée affiche « Citée dans ».</span></div><button class="sw" role="switch" aria-checked="' + linksOn() + '" aria-label="Activer les liens entre notes" data-a="set-feat" data-id="links"><i></i></button></div>' +
     '<div class="switch"><div><b>Modèles de notes</b><span>Compte rendu, courses, fiche livre, projet, proposés à la création d\'une note.</span></div><button class="sw" role="switch" aria-checked="' + templatesOn() + '" aria-label="Activer les modèles de notes" data-a="set-feat" data-id="templates"><i></i></button></div>' +
     '<div class="switch"><div><b>Fonctions IA sur les notes</b><span>Transformer une note (tâches, résumé, reformulation) et poser une question à ses notes. Toujours manuelles : un appel par clic, compté dans le plafond mensuel.</span></div><button class="sw" role="switch" aria-checked="' + aiOn() + '" aria-label="Activer les fonctions IA sur les notes" data-a="set-feat" data-id="ai"><i></i></button></div></div>' +
+    '<div id="usersbox"></div>' +
     '<div class="panel"><h3>Carnets et tags</h3><div class="actions"><button class="btn" data-a="tab" data-id="cats">Gérer les carnets et les tags</button></div></div>' +
     '<div class="savebar" id="savebar" hidden><span>Modifications non enregistrées</span><button class="btn primary" data-a="set-save" id="setsave">Enregistrer les réglages</button></div>';
   setDirty = false;
   renderInstall();
+  if (isAdmin()) renderUsers();
   autoRefreshModels();
 }
 
@@ -263,7 +265,6 @@ function renderAccount() {
       '<div class="sec" style="margin-top:8px"><p class="sub" style="margin:0;flex:1 1 200px">' + esc(u.name || u.login) + ' · ' + (u.role === 'admin' ? 'administrateur' : 'compte') + ', créé le ' + fmtFull(u.createdAt) + '.</p><button class="btn" data-a="logout">Se déconnecter</button></div>' +
       (u.mustChangePassword ? '<div class="banner warn">Votre mot de passe a été défini par l\'administrateur : choisissez-en un nouveau ci-dessous.</div>' : '') +
       '<div id="notifybox"></div>' +
-      '<div id="usersbox"></div>' +
       '<form class="panel" id="f-profile"><h3>Profil</h3>' +
       '<div><label class="l" for="acc-name">Nom affiché</label><input id="acc-name" class="field" maxlength="80" value="' + esc(u.name) + '" autocomplete="name"></div>' +
       '<div><label class="l" for="acc-login">Identifiant de connexion</label><input id="acc-login" class="field" maxlength="120" value="' + esc(u.login) + '" autocomplete="username"></div>' +
@@ -292,7 +293,6 @@ function renderAccount() {
       '<div class="actions"><button type="submit" class="btn danger">Supprimer définitivement</button></div></form>';
     bindAccountForms(u);
     renderNotify();
-    if (u.role === 'admin') renderUsers();
     accordionize($('#view-account'));
   }, function (e) { $('#view-account').innerHTML = '<p class="err">' + esc(e.message) + '</p>'; });
 }

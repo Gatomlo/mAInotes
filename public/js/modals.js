@@ -608,11 +608,14 @@ function openNotebook(id) {
     '<div><label class="l" for="cdesc">Ce qu\'il doit contenir</label><textarea id="cdesc" class="field" rows="2" placeholder="ex. Billets, réservations, itinéraires">' + esc(c ? c.desc : '') + '</textarea><div class="help">' + I(IC.spark, 14) + '<span>L\'IA s\'appuie sur cette description pour classer.</span></div></div>' +
     '<div><div class="l">Couleur</div><div class="swatches" id="sw">' + sw + '</div></div>' +
     (propsOn() ? '<div id="peditor">' + propsEditor() + '</div>' : '') +
-    (c && (S.users || []).length > 1 ? '<div class="kv"><span>' + ((c.shares || []).length ? 'Partagé avec ' + plural((c.shares || []).length, 'personne', 'personnes') : 'Carnet privé') + '</span><button type="button" class="btn" style="height:40px" data-a="share-nb" data-id="' + c.id + '">Partager…</button></div>' : '') +
     '<div class="err" id="cerr" role="alert" hidden></div>' +
-    '<div class="actions"><button class="btn primary" data-a="csave">' + (c ? 'Enregistrer' : 'Créer le carnet') + '</button>' + (c ? '<button class="btn danger" data-a="cdel">Supprimer</button>' : '<button class="btn ghost" data-a="close">Annuler</button>') + '</div>' +
     (c ? '<div class="help"><span>Supprimer : ' + plural(count, 'note passe', 'notes passent') + ' « à vérifier ». Pour les garder ensemble, utilisez plutôt la fusion.</span></div>' : '') +
-    '<div class="help"><span>Après une création ou une modification, vous pouvez relancer le tri depuis l\'onglet Carnets.</span></div>', 'Carnet');
+    '<div class="help"><span>Après une création ou une modification, vous pouvez relancer le tri depuis l\'onglet Carnets.</span></div>' +
+    '<div class="actions sfoot">' + (c
+      ? '<button type="button" class="rbtn danger" data-a="cdel" aria-label="Supprimer le carnet" title="Supprimer le carnet">' + I(TRASH, 22) + '</button>' +
+        ((S.users || []).length > 1 ? '<button type="button" class="rbtn' + ((c.shares || []).length ? ' on' : '') + '" data-a="share-nb" data-id="' + c.id + '" aria-label="Partager le carnet" title="' + ((c.shares || []).length ? 'Partagé avec ' + plural((c.shares || []).length, 'personne', 'personnes') : 'Partager le carnet') + '">' + I(SHARE_ICON, 22) + '</button>' : '') +
+        '<button class="btn primary" data-a="csave">Enregistrer</button>'
+      : '<button class="btn" data-a="close">Annuler</button><button class="btn primary" data-a="csave">Créer le carnet</button>') + '</div>', 'Carnet');
 }
 var PTYPES = [['text', 'Texte'], ['number', 'Nombre'], ['date', 'Date'], ['select', 'Sélection'], ['checkbox', 'Case à cocher'], ['url', 'Lien (URL)']];
 function propsEditor() {
@@ -967,6 +970,7 @@ function shareChipInline(classif, dueChip, sharedChip) {
   var inner = classif.replace(/^<div class="foot"[^>]*>/, '').replace(/<\/div>$/, '');
   return inner + dueChip + sharedChip;
 }
+var SHARE_ICON = '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.6c2 .8 3 2.8 3 5.4"/>';
 function canShare(n) { return !n.trashedAt && n.type !== 'synthesis' && roleOf(n) === 'owner' && (S.users || []).length > 1; }
 // Pied de la fiche : tous les boutons ont la même taille. Supprimer à gauche (rouge), puis partager,
 // transformer, enrichir, et « Modifier » qui prend la place restante.
@@ -978,7 +982,7 @@ function readFoot(n, x) {
     : '<button type="button" class="rbtn danger" data-a="del" aria-label="Mettre à la corbeille" title="Mettre à la corbeille">' + I(TRASH, 22) + '</button>';
   if (canShare(n)) {
     var k = (n.shares || []).length;
-    h += '<button type="button" class="rbtn' + (k ? ' on' : '') + '" data-a="share-note" data-id="' + n.id + '" aria-label="Partager la note" title="' + (k ? 'Partagée avec ' + plural(k, 'personne', 'personnes') : 'Partager la note') + '">' + I('<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.6c2 .8 3 2.8 3 5.4"/>', 22) + '</button>';
+    h += '<button type="button" class="rbtn' + (k ? ' on' : '') + '" data-a="share-note" data-id="' + n.id + '" aria-label="Partager la note" title="' + (k ? 'Partagée avec ' + plural(k, 'personne', 'personnes') : 'Partager la note') + '">' + I(SHARE_ICON, 22) + '</button>';
   }
   h += aiFootBtns(n, x);
   if (!n.trashedAt) h += '<button class="btn primary" data-a="dedit" autofocus>' + I(IC.text, 18) + 'Modifier</button>';

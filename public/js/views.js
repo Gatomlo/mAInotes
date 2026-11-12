@@ -467,21 +467,24 @@ function renderTasksTab() {
   b.classList.toggle('late', !!late);
   $('#tab-tasks').setAttribute('aria-label', 'Tâches' + (open.length ? ' (' + open.length + ' à faire' + (late ? ', ' + late + ' en retard' : '') + ')' : ''));
 }
-var TK = { mode: 'todo', nb: '' };
+var TK = { mode: 'todo', nb: '', calf: 'both' };
 // Calendrier mensuel des échéances de tâches : un clic ouvre la note.
-function tasksCalendar(all) {
+function tasksCalendar(all, notes) {
   var first = new Date(PV.y, PV.m, 1), lead = (first.getDay() + 6) % 7, days = new Date(PV.y, PV.m + 1, 0).getDate();
   var by = {}, undated = 0, today = todayStr(), cells = '';
-  all.forEach(function (x) { if (x.t.done) return; if (!x.t.due) { undated++; return; } (by[x.t.due] = by[x.t.due] || []).push(x); });
+  var f = TK.calf, showT = f !== 'notes', showN = f !== 'tasks';
+  if (showT) all.forEach(function (x) { if (x.t.done) return; if (!x.t.due) { undated++; return; } (by[x.t.due] = by[x.t.due] || []).push({ n: x.n, label: x.t.text, title: x.n.title + ' : ' + x.t.text, kind: 'task' }); });
+  if (showN) notes.forEach(function (n) { (by[n.due] = by[n.due] || []).push({ n: n, label: n.title, title: 'Note : ' + n.title, kind: 'note' }); });
+  var seg = '<div class="modes small" role="group" aria-label="Afficher dans le calendrier">' + [['both', 'Notes et tâches'], ['notes', 'Notes'], ['tasks', 'Tâches']].map(function (b) { return '<button type="button" data-a="tkcal" data-id="' + b[0] + '" aria-pressed="' + (f === b[0]) + '">' + b[1] + '</button>'; }).join('') + '</div>';
   ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'].forEach(function (d) { cells += '<div class="ch">' + d + '</div>'; });
   for (var i = 0; i < lead; i++) cells += '<div class="cd out"></div>';
   for (var d = 1; d <= days; d++) {
     var key = PV.y + '-' + String(PV.m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0'), its = by[key] || [];
-    cells += '<div class="cd' + (key === today ? ' today' : '') + '"><span class="cn">' + d + '</span>' + its.slice(0, 3).map(function (x) { var c = nb(x.n.notebookId); return '<button type="button" class="cev' + (c ? ' cat-' + c.color : '') + '" data-a="open" data-id="' + x.n.id + '" title="' + esc(x.n.title + ' : ' + x.t.text) + '">' + esc(x.t.text) + '</button>'; }).join('') + (its.length > 3 ? '<small class="muted">+ ' + (its.length - 3) + '</small>' : '') + '</div>';
+    cells += '<div class="cd' + (key === today ? ' today' : '') + '"><span class="cn">' + d + '</span>' + its.slice(0, 3).map(function (x) { var c = nb(x.n.notebookId); return '<button type="button" class="cev' + (c ? ' cat-' + c.color : '') + (x.kind === 'note' ? ' cev-note' : '') + '" data-a="open" data-id="' + x.n.id + '" title="' + esc(x.title) + '">' + (x.kind === 'note' ? '<b>Note</b> ' : '') + esc(x.label) + '</button>'; }).join('') + (its.length > 3 ? '<small class="muted">+ ' + (its.length - 3) + '</small>' : '') + '</div>';
   }
   var label = first.toLocaleDateString('fr-BE', { month: 'long', year: 'numeric' });
-  return '<div class="cal-top"><button type="button" class="iconbtn" data-a="calnav" data-id="-1" aria-label="Mois précédent">‹</button><b>' + esc(label) + '</b><button type="button" class="iconbtn" data-a="calnav" data-id="1" aria-label="Mois suivant">›</button><button type="button" class="btn" style="height:40px" data-a="calnav" data-id="0">Aujourd\'hui</button></div>' +
-    '<div class="cal">' + cells + '</div>' + (undated ? '<p class="sub">' + plural(undated, 'tâche sans date n\'apparaît pas', 'tâches sans date n\'apparaissent pas') + ' dans le calendrier.</p>' : '');
+  return seg + '<div class="cal-top"><button type="button" class="iconbtn" data-a="calnav" data-id="-1" aria-label="Mois précédent">‹</button><b>' + esc(label) + '</b><button type="button" class="iconbtn" data-a="calnav" data-id="1" aria-label="Mois suivant">›</button><button type="button" class="btn" style="height:40px" data-a="calnav" data-id="0">Aujourd\'hui</button></div>' +
+    '<div class="cal">' + cells + '</div>' + (showT && undated ? '<p class="sub">' + plural(undated, 'tâche sans date n\'apparaît pas', 'tâches sans date n\'apparaissent pas') + ' dans le calendrier.</p>' : '');
 }
 function renderTasks() {
   var today = todayStr();
@@ -507,7 +510,7 @@ function renderTasks() {
   ];
   var body;
   if (TK.mode === 'cal') {
-    body = tasksCalendar(all);
+    body = tasksCalendar(all, live().filter(function (n) { return n.due && n.type !== 'synthesis' && inNb({ n: n }); }));
   } else if (TK.mode === 'done') {
     body = done.length ? '<ul class="tlist">' + done.map(row).join('') + '</ul>' : '<div class="empty"><h3>Aucune tâche terminée</h3><p>Les tâches cochées apparaîtront ici.</p></div>';
   } else {

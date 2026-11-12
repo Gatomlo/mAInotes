@@ -55,6 +55,7 @@ var ACTIONS = {
     var due = $('#todoin-due').value || null;
     todoCall(el.dataset.id, 'POST', '', { text: text, due: due }).then(function (ok) { var i = $('#todoin'); if (ok && i) i.focus(); });
   },
+  tkcal: function (el) { TK.calf = el.dataset.id; renderTasks(); },
   tkmode: function (el) { TK.mode = el.dataset.id; renderTasks(); },
   'set-feat': function (el) { var f = {}; f[el.dataset.id] = el.getAttribute('aria-checked') !== 'true'; saveSettings({ features: f }); },
   dread: function (el) { var n = curNote(); if (n) setRead(n, el.dataset.id || null).then(function () { if (modal === 'detail' && curId === n.id) openDetail(n.id, false); }); },

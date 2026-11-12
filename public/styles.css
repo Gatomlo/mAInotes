@@ -635,6 +635,7 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
 .cd.today{box-shadow:0 0 0 2px var(--accent)}
 .cn{color:var(--muted)}.cd.today .cn{color:var(--ink);font-weight:700}
 .cev{border:0;text-align:left;padding:3px 6px;border-radius:6px;font-size:11px;line-height:1.25;background:var(--soft,var(--chip));color:var(--cink,var(--chip-ink));overflow:hidden;text-overflow:ellipsis;white-space:nowrap;width:100%;min-height:24px}
+.cev-note{outline:1.5px solid currentColor;outline-offset:-1.5px}.cev-note b{font-weight:700}
 @media (max-width:759px){.cd{min-height:64px;padding:2px}.cev{font-size:10px;padding:2px 3px}.kanban{grid-auto-columns:minmax(78%,1fr)}}
 
 /* Liens entre notes et modèles */

@@ -478,7 +478,7 @@ Maquette de référence : `docs/maquette-notion.html` (non reliée au serveur). 
 | Réf. | Fonction | Priorité | État |
 |---|---|---|---|
 | F98 | Propriétés par carnet : texte, nombre, date, sélection, sélection multiple, case à cocher, URL. Une propriété peut être marquée « remplie par l'IA ». | Must | Codé, sauf sélection multiple et marque « IA » |
-| F99 | L'IA propose les valeurs des propriétés marquées dans l'appel de classement (aucun appel en plus), sans jamais écraser une valeur saisie à la main. | Should | Non codé |
+| F99 | L'IA propose les valeurs des propriétés marquées dans l'appel de classement (aucun appel en plus), sans jamais écraser une valeur saisie à la main. | Should | Codé : propriétés marquées « IA » dans l'éditeur du carnet ; l'IA ne remplit que celles du carnet retenu, jamais par-dessus une valeur saisie, repère ✦ jusqu'à modification |
 | F100 | Vues d'un carnet : cartes (actuelle), tableau, kanban par propriété de sélection (glisser pour changer de valeur), calendrier par propriété date. | Must | Codé (tableau, kanban, calendrier) |
 | F101 | Filtres et tris enregistrés par vue. L'onglet « À lire / Lu » devient un carnet-base avec vue kanban. | Should | Non codé : la vue choisie est gardée par carnet sur l'appareil, sans filtres ni tris enregistrés |
 
@@ -488,7 +488,7 @@ Maquette de référence : `docs/maquette-notion.html` (non reliée au serveur). 
 |---|---|---|---|
 | F102 | Mentions `@note` dans un bloc, et rétroliens affichés sur la note citée. | Should | Codé : syntaxe `[[Titre]]` avec sélecteur « Lier une note » en édition ; « Citée dans » sur la note citée |
 | F103 | Sous-pages d'une note. | Could | Non codé |
-| F104 | Notes liées suggérées par l'IA (à valider d'un clic). | Could | Non codé |
+| F104 | Notes liées suggérées par l'IA (à valider d'un clic). | Could | Codé : l'appel de classement reçoit 5 notes candidates (choisies sans IA, environ 150 jetons de plus) et en retient 0 à 3 ; « Citer » ajoute `[[Titre]]`, « Ignorer » la masque durablement |
 | F105 | Modèles de notes (compte rendu, courses, fiche livre, projet) proposés à la création, en plus de la note libre. | Should | Codé (4 modèles, tâches de départ à la création) |
 | F106 | Vue graphe des liens. | Could | Non codé |
 
@@ -508,7 +508,7 @@ Maquette de référence : `docs/maquette-notion.html` (non reliée au serveur). 
 | F111 | **Onglet Tâches** : toutes les tâches des notes hors corbeille, regroupées En retard / Aujourd'hui / Cette semaine / Plus tard / Sans date, filtre par carnet, onglet Terminées, badge avec pastille rouge si retard. | Must | Codé |
 | F112 | **Réglage « Espace de travail »** : chaque fonction se désactive sans supprimer de données. Interrupteurs codés : Tâches, Propriétés, Vues supplémentaires, Liens entre notes, Modèles. Fonctions IA sur les notes : interrupteur « ai ». Tous les interrupteurs de l'espace de travail sont codés. | Must | Codé |
 
-Les tâches se modifient en ligne uniquement pour l'instant (pas de file d'attente hors connexion pour elles).
+**Hors connexion** : les modifications de tâches et de propriétés s'appliquent tout de suite sur l'appareil, sont rangées dans une file (gardée dans le navigateur) et envoyées dans l'ordre au retour du réseau ; l'indicateur d'en-tête affiche « n modifications en attente ». Une modification refusée par le serveur est abandonnée avec un message. Les tâches ajoutées hors connexion gardent leur identifiant : un renvoi ne crée pas de doublon.
 
 ### Choix technique : stockage
 

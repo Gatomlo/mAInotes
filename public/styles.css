@@ -672,3 +672,10 @@ button.chip{border:0;font:inherit;font-size:13px;cursor:pointer}
 .xfl{display:flex;flex-direction:column;gap:8px}
 .xfb{height:auto;min-height:60px;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 16px;text-align:left}
 .xfb small{color:var(--muted);font-weight:400;font-size:13px}
+
+/* Propriétés proposées par l'IA, notes liées suggérées */
+.pe-aiw{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--muted);min-height:44px}
+.pe-aiw input{width:20px;height:20px;accent-color:var(--accent)}
+.aimark{color:var(--accent);display:inline-flex;vertical-align:middle}
+.rel{display:flex;flex-direction:column;gap:4px}
+.rel-i{display:flex;align-items:center;gap:6px;flex-wrap:wrap}

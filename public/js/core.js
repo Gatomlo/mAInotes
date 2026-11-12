@@ -201,7 +201,7 @@ function setOnline(v) {
   online = v;
   renderBanners();
   renderSync();
-  if (v) flushOutbox();
+  if (v) { flushOutbox(); flushOps(); }
 }
 window.addEventListener('online', function () { setOnline(true); sync(); });
 window.addEventListener('offline', function () { setOnline(false); });
@@ -311,12 +311,84 @@ function upsertNote(n) {
   if (i > -1) S.notes[i] = n; else S.notes.push(n);
 }
 
+/* ---------- Modifications hors connexion (tâches et propriétés) ---------- */
+// Chaque modification est appliquée tout de suite sur l'appareil, rangée dans une file
+// (gardée dans le navigateur) puis envoyée dans l'ordre dès que le réseau le permet.
+var OPS_KEY = 'mainotes-ops';
+var ops = [];
+try { ops = JSON.parse(localStorage.getItem(OPS_KEY) || '[]') || []; } catch (e) { ops = []; }
+function saveOps() { try { localStorage.setItem(OPS_KEY, JSON.stringify(ops)); } catch (e) { /* stockage indisponible : la file reste en mémoire */ } }
+function opApply(op, n) {
+  n.todos = n.todos || [];
+  if (op.kind === 'todo-add') {
+    if (!n.todos.some(function (t) { return t.id === op.tid; })) n.todos.push({ id: op.tid, text: op.text, done: false, due: op.due || null, doneAt: null });
+  } else if (op.kind === 'todo-patch') {
+    var t = n.todos.filter(function (x) { return x.id === op.tid; })[0];
+    if (t) {
+      if (op.patch.done !== undefined) { t.done = !!op.patch.done; t.doneAt = t.done ? Date.now() : null; }
+      if (op.patch.text !== undefined) t.text = op.patch.text;
+      if (op.patch.due !== undefined) t.due = op.patch.due || null;
+    }
+  } else if (op.kind === 'todo-del') {
+    n.todos = n.todos.filter(function (x) { return x.id !== op.tid; });
+  } else if (op.kind === 'props') {
+    n.props = n.props || {}; n.propsAi = n.propsAi || {};
+    Object.keys(op.props).forEach(function (k) {
+      var v = op.props[k];
+      delete n.propsAi[k];
+      if (v === null || v === '' || v === false) delete n.props[k]; else n.props[k] = v;
+    });
+  }
+}
+function opsApplyAll() { ops.forEach(function (op) { var n = noteById(op.noteId); if (n) opApply(op, n); }); }
+function queueOp(op) {
+  op.id = uid();
+  ops.push(op);
+  saveOps();
+  var n = noteById(op.noteId);
+  if (n) opApply(op, n);
+  saveCache();
+  if (n && typeof refreshTodos === 'function') refreshTodos(n);
+  render();
+  flushOps();
+}
+function sendOp(op) {
+  var base = 'notes/' + op.noteId;
+  var p = op.kind === 'todo-add' ? api('POST', base + '/todos', { text: op.text, due: op.due, id: op.tid })
+    : op.kind === 'todo-patch' ? api('PATCH', base + '/todos/' + op.tid, op.patch)
+    : op.kind === 'todo-del' ? api('DELETE', base + '/todos/' + op.tid)
+    : api('PATCH', base, { props: op.props });
+  return p.then(function (r) { return r.note; });
+}
+var opsFlushing = false;
+function flushOps() {
+  if (opsFlushing || !ops.length || !S.user) return Promise.resolve();
+  opsFlushing = true;
+  var next = function () {
+    if (!ops.length) return Promise.resolve();
+    var op = ops[0];
+    return sendOp(op).then(function (note) {
+      ops.shift(); saveOps();
+      upsertNote(note); opsApplyAll(); saveCache(); render();
+      return next();
+    }, function (err) {
+      if (!err || err.network || err.status === 401) return; // réseau absent : on réessaiera
+      ops.shift(); saveOps();
+      if (err.status !== 404) toast('Modification refusée : ' + err.message);
+      return next();
+    });
+  };
+  var done = function () { opsFlushing = false; render(); };
+  return next().then(done, done);
+}
+
 /* ---------- Synchronisation ---------- */
 var syncTimer = null;
 function sync() {
   if (!S.user) return Promise.resolve();
-  return api('GET', 'state', undefined, { timeout: 15000 }).then(function (d) {
+  return flushOps().then(function () { return api('GET', 'state', undefined, { timeout: 15000 }); }).then(function (d) {
     S.notebooks = d.notebooks; S.tags = d.tags; S.notes = d.notes; S.settings = d.settings;
+    opsApplyAll();
     S.providers = d.providers; S.retri = d.retri; S.synthesesCount = d.synthesesCount;
     saveCache();
     render();

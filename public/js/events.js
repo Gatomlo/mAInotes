@@ -122,6 +122,14 @@ var ACTIONS = {
     renderAdd();
     var ta = $('#ntext'); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
   },
+  'rel-off': function (el) { var n = curNote(); if (n) api('PATCH', 'notes/' + n.id, { dismissRelated: el.dataset.id }).then(function (r) { upsertNote(r.note); saveCache(); openDetail(n.id, false); }, fail); },
+  'rel-link': function (el) {
+    var n = curNote(), t = noteById(el.dataset.id);
+    if (!n || !t) return;
+    var field = n.type === 'voice' ? 'transcript' : 'content', cur = n[field] || '';
+    var body = { dismissRelated: t.id }; body[field] = (cur ? cur + '\n' : '') + '[[' + t.title.replace(/[\[\]]/g, '') + ']]';
+    api('PATCH', 'notes/' + n.id, body).then(function (r) { upsertNote(r.note); saveCache(); toast('Lien ajouté au texte'); openDetail(n.id, false); render(); }, fail);
+  },
   'xf-open': function (el) { openTransform(el.dataset.id); },
   'xf-run': function (el) { xfRun(el.dataset.id); },
   'xf-apply': function (el) { xfApply(el.dataset.id); },
@@ -448,12 +456,14 @@ document.addEventListener('submit', function (e) {
   }
 });
 
-// Tâches : appel au serveur puis mise à jour locale sans recharger la fiche (le défilement reste en place).
+// Tâches : appliquées tout de suite, envoyées au serveur dès que possible (voir queueOp).
 function todoCall(noteId, method, suffix, body) {
-  if (!online) { toast('Les tâches se modifient en ligne.'); return Promise.resolve(false); }
-  return api(method, 'notes/' + noteId + '/todos' + suffix, body).then(function (r) {
-    upsertNote(r.note); saveCache(); refreshTodos(r.note); render(); return true;
-  }, function (e) { fail(e); return false; });
+  var tid = suffix ? suffix.slice(1) : null, op;
+  if (method === 'POST') op = { kind: 'todo-add', noteId: noteId, tid: uid(), text: body.text, due: body.due || null };
+  else if (method === 'PATCH') op = { kind: 'todo-patch', noteId: noteId, tid: tid, patch: body };
+  else op = { kind: 'todo-del', noteId: noteId, tid: tid };
+  queueOp(op);
+  return Promise.resolve(true);
 }
 // Menu « / » : taper « / » seul sur une ligne propose les blocs.
 document.addEventListener('input', function (e) {
@@ -483,10 +493,9 @@ document.addEventListener('change', function (e) {
   }
 });
 // Propriétés : enregistrement (mise à jour locale sans recharger la fiche).
-function patchProps(noteId, props, fromForm) {
-  if (!online) { toast('Les propriétés se modifient en ligne.'); if (fromForm && modal === 'detail') openDetail(noteId, false); return Promise.resolve(false); }
-  return api('PATCH', 'notes/' + noteId, { props: props }).then(function (r) { upsertNote(r.note); saveCache(); render(); return true; },
-    function (e) { fail(e); if (fromForm && modal === 'detail') openDetail(noteId, false); return false; });
+function patchProps(noteId, props) {
+  queueOp({ kind: 'props', noteId: noteId, props: props });
+  return Promise.resolve(true);
 }
 function moveCard(noteId, pid, value) { var p = {}; p[pid] = value || null; return patchProps(noteId, p); }
 // Kanban : glisser une carte vers une autre colonne change la valeur de la propriété.

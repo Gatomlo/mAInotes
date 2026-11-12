@@ -296,8 +296,17 @@ function propsHtml(n) {
     else if (p.type === 'date') input = '<input' + at + ' type="date" value="' + esc(v) + '">';
     else if (p.type === 'url') input = '<input' + at + ' type="url" inputmode="url" placeholder="https://…" value="' + esc(v) + '">' + (/^https?:\/\//i.test(v) ? '<a class="pl" href="' + esc(v) + '" target="_blank" rel="noopener noreferrer">Ouvrir</a>' : '');
     else input = '<input' + at + ' maxlength="500" value="' + esc(v) + '">';
-    return '<label class="pk" for="' + id + '">' + esc(p.name) + '</label><div class="pv-in">' + input + '</div>';
+    return '<label class="pk" for="' + id + '">' + esc(p.name) + (n.propsAi && n.propsAi[p.id] ? ' <span class="aimark" title="Proposé par l\'IA, modifiable">' + I(IC.spark, 12) + '</span>' : '') + '</label><div class="pv-in">' + input + '</div>';
   }).join('') + '</div>';
+}
+// Notes proches proposées par l'IA pendant le classement : un clic pour citer, un pour ignorer.
+function relatedHtml(n) {
+  if (!linksOn() || n.trashedAt) return '';
+  var list = (n.related || []).map(function (id) { return noteById(id); }).filter(function (x) { return x && !x.trashedAt; });
+  if (!list.length) return '';
+  return '<div><div class="l">' + I(IC.spark, 13) + ' Notes liées suggérées</div><div class="rel">' + list.map(function (x) {
+    return '<div class="rel-i"><button type="button" class="mention" data-a="open" data-id="' + x.id + '">' + esc(x.title) + '</button><button type="button" class="btn ghost" style="height:40px;padding:0 10px" data-a="rel-link" data-id="' + x.id + '">Citer</button><button type="button" class="iconbtn" data-a="rel-off" data-id="' + x.id + '" aria-label="Ignorer la suggestion : ' + esc(x.title) + '">' + I(IC.x, 16) + '</button></div>';
+  }).join('') + '</div></div>';
 }
 function backlinksHtml(n) {
   var b = backlinks(n);
@@ -355,7 +364,7 @@ function readView(n, x) {
   var classif = n.type === 'synthesis' ? '' : '<div class="foot" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">' + catChip(n) + tags +
     (n.locked ? '<span class="chip">' + I(IC.lock, 13) + 'Verrouillé</span>' : n.ai && n.notebookId ? '<span class="chip">' + I(IC.spark, 13) + 'Classé par l\'IA</span>' : '') + '</div>';
   return '<div class="shead"><h2 style="overflow-wrap:anywhere">' + esc(n.title) + '</h2>' + xbtn() + '</div>' +
-    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + propsHtml(n) + readPick(n) + x.media + body + todosHtml(n) + aiNote + backlinksHtml(n) + x.links +
+    '<div class="sub">' + esc(x.meta) + '</div>' + x.banners + classif + propsHtml(n) + readPick(n) + x.media + body + todosHtml(n) + aiNote + relatedHtml(n) + backlinksHtml(n) + x.links +
     (x.busy || n.type === 'synthesis' ? '' : enrichHtml(n)) +
     (x.analyzeBtns ? '<div class="actions">' + x.analyzeBtns + '</div>' : '') +
     (aiOn() && !n.trashedAt && !x.busy && n.type !== 'synthesis' && (n.status === 'ready' || n.type === 'text') && noteText(n).trim() ? '<div class="actions"><button type="button" class="btn" data-a="xf-open" data-id="' + n.id + '">' + I(IC.spark, 18) + 'Transformer avec l\'IA</button></div>' : '') +
@@ -550,6 +559,7 @@ function propsEditor() {
   var rows = ce.props.map(function (p, i) {
     return '<div class="pe-row" data-i="' + i + '"><input class="field pe-name" maxlength="30" placeholder="Nom" aria-label="Nom de la propriété" value="' + esc(p.name) + '">' +
       '<select class="field pe-type" aria-label="Type">' + PTYPES.map(function (t) { return '<option value="' + t[0] + '"' + (p.type === t[0] ? ' selected' : '') + '>' + t[1] + '</option>'; }).join('') + '</select>' +
+      '<label class="pe-aiw" title="L\'IA propose la valeur à l\'analyse de la note"><input type="checkbox" class="pe-ai"' + (p.ai ? ' checked' : '') + '>' + I(IC.spark, 14) + 'IA</label>' +
       '<button type="button" class="iconbtn" data-a="pe-del" data-id="' + i + '" aria-label="Supprimer la propriété">' + I(IC.x, 18) + '</button>' +
       (p.type === 'select' ? '<input class="field pe-opts" placeholder="Options séparées par des virgules (ex. À lire, En cours, Lu)" aria-label="Options" value="' + esc((p.options || []).join(', ')) + '">' : '') + '</div>';
   }).join('');
@@ -563,6 +573,7 @@ function peSync() {
     if (!p) return;
     p.name = $('.pe-name', row).value;
     p.type = $('.pe-type', row).value;
+    p.ai = $('.pe-ai', row).checked;
     var o = $('.pe-opts', row);
     if (p.type === 'select') p.options = o ? o.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean) : (p.options || []);
     else delete p.options;
@@ -571,7 +582,7 @@ function peSync() {
 function peRender() { var e = $('#peditor'); if (e) e.innerHTML = propsEditor(); }
 function saveNotebook() {
   var body = { name: $('#cname').value.trim(), desc: $('#cdesc').value.trim(), color: ce.color };
-  if (propsOn()) { peSync(); body.properties = ce.props.map(function (p) { var o = { id: p.id, name: p.name.trim(), type: p.type }; if (p.type === 'select') o.options = p.options || []; return o; }); }
+  if (propsOn()) { peSync(); body.properties = ce.props.map(function (p) { var o = { id: p.id, name: p.name.trim(), type: p.type, ai: !!p.ai }; if (p.type === 'select') o.options = p.options || []; return o; }); }
   var p = ce.id ? api('PATCH', 'notebooks/' + ce.id, body) : api('POST', 'notebooks', body);
   p.then(function () { closeModal(); return sync(); }).then(function () { askRetri(ce && ce.id ? 'Carnet enregistré.' : 'Carnet créé.'); }, function (e) { var el = $('#cerr'); if (el) { el.textContent = e.message; el.hidden = false; } });
 }

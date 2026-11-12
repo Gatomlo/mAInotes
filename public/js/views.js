@@ -255,7 +255,7 @@ function render() {
 function renderSync() {
   var el = $('#syncpill');
   if (!el) return;
-  var st = !online ? ['off', 'Hors connexion'] : outbox.length ? ['wait', plural(outbox.length, 'envoi', 'envois') + ' en attente'] : ['ok', 'Synchronisé'];
+  var st = !online ? ['off', 'Hors connexion' + (ops.length ? ' · ' + plural(ops.length, 'modification', 'modifications') : '')] : outbox.length ? ['wait', plural(outbox.length, 'envoi', 'envois') + ' en attente'] : ops.length ? ['wait', plural(ops.length, 'modification', 'modifications') + ' en attente'] : ['ok', 'Synchronisé'];
   el.className = 'syncpill ' + st[0];
   el.innerHTML = '<i></i>' + st[1];
 }

@@ -39,6 +39,8 @@ before(async () => {
       const nbCode = /C(\d) Maison/.exec(prompt);
       const out = { titre: 'Devis du plombier', carnet: nbCode ? 'C' + nbCode[1] : null, tags: ['T1'], confiance: 0.9 };
       if (prompt.includes('enrichissement')) out.enrichissement = ENRICH(mockUrl);
+      if (prompt.includes('Propriétés à remplir')) out.proprietes = { P1: 'En cours', P2: '2026-12-20', P3: 'pas utilisé' };
+      if (prompt.includes('Notes existantes proches')) out.liees = ['N1'];
       if (prompt.includes('L1 ')) out.liens = { L1: 'Fiche d\'un robinet thermostatique vendu par un magasin de bricolage.' };
       content = JSON.stringify(out);
     } else if (prompt.includes('liste des tâches à faire')) {
@@ -625,4 +627,53 @@ test('fonctions IA sur les notes : extraire des tâches, reformuler, interroger,
   assert.strictEqual((await call('POST', 'ask', { question: 'facture' })).status, 400);
   assert.strictEqual((await call('POST', 'notes/' + n.id + '/transform', { action: 'todos' })).status, 400);
   await call('PATCH', 'settings', { features: { ai: true } });
+});
+
+test('F99 et F104 : propriétés et notes liées proposées dans l\'appel de classement', async () => {
+  const c = (await call('POST', 'notebooks', { name: 'Lectures', desc: 'Livres', properties: [
+    { name: 'Statut', type: 'select', options: 'À lire, En cours, Lu', ai: true },
+    { name: 'Échéance', type: 'date', ai: true },
+    { name: 'Auteur', type: 'text' }
+  ] })).data.notebook;
+  assert.ok(c.properties[0].ai && c.properties[1].ai && !c.properties[2].ai);
+  const [st, due, aut] = c.properties;
+  await call('POST', 'notes', { type: 'text', content: 'Atelier du potier : argile et émaux, cuisson à 1200 degrés.', notebookId: c.id });
+  await wait(300);
+  const before = calls.length;
+  const r = await call('POST', 'notes', { type: 'text', content: 'Rendre le livre sur la cuisson des émaux avant le 20 décembre.', notebookId: c.id });
+  const n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r.data.note.id); return x.status === 'ready' && x; });
+  assert.strictEqual(calls.length, before + 1, 'un seul appel : classement, propriétés et liens ensemble');
+  const prompt = JSON.stringify(calls[calls.length - 1].messages);
+  assert.ok(prompt.includes('Propriétés à remplir') && prompt.includes('Statut') && !prompt.includes('Auteur'), 'seules les propriétés marquées IA sont demandées');
+  assert.strictEqual(n.props[st.id], 'En cours');
+  assert.strictEqual(n.props[due.id], '2026-12-20');
+  assert.strictEqual(n.props[aut.id], undefined, 'valeur invalide ou non demandée ignorée');
+  assert.ok(n.propsAi[st.id] && n.propsAi[due.id]);
+  assert.strictEqual(n.related.length, 1, 'note liée proposée');
+  // Une valeur saisie à la main n'est plus marquée IA et n'est jamais écrasée.
+  let p = await call('PATCH', 'notes/' + n.id, { props: { [st.id]: 'Lu' } });
+  assert.strictEqual(p.data.note.propsAi[st.id], undefined);
+  await call('POST', 'notes/' + n.id + '/analyze', {});
+  const again = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === n.id); return x.status === 'ready' && x; });
+  assert.strictEqual(again.props[st.id], 'Lu', 'la valeur choisie à la main reste');
+  // Ignorer une suggestion de lien.
+  p = await call('PATCH', 'notes/' + n.id, { dismissRelated: n.related[0] });
+  assert.deepStrictEqual(p.data.note.related, []);
+  assert.ok(p.data.note.relatedOff.includes(n.related[0]));
+});
+
+test('tâches hors connexion : identifiant fourni par l\'appareil, renvois sans doublon', async () => {
+  const n = (await call('POST', 'notes', { type: 'text', content: 'Note pour tâches hors ligne' })).data.note;
+  let p = await call('POST', 'notes/' + n.id + '/todos', { text: 'Ajoutée sans réseau', id: 'local-abc123' });
+  assert.strictEqual(p.data.note.todos[0].id, 'local-abc123');
+  p = await call('POST', 'notes/' + n.id + '/todos', { text: 'Ajoutée sans réseau', id: 'local-abc123' });
+  assert.strictEqual(p.data.note.todos.length, 1, 'renvoi : pas de doublon');
+  p = await call('PATCH', 'notes/' + n.id + '/todos/local-abc123', { done: true });
+  assert.strictEqual(p.data.note.todos[0].done, true);
+  p = await call('DELETE', 'notes/' + n.id + '/todos/local-abc123');
+  assert.strictEqual(p.status, 200);
+  p = await call('DELETE', 'notes/' + n.id + '/todos/local-abc123');
+  assert.strictEqual(p.status, 200, 'suppression déjà faite : sans erreur');
+  p = await call('POST', 'notes/' + n.id + '/todos', { text: 'x', id: 'a b' });
+  assert.notStrictEqual(p.data.note.todos[0].id, 'a b', 'identifiant invalide ignoré');
 });

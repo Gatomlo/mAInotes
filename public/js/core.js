@@ -470,9 +470,22 @@ var startAction = (function () {
   if (q.get('action') !== 'new') return null;
   var t = q.get('type');
   if (t === 'voice' && q.get('car') === '1') carMode = true;
+  // L'adresse est effacée tout de suite : un rechargement ou une reprise de la page ne relance pas le mode voiture.
+  try { history.replaceState(null, '', location.pathname); } catch (e) { /* rien */ }
   return t === 'voice' || t === 'image' ? t : 'text';
 })();
+// Le mode voiture ne dure pas : 10 minutes sans enregistrement, ou retour d'un long passage en arrière-plan.
+var CAR_MAX_MS = 10 * 60 * 1000, carStamp = 0;
+function carExit() {
+  if (!carMode) return;
+  carMode = false;
+  document.body.classList.remove('carmode');
+  if (modal === 'add' && add && !add.rec) closeModal();
+}
+setInterval(function () { if (carMode && Date.now() - carStamp > CAR_MAX_MS && !(add && add.rec)) carExit(); }, 30000);
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && carMode && Date.now() - carStamp > CAR_MAX_MS) carExit(); });
 function launchStart(t) {
+  carStamp = Date.now();
   document.body.classList.toggle('carmode', carMode && t === 'voice');
   openAdd(t);
   if (carMode && t === 'voice') startRecording();

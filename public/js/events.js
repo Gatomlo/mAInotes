@@ -52,7 +52,7 @@ var ACTIONS = {
   'todo-add': function (el) {
     var inp = $('#todoin'), text = inp ? inp.value.trim() : '';
     if (!text) { if (inp) inp.focus(); return; }
-    var due = null;
+    var due = $('#todoin-due').value || null;
     todoCall(el.dataset.id, 'POST', '', { text: text, due: due }).then(function (ok) { var i = $('#todoin'); if (ok && i) i.focus(); });
   },
   tkmode: function (el) { TK.mode = el.dataset.id; renderTasks(); },
@@ -498,6 +498,7 @@ document.addEventListener('keydown', function (e) {
 });
 document.addEventListener('change', function (e) {
   var t = e.target;
+  if (t.classList && t.classList.contains('tdue-in')) { todoCall(t.dataset.id, 'PATCH', '/' + t.dataset.tid, { due: t.value || null }); }
   if (t.id === 'notedue') { queueOp({ kind: 'note-due', noteId: t.dataset.id, due: t.value || null }); }
   if (t.id === 'tkcat') { TK.nb = t.value; renderTasks(); }
   if (t.classList && t.classList.contains('pe-type')) { peSync(); peRender(); }

@@ -332,13 +332,13 @@ function todosHtml(n) {
   var list = (n.todos || []).map(function (t) {
     var late = !t.done && t.due && t.due < today;
     return '<li class="todo' + (t.done ? ' done' : '') + '"><button type="button" class="tchk" role="checkbox" aria-checked="' + t.done + '" data-a="todo-toggle" data-id="' + n.id + '" data-tid="' + t.id + '" aria-label="' + (t.done ? 'Rouvrir' : 'Terminer') + ' : ' + esc(t.text) + '">' + (t.done ? I(IC.check, 18) : '') + '</button>' +
-      '<span class="ttx">' + esc(t.text) + '</span>' + (t.due ? '<span class="tdue' + (late ? ' late' : t.due === today ? ' today' : '') + '">' + esc(t.due === today ? 'Aujourd\'hui' : fmtDay(t.due)) + '</span>' : '') +
+      '<span class="ttx">' + esc(t.text) + '</span>' + '<input type="date" class="field tdue-in' + (late ? ' late' : '') + '" data-id="' + n.id + '" data-tid="' + t.id + '" value="' + esc(t.due || '') + '" aria-label="Date propre à la tâche : ' + esc(t.text) + (n.due ? ' (sinon celle de la note)' : '') + '" title="' + (t.due ? 'Date propre à cette tâche' : n.due ? 'Date de la note (' + esc(fmtDay(n.due)) + ') ; choisissez-en une pour cette tâche' : 'Date facultative pour cette tâche') + '" style="width:auto;min-height:36px;padding:2px 6px' + (t.due || !n.due ? '' : ';opacity:.55') + '">' +
       '<button type="button" class="iconbtn" data-a="todo-del" data-id="' + n.id + '" data-tid="' + t.id + '" aria-label="Supprimer la tâche : ' + esc(t.text) + '">' + I(IC.x, 18) + '</button></li>';
   }).join('');
   var s = todoStats(n);
   return '<div id="todobox"><div class="l">Tâches' + (s.total ? ' · ' + s.done + '/' + s.total : '') + '</div>' +
     (n.trashedAt ? (n.due ? '<p class="sub">Date limite : ' + esc(fmtDay(n.due)) + '</p>' : '') : '<label class="notedue' + (n.due && n.due < today && s.done < s.total ? ' late' : '') + '"><span class="l" style="margin:0">Date limite</span><input id="notedue" class="field" type="date" data-id="' + n.id + '" value="' + esc(n.due || '') + '" aria-label="Date limite de la note" style="width:auto"></label>') + + (list ? '<ul class="todos">' + list + '</ul>' : '') +
-    (n.trashedAt ? '' : '<div class="todo-add"><input id="todoin" class="field" maxlength="300" placeholder="Ajouter une tâche…" aria-label="Nouvelle tâche" enterkeyhint="done"><button type="button" class="btn" data-a="todo-add" data-id="' + n.id + '">Ajouter</button></div>') + '</div>';
+    (n.trashedAt ? '' : '<div class="todo-add"><input id="todoin" class="field" maxlength="300" placeholder="Ajouter une tâche…" aria-label="Nouvelle tâche" enterkeyhint="done"><input id="todoin-due" class="field" type="date" aria-label="Date propre à la tâche (facultative)"><button type="button" class="btn" data-a="todo-add" data-id="' + n.id + '">Ajouter</button></div>') + '</div>';
 }
 function refreshTodos(n) {
   var box = $('#todobox');

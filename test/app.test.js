@@ -41,7 +41,7 @@ before(async () => {
       if (prompt.includes('enrichissement')) out.enrichissement = ENRICH(mockUrl);
       if (prompt.includes('Propriétés à remplir')) out.proprietes = { P1: 'En cours', P2: '2026-12-20', P3: 'pas utilisé' };
       if (prompt.includes('Notes existantes proches')) out.liees = ['N1'];
-      if (prompt.includes('liste de courses')) out.taches = { liste: ['500 g de patates', 'Une douzaine d\'œufs', '500 g de patates', 'Un pain'], echeance: '2026-11-17' };
+      if (prompt.includes('liste de courses')) out.taches = { liste: ['500 g de patates', 'Une douzaine d\'œufs', '500 g de patates', { texte: 'Un pain', echeance: '2026-11-16' }, { texte: 'Confiture', echeance: '2026-11-17' }], echeance: '2026-11-17' };
       if (prompt.includes('L1 ')) out.liens = { L1: 'Fiche d\'un robinet thermostatique vendu par un magasin de bricolage.' };
       content = JSON.stringify(out);
     } else if (prompt.includes('liste des tâches à faire')) {
@@ -195,7 +195,8 @@ test('liste détectée : cases à cocher et échéance créées automatiquement,
   const before = calls.length;
   const r = await call('POST', 'notes', { type: 'text', content: 'Prévoir une liste de courses pour mardi prochain : 500 g de patates, une douzaine d\'œufs, un pain.' });
   const n = await until(async () => { const s = await call('GET', 'state'); const x = s.data.notes.find((y) => y.id === r.data.note.id); return x.status === 'ready' && x; });
-  assert.deepStrictEqual(n.todos.map((t) => t.text), ['500 g de patates', 'Une douzaine d\'œufs', 'Un pain']);
+  assert.deepStrictEqual(n.todos.map((t) => t.text), ['500 g de patates', 'Une douzaine d\'œufs', 'Un pain', 'Confiture']);
+  assert.deepStrictEqual(n.todos.map((t) => t.due), [null, null, '2026-11-16', null], 'date propre seulement si elle diffère de celle de la note');
   assert.strictEqual(n.due, '2026-11-17', 'date limite portée par la note');
   assert.ok(n.todos.every((t) => !t.done));
   const up = await call('PATCH', 'notes/' + n.id, { due: '2026-11-20' });

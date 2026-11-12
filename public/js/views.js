@@ -317,6 +317,7 @@ function renderHome() {
   var calls = pend.reduce(function (a, n) { return a + 1 + ((n.type === 'voice' && !n.transcript) || (n.type === 'image' && !n.description && !n.content) ? 1 : 0); }, 0);
   $('#pendbar').innerHTML = pend.length ? '<div class="pendbar"><span>' + plural(pend.length, 'note à analyser', 'notes à analyser') + '</span><button class="btn primary" style="height:44px" data-a="analyze-all">Tout analyser · ≈ ' + plural(calls, 'appel', 'appels') + '</button></div>' : '';
   var showOutbox = !active ? outbox.map(outboxCard).join('') : '';
+  if (cv === 'agenda') { $('#grid').className = 'pv'; $('#grid').innerHTML = agendaView(list); return; }
   var pvMode = cv === 'table' || cv === 'kanban' || cv === 'calendar';
   $('#grid').className = pvMode ? 'pv' : cv === 'list' ? 'rows' : 'grid';
   if (pvMode) { $('#grid').innerHTML = renderPropView(list, hc, cv); layoutMasonry(); return; }
@@ -478,13 +479,21 @@ function renderTasksTab() {
   $('#tab-tasks').setAttribute('aria-label', 'Tâches' + (open.length ? ' (' + open.length + ' à faire' + (late ? ', ' + late + ' en retard' : '') + ')' : ''));
 }
 var TK = { mode: 'todo', nb: '', calf: 'both', who: '' };
+// Page Notes, vue « Calendrier » : les notes affichées (filtres compris) à leur date limite, et leurs tâches.
+function agendaView(list) {
+  var all = [];
+  if (tasksOn()) list.forEach(function (n) { (n.todos || []).forEach(function (t) { all.push({ n: n, t: Object.assign({}, t, { due: todoDue(n, t) }) }); }); });
+  var out = tasksCalendar(all, list.filter(function (n) { return n.due && n.type !== 'synthesis'; }));
+  var none = !list.some(function (n) { return n.due || (tasksOn() && (n.todos || []).some(function (t) { return !t.done && t.due; })); });
+  return out + (none ? '<div class="help"><span>Aucune date limite pour l\'instant. Ajoutez-en une en modifiant une note, ou laissez l\'IA la détecter (« pour mardi prochain »).</span></div>' : '');
+}
 // Calendrier mensuel des échéances de tâches : un clic ouvre la note.
 function tasksCalendar(all, notes) {
   var first = new Date(PV.y, PV.m, 1), lead = (first.getDay() + 6) % 7, days = new Date(PV.y, PV.m + 1, 0).getDate();
   var by = {}, undated = 0, today = todayStr(), cells = '';
   var f = TK.calf, showT = f !== 'notes', showN = f !== 'tasks';
-  if (showT) all.forEach(function (x) { if (x.t.done) return; if (!x.t.due) { undated++; return; } (by[x.t.due] = by[x.t.due] || []).push({ n: x.n, label: x.t.text, title: x.n.title + ' : ' + x.t.text, kind: 'task' }); });
   if (showN) notes.forEach(function (n) { (by[n.due] = by[n.due] || []).push({ n: n, label: n.title, title: 'Note : ' + n.title, kind: 'note' }); });
+  if (showT) all.forEach(function (x) { if (x.t.done) return; if (!x.t.due) { undated++; return; } (by[x.t.due] = by[x.t.due] || []).push({ n: x.n, label: x.t.text, title: x.n.title + ' : ' + x.t.text, kind: 'task' }); });
   var seg = '<div class="modes small" role="group" aria-label="Afficher dans le calendrier">' + [['both', 'Notes et tâches'], ['notes', 'Notes'], ['tasks', 'Tâches']].map(function (b) { return '<button type="button" data-a="tkcal" data-id="' + b[0] + '" aria-pressed="' + (f === b[0]) + '">' + b[1] + '</button>'; }).join('') + '</div>';
   ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'].forEach(function (d) { cells += '<div class="ch">' + d + '</div>'; });
   for (var i = 0; i < lead; i++) cells += '<div class="cd out"></div>';

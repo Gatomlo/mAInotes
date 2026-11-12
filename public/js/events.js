@@ -52,7 +52,7 @@ var ACTIONS = {
   'todo-add': function (el) {
     var inp = $('#todoin'), text = inp ? inp.value.trim() : '';
     if (!text) { if (inp) inp.focus(); return; }
-    var due = $('#todoin-due').value || null;
+    var dd = $('#todoin-due'), due = dd ? dd.value || null : null;
     todoCall(el.dataset.id, 'POST', '', { text: text, due: due }).then(function (ok) { var i = $('#todoin'); if (ok && i) i.focus(); });
   },
   'user-pw': function (el) {
@@ -68,10 +68,11 @@ var ACTIONS = {
   'notify-disable': function () { notifyDisable(); },
   'notify-test': function () { api('POST', 'notify/test', {}).then(function () { toast('Notification de test envoyée'); }, fail); },
   'notify-toggle': function (el) { api('PATCH', 'notify', { enabled: el.getAttribute('aria-checked') !== 'true' }).then(function () { renderNotify(); }, fail); },
+  'todo-edit': function (el) { todoOpen = todoOpen === el.dataset.tid ? null : el.dataset.tid; var n = noteById(el.dataset.id); if (n) refreshTodos(n); },
   'share-note': function (el) { openShare('note', el.dataset.id); },
   'share-nb': function (el) { openShare('nb', el.dataset.id); },
   'share-save': function () { saveShare(); },
-  tkcal: function (el) { TK.calf = el.dataset.id; renderTasks(); },
+  tkcal: function (el) { TK.calf = el.dataset.id; if (tab === 'tasks') renderTasks(); else renderHome(); },
   tkmode: function (el) { TK.mode = el.dataset.id; renderTasks(); },
   'set-feat': function (el) { var f = {}; f[el.dataset.id] = el.getAttribute('aria-checked') !== 'true'; saveSettings({ features: f }); },
   dread: function (el) { var n = curNote(); if (n) setRead(n, el.dataset.id || null).then(function () { if (modal === 'detail' && curId === n.id) openDetail(n.id, false); }); },
@@ -99,7 +100,7 @@ var ACTIONS = {
   calnav: function (el) {
     var d = +el.dataset.id;
     if (!d) { PV.y = new Date().getFullYear(); PV.m = new Date().getMonth(); } else { var t = new Date(PV.y, PV.m + d, 1); PV.y = t.getFullYear(); PV.m = t.getMonth(); }
-    if (typeof TK !== 'undefined' && TK.mode === 'cal' && tab === 'tasks') renderTasks(); else renderHome();
+    if (tab === 'tasks' && TK.mode === 'cal') renderTasks(); else renderHome();
   },
   'pe-add': function () { peSync(); ce.props.push({ name: '', type: 'text' }); peRender(); var r = $$('#peditor .pe-name'); if (r.length) r[r.length - 1].focus(); },
   'pe-del': function (el) { peSync(); ce.props.splice(+el.dataset.id, 1); peRender(); },

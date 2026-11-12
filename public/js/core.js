@@ -37,7 +37,7 @@ function canEdit(n) { return roleOf(n) !== 'read'; }
 function userName(id) { var u = (S.users || []).filter(function (x) { return x.id === id; })[0]; return u ? u.name : ''; }
 var F = { q: '', cat: null, tags: [], tagMode: 'all', read: '', period: '', from: '', to: '' };
 var VIEW = 'cards';
-try { VIEW = localStorage.getItem('mainotes-view') === 'list' ? 'list' : 'cards'; } catch (e) { /* stockage indisponible */ }
+try { var vs = localStorage.getItem('mainotes-view'); VIEW = vs === 'list' || vs === 'agenda' ? vs : 'cards'; } catch (e) { /* stockage indisponible */ }
 
 // Période de création choisie dans les filtres : [début, fin] en millisecondes, ou null.
 function dateRange(f) {

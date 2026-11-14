@@ -31,3 +31,5 @@ Adresse exacte et noms de modèles de l'API IA Infomaniak (réglables dans l'app
 - `npm test` lance un test de bout en bout monté sous `/mainotes` avec un faux fournisseur : à garder vert.
 
 - Connexion centralisée (node-gateway) : `lib/gateway-bridge.js` (copie de `node-gateway/docs/gateway-bridge.js`) + `currentSession` dans `lib/auth.js`. Si la passerelle fournit `req.gateway` (droit sur cet outil), l'identité est rattachée au compte local **de même identifiant** (aucun compte créé) via une session locale de 2 h, jamais prolongée, recréée en silence. Hors passerelle : sans effet. Test : `test/gateway-bridge.test.js`.
+
+- Sécurité (branche `claude/security-fixes`) : derrière la passerelle, la création du premier compte exige le droit admin de la passerelle (plus de course au premier visiteur ; hors passerelle : inchangé, test `gateway-setup`) ; dépendances à jour (`npm audit` : 0). `npm test` inclut maintenant les tests du pont.

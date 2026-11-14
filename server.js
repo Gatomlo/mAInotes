@@ -87,4 +87,7 @@ if (require.main === module) {
   app.listen(PORT, () => console.log(`mAInotes disponible sur http://localhost:${PORT}`));
 }
 
+// Liste des comptes pour l'administration de node-gateway (lecture seule, facultatif : voir node-gateway/README).
+app.gatewayAccounts = () => store.db.users.map((u) => ({ key: u.login, login: u.login, name: u.name || u.login, detail: u.role === 'admin' ? 'administrateur' : 'utilisateur' }));
+
 module.exports = app;
